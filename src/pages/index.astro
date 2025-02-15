@@ -1,5 +1,9 @@
 ---
-
+import Footer from "../components/Footer.astro";
+import Navigation from "../components/Navigation.astro";
+import "../styles/global.css";
+const title = import.meta.env.PUBLIC_BLOG_TITLE;
+const author = import.meta.env.PUBLIC_BLOG_AUTHOR;
 ---
 
 <html lang="es">
@@ -8,13 +12,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Bitácora | Ramiro Cerdá</title>
+    <title>{title} | {author}</title>
   </head>
   <body>
-    <a href="/">Home</a>
-    <a href="/about/">About</a>
-    <a href="/blog/">Blog</a>
+    <Navigation />
 
-    <h1>Bitácora | Ramiro Cerdá</h1>
+    <h1>{title}</h1>
+
+    <Footer />
   </body>
 </html>
