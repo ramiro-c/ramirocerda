@@ -1,21 +1,21 @@
 ---
+import { getCollection } from "astro:content";
 import BlogPost from "../components/BlogPost.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-const title = import.meta.env.PUBLIC_BLOG_TITLE;
-const allPosts = Object.values(
-  import.meta.glob("./posts/*.md", {
-    eager: true,
-  })
-);
+const posts = await getCollection("blog");
 ---
 
-<BaseLayout title={title}>
-  <ul>
+<BaseLayout title="Inicio">
+  <div class="posts-grid">
     {
-      allPosts.map((post: any) => (
-        <BlogPost title={post.frontmatter.title} url={post.url} />
+      posts.map((post) => (
+        <BlogPost
+          title={post.data.title}
+          url={`/posts/${post.id}`}
+          img={post.data.image.url}
+        />
       ))
     }
-  </ul>
+  </div>
 </BaseLayout>

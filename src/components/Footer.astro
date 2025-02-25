@@ -1,26 +1,49 @@
 ---
+import QuoteCarousel from "./QuoteCarousel.astro";
 import Social from "./Social.astro";
-
-const platform = "github";
-const username = "withastro";
 ---
+
+<footer>
+  <div class="footer-content">
+    <QuoteCarousel />
+    <div class="social-links">
+      <Social platform="LinkedIn" username="in/ramiro-cerdá-619983177" />
+      <Social platform="GitHub" username="ramiro-c" />
+    </div>
+  </div>
+</footer>
 
 <style>
   footer {
+    padding: 2rem 0;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 4rem;
+  }
+
+  .footer-content {
+    max-width: 80ch;
+    margin: 0 auto;
+    padding: 0 1rem;
     display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .social-links {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  :global(html.dark) footer {
+    border-top-color: #2d2d2d;
+  }
+
+  @media (max-width: 636px) {
+    footer {
+      padding: 1.5rem 0;
+      margin-top: 2rem;
+    }
   }
 </style>
-
-<footer>
-  <p>
-    Learn more about my projects on <a
-      href={`https://www.${platform}.com/${username}`}>{platform}</a
-    >!
-  </p>
-
-  <Social platform="twitter" username="astrodotbuild" />
-  <Social platform="github" username="withastro" />
-  <Social platform="youtube" username="astrodotbuild" />
-</footer>

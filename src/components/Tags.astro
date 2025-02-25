@@ -1,33 +1,40 @@
 ---
-const { tags } = Astro.props;
+import Tag from "./Tag.astro";
+
+type Props = {
+  tags: string[];
+  className?: string;
+};
+
+const { tags, className = "" } = Astro.props;
 ---
 
-<div class="tags">
-  {
-    tags.map((tag: string) => (
-      <p class="tag">
-        <a href={`/tags/${tag}`}>{tag}</a>
-      </p>
-    ))
-  }
+<div class:list={["tags", className]}>
+  {tags.map((tag) => <Tag tag={tag} />)}
 </div>
 
 <style>
-  a {
-    color: #00539f;
-  }
-
   .tags {
     display: flex;
     flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
   }
 
-  .tag {
-    margin: 0.25em;
-    border: dotted 1px #a1a1a1;
-    border-radius: 0.5em;
-    padding: 0.5em 1em;
-    font-size: 1.15em;
-    background-color: #f8fcfd;
+  /* If used in a header or other special location */
+  .tags.header {
+    margin: 0;
+    justify-content: center;
+  }
+
+  /* If used in a blog post */
+  .tags.post {
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 636px) {
+    .tags {
+      justify-content: center;
+    }
   }
 </style>

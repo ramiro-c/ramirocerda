@@ -2,11 +2,14 @@
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import "../styles/global.css";
+import { capitalizeFirstLetter } from "../utils/text";
 
 const title = import.meta.env.PUBLIC_BLOG_TITLE;
 const author = import.meta.env.PUBLIC_BLOG_AUTHOR;
 
 const { title: pageTitle } = Astro.props;
+
+const sectionTitle = pageTitle ? capitalizeFirstLetter(pageTitle) : title;
 ---
 
 <html lang="es">
@@ -15,11 +18,14 @@ const { title: pageTitle } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>{pageTitle ?? `${title} | ${author}`}</title>
+    <title>
+      {pageTitle ? capitalizeFirstLetter(pageTitle) : `${title} | ${author}`}
+    </title>
   </head>
   <body>
     <Header />
-    <h1>{pageTitle ?? title}</h1>
+
+    <h2>{sectionTitle}</h2>
 
     <slot />
 

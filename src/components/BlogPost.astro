@@ -1,7 +1,13 @@
 ---
-const { title, url } = Astro.props;
+import ImageCard from "./ImageCard.astro";
+
+type Props = {
+  title: string;
+  url: string;
+  img?: string;
+};
+
+const { title, url, img } = Astro.props;
 ---
 
-<li>
-  <a href={url}>{title}</a>
-</li>
+<ImageCard title={title} url={url} img={img} />

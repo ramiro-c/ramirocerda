@@ -1,0 +1,38 @@
+---
+type Props = {
+  tag: string;
+};
+
+const { tag } = Astro.props;
+---
+
+<a href={`/tags/${tag}`} class="tag">
+  {tag}
+</a>
+
+<style>
+  .tag {
+    display: inline-block;
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 2rem;
+    transition: all 0.2s ease;
+    background-color: transparent;
+  }
+
+  .tag:hover {
+    background-color: var(--bg-color);
+    transform: translateY(-1px);
+  }
+
+  :global(html.dark) .tag {
+    border-color: #2d2d2d;
+  }
+
+  :global(html.dark) .tag:hover {
+    background-color: #2d2d2d;
+  }
+</style>
