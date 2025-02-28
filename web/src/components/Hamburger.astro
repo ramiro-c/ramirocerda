@@ -1,0 +1,60 @@
+<button class="hamburger" aria-label="Menu">
+  <div class="line-container">
+    <span class="line"></span>
+    <span class="line"></span>
+    <span class="line"></span>
+  </div>
+</button>
+
+<style>
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .line-container {
+    position: relative;
+    width: 24px;
+    height: 24px;
+  }
+
+  .line {
+    position: absolute;
+    left: 0;
+    width: 24px;
+    height: 2px;
+    background-color: var(--text-color);
+    transition: all 0.3s ease;
+  }
+
+  .line:nth-child(1) {
+    top: 4px;
+  }
+  .line:nth-child(2) {
+    top: 11px;
+  }
+  .line:nth-child(3) {
+    top: 18px;
+  }
+
+  @media (max-width: 636px) {
+    .hamburger {
+      display: block;
+    }
+
+    :global(.hamburger.active) .line:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    :global(.hamburger.active) .line:nth-child(2) {
+      opacity: 0;
+    }
+
+    :global(.hamburger.active) .line:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+  }
+</style>
