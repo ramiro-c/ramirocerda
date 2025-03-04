@@ -6,7 +6,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const posts = await getCollection("blog");
 ---
 
-<BaseLayout title="Inicio">
+<BaseLayout>
   <div class="posts-grid">
     {
       posts.map((post) => (
