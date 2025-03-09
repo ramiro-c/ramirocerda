@@ -1,9 +1,11 @@
 ---
-const { platform, username } = Astro.props;
+const { platform, username, isEmail } = Astro.props;
 ---
 
 <a
-  href={`https://www.${platform.toLowerCase()}.com/${username}`}
+  href={isEmail
+    ? `mailto:${username}`
+    : `https://www.${platform.toLowerCase()}.com/${username}`}
   target="_blank"
   rel="noopener noreferrer"
 >
