@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <title>Ramiro Cerdá - Full-Stack Developer</title>
+    <meta
+      name="description"
+      content="Desarrollador Full-Stack especializado en React, React Native y TypeScript desde Buenos Aires, Argentina"
+    />
+    <meta
+      name="keywords"
+      content="react, react native, typescript, javascript, developer, frontend, mobile, argentina"
+    />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+        color: #e0e0e0;
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      /* Header */
+      .header {
+        padding: 60px 0;
+        text-align: center;
+        opacity: 0;
+        animation: fadeInUp 1s ease-out 0.2s forwards;
+      }
+
+      .header h1 {
+        font-size: 3.5rem;
+        font-weight: 600;
+        background: linear-gradient(45deg, #64ffda, #00bcd4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+        letter-spacing: -0.02em;
+      }
+
+      .header .subtitle {
+        font-size: 1.2rem;
+        color: #a0a0a0;
+        font-weight: 300;
+      }
+
+      .header .location {
+        font-size: 1rem;
+        color: #64ffda;
+        margin-top: 10px;
+      }
+
+      /* Navigation */
+      .nav {
+        position: sticky;
+        top: 0;
+        background: rgba(15, 15, 15, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 15px 0;
+        z-index: 100;
+        border-bottom: 1px solid rgba(100, 255, 218, 0.1);
+      }
+
+      .nav ul {
+        list-style: none;
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+      }
+
+      .nav a {
+        color: #a0a0a0;
+        text-decoration: none;
+        font-weight: 400;
+        transition: all 0.3s ease;
+        position: relative;
+        font-size: 0.95rem;
+      }
+
+      .nav a:hover {
+        color: #64ffda;
+      }
+
+      .nav a::after {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #64ffda;
+        transition: width 0.3s ease;
+      }
+
+      .nav a:hover::after {
+        width: 100%;
+      }
+
+      /* Sections */
+      .section {
+        padding: 80px 0;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 1s ease-out forwards;
+      }
+
+      .section:nth-child(2) {
+        animation-delay: 0.4s;
+      }
+      .section:nth-child(3) {
+        animation-delay: 0.6s;
+      }
+      .section:nth-child(4) {
+        animation-delay: 0.8s;
+      }
+      .section:nth-child(5) {
+        animation-delay: 1s;
+      }
+
+      .section-title {
+        font-size: 2.5rem;
+        font-weight: 600;
+        margin-bottom: 40px;
+        color: #ffffff;
+        position: relative;
+        display: inline-block;
+      }
+
+      .section-title::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(45deg, #64ffda, #00bcd4);
+      }
+
+      /* About */
+      .about-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        align-items: center;
+      }
+
+      .about-text p {
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+        color: #c0c0c0;
+      }
+
+      .about-text .highlight {
+        color: #64ffda;
+        font-weight: 500;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+      }
+
+      .stat-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(100, 255, 218, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .stat-item:hover {
+        transform: translateY(-5px);
+        background: rgba(100, 255, 218, 0.1);
+      }
+
+      .stat-number {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #64ffda;
+        display: block;
+      }
+
+      .stat-label {
+        color: #a0a0a0;
+        font-size: 0.9rem;
+        margin-top: 5px;
+      }
+
+      /* Experience */
+      .experience-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(100, 255, 218, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .experience-item:hover {
+        transform: translateY(-5px);
+        background: rgba(100, 255, 218, 0.08);
+      }
+
+      .job-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+      }
+
+      .job-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #ffffff;
+      }
+
+      .company {
+        color: #64ffda;
+        font-weight: 500;
+      }
+
+      .period {
+        color: #a0a0a0;
+        font-size: 0.9rem;
+      }
+
+      .job-description {
+        color: #c0c0c0;
+        line-height: 1.7;
+      }
+
+      .achievements {
+        list-style: none;
+        margin-top: 15px;
+      }
+
+      .achievements li {
+        position: relative;
+        padding-left: 20px;
+        margin-bottom: 8px;
+      }
+
+      .achievements li::before {
+        content: "▸";
+        position: absolute;
+        left: 0;
+        color: #64ffda;
+      }
+
+      /* Skills */
+      .skills-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+      }
+
+      .skill-category {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 25px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(100, 255, 218, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .skill-category:hover {
+        transform: translateY(-5px);
+        background: rgba(100, 255, 218, 0.08);
+      }
+
+      .skill-category h3 {
+        color: #64ffda;
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+      }
+
+      .skill-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .skill-tag {
+        background: rgba(100, 255, 218, 0.1);
+        color: #64ffda;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        border: 1px solid rgba(100, 255, 218, 0.2);
+      }
+
+      /* Contact */
+      .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+      }
+
+      .contact-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(100, 255, 218, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .contact-item:hover {
+        transform: translateY(-5px);
+        background: rgba(100, 255, 218, 0.1);
+      }
+
+      .contact-item a {
+        color: #e0e0e0;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
+
+      .contact-item:hover a {
+        color: #64ffda;
+      }
+
+      /* Footer */
+      .footer {
+        text-align: center;
+        padding: 40px 0;
+        color: #a0a0a0;
+        border-top: 1px solid rgba(100, 255, 218, 0.1);
+        margin-top: 60px;
+      }
+
+      /* Animations */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .floating {
+        animation: float 3s ease-in-out infinite;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .header h1 {
+          font-size: 2.5rem;
+        }
+
+        .nav {
+          padding: 10px 0;
+        }
+
+        .nav ul {
+          gap: 25px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .nav a {
+          font-size: 0.9rem;
+        }
+
+        .about-content {
+          grid-template-columns: 1fr;
+          gap: 40px;
+        }
+
+        .stats {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 15px;
+        }
+
+        .stat-item {
+          padding: 20px;
+        }
+
+        .job-header {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .section {
+          padding: 50px 0;
+        }
+
+        .section-title {
+          font-size: 2rem;
+        }
+
+        .skills-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+
+        .contact-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 15px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .nav ul {
+          gap: 20px;
+        }
+
+        .nav a {
+          font-size: 0.85rem;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .contact-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section {
+          padding: 40px 0;
+        }
+
+        .container {
+          padding: 0 15px;
+        }
+      }
+
+      /* Particles background */
+      .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .particle {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: #64ffda;
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: particleMove 20s infinite linear;
+      }
+
+      @keyframes particleMove {
+        0% {
+          transform: translateY(100vh) translateX(0);
+        }
+        100% {
+          transform: translateY(-100vh) translateX(100px);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+      <header class="header">
+        <h1>Ramiro Cerdá</h1>
+        <p class="subtitle">
+          Full-Stack Developer especializado en React & React Native
+        </p>
+        <p class="location">Buenos Aires, Argentina</p>
+      </header>
+
+      <nav class="nav">
+        <ul>
+          <li><a href="#about">Sobre mí</a></li>
+          <li><a href="#experience">Experiencia</a></li>
+          <li><a href="#skills">Habilidades</a></li>
+          <li><a href="#contact">Contacto</a></li>
+        </ul>
+      </nav>
+
+      <section id="about" class="section">
+        <h2 class="section-title">Sobre mí</h2>
+        <div class="about-content">
+          <div class="about-text">
+            <p>
+              Soy un desarrollador <span class="highlight">Full-Stack</span> de
+              <span id="age">25</span> años con más de 4 años de experiencia,
+              especializado en <span class="highlight">React</span>,
+              <span class="highlight">React Native</span> y
+              <span class="highlight">TypeScript</span>.
+            </p>
+            <p>
+              Actualmente trabajo como
+              <span class="highlight">Desarrollador Mobile/Front-end SSR</span>
+              en LibroDePases, donde lidero proyectos técnicos y mentoría a
+              desarrolladores junior.
+            </p>
+            <p>
+              Me apasiona crear soluciones tecnológicas innovadoras y tengo
+              experiencia en el desarrollo de aplicaciones móviles que impactan
+              positivamente en la vida de las personas.
+            </p>
+          </div>
+          <div class="stats floating">
+            <div class="stat-item">
+              <span class="stat-number">4+</span>
+              <span class="stat-label">años de experiencia</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">50+</span>
+              <span class="stat-label">usuarios satisfechos</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">8.04</span>
+              <span class="stat-label">promedio universitario</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">100%</span>
+              <span class="stat-label">satisfacción cliente</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="experience" class="section">
+        <h2 class="section-title">Experiencia</h2>
+
+        <div class="experience-item">
+          <div class="job-header">
+            <div>
+              <h3 class="job-title">Desarrollador Mobile / Front-end SSR</h3>
+              <p class="company">LibroDePases</p>
+            </div>
+            <span class="period">Jun 2022 - Actualidad</span>
+          </div>
+          <div class="job-description">
+            <p>
+              Liderazgo técnico en el desarrollo de aplicaciones móviles y web
+              con React Native y React.
+            </p>
+            <ul class="achievements">
+              <li>
+                Optimización del state management con Zustand y TypeScript
+              </li>
+              <li>
+                Implementación de CI/CD con Bitbucket Pipelines y SonarQube
+              </li>
+              <li>Desarrollo de visualizaciones interactivas con amCharts</li>
+              <li>Mentoría a desarrolladores junior y gestión de onboarding</li>
+              <li>
+                Implementación de pruebas unitarias y automatización de
+                estándares
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="experience-item">
+          <div class="job-header">
+            <div>
+              <h3 class="job-title">Desarrollador Mobile</h3>
+              <p class="company">LactarIA (Freelance)</p>
+            </div>
+            <span class="period">Oct 2024 - Nov 2024</span>
+          </div>
+          <div class="job-description">
+            <p>
+              Desarrollo de aplicación móvil para apoyo en lactancia materna con
+              React Native y Expo.
+            </p>
+            <ul class="achievements">
+              <li>100% de satisfacción de usuarias (50 mamás)</li>
+              <li>77.3% reportó menor ansiedad con la aplicación</li>
+              <li>Backend serverless y despliegue en Play Store</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="experience-item">
+          <div class="job-header">
+            <div>
+              <h3 class="job-title">Desarrollador Full-stack</h3>
+              <p class="company">Secretaría de TIC - UTN FRLP</p>
+            </div>
+            <span class="period">Ene 2020 - Sep 2021</span>
+          </div>
+          <div class="job-description">
+            <p>
+              Desarrollo de sistemas de gestión administrativa universitaria con
+              Vue.js y Laravel.
+            </p>
+            <ul class="achievements">
+              <li>Sistema de gestión de trámites administrativos</li>
+              <li>Optimización de interfaces para mayor accesibilidad</li>
+              <li>Corrección de errores en back-end y front-end</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="skills" class="section">
+        <h2 class="section-title">Habilidades</h2>
+        <div class="skills-grid">
+          <div class="skill-category">
+            <h3>Frontend</h3>
+            <div class="skill-tags">
+              <span class="skill-tag">React</span>
+              <span class="skill-tag">React Native</span>
+              <span class="skill-tag">TypeScript</span>
+              <span class="skill-tag">JavaScript</span>
+              <span class="skill-tag">CSS3</span>
+              <span class="skill-tag">HTML5</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <h3>Backend</h3>
+            <div class="skill-tags">
+              <span class="skill-tag">Node.js</span>
+              <span class="skill-tag">PHP</span>
+              <span class="skill-tag">Laravel</span>
+              <span class="skill-tag">SQL</span>
+              <span class="skill-tag">Python</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <h3>Tools & DevOps</h3>
+            <div class="skill-tags">
+              <span class="skill-tag">Git</span>
+              <span class="skill-tag">Docker</span>
+              <span class="skill-tag">CI/CD</span>
+              <span class="skill-tag">Jest</span>
+              <span class="skill-tag">SonarQube</span>
+              <span class="skill-tag">Jira</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <h3>UI/UX</h3>
+            <div class="skill-tags">
+              <span class="skill-tag">Styled Components</span>
+              <span class="skill-tag">Material UI</span>
+              <span class="skill-tag">Responsive Design</span>
+              <span class="skill-tag">amCharts</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="section">
+        <h2 class="section-title">Contacto</h2>
+        <div class="contact-grid">
+          <div class="contact-item">
+            <a href="mailto:rami992009@gmail.com">📧 Email</a>
+          </div>
+          <div class="contact-item">
+            <a
+              href="https://www.linkedin.com/in/ramiro-cerdá-619983177/"
+              target="_blank"
+              >🔗 LinkedIn</a
+            >
+          </div>
+          <div class="contact-item">
+            <a href="https://github.com/ramiro-c" target="_blank">🐙 GitHub</a>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p>&copy; 2025 Ramiro Cerdá. Desarrollado con 💙</p>
+      </footer>
+    </div>
+
+    <script>
+      function calculateAge() {
+        const birthDate = new Date("1999-09-06"); // Tu fecha de nacimiento
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDifference = today.getMonth() - birthDate.getMonth();
+
+        // Ajustar si aún no ha pasado el cumpleaños este año
+        if (
+          monthDifference < 0 ||
+          (monthDifference === 0 && today.getDate() < birthDate.getDate())
+        ) {
+          age--;
+        }
+
+        return age;
+      }
+
+      // Crear partículas animadas
+      function createParticles() {
+        const particlesContainer = document.getElementById("particles");
+        const particleCount = 50;
+
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement("div");
+          particle.className = "particle";
+          particle.style.left = Math.random() * 100 + "%";
+          particle.style.animationDelay = Math.random() * 20 + "s";
+          particle.style.animationDuration = Math.random() * 10 + 10 + "s";
+          particlesContainer.appendChild(particle);
+        }
+      }
+
+      // Smooth scrolling para navegación
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("age").textContent = calculateAge();
+        createParticles();
+
+        const navLinks = document.querySelectorAll(".nav a");
+        navLinks.forEach((link) => {
+          link.addEventListener("click", function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute("href");
+            const targetSection = document.querySelector(targetId);
+            if (targetSection) {
+              targetSection.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }
+          });
+        });
+      });
+
+      // Intersection Observer para animaciones
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px",
+      };
+
+      const observer = new IntersectionObserver(function (entries) {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = "1";
+            entry.target.style.transform = "translateY(0)";
+          }
+        });
+      }, observerOptions);
+
+      // Observar elementos para animaciones
+      document.addEventListener("DOMContentLoaded", function () {
+        const elements = document.querySelectorAll(
+          ".experience-item, .skill-category, .contact-item"
+        );
+        elements.forEach((el) => {
+          el.style.opacity = "0";
+          el.style.transform = "translateY(20px)";
+          el.style.transition = "all 0.6s ease";
+          observer.observe(el);
+        });
+      });
+    </script>
+  </body>
+</html>
