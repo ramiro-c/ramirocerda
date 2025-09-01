@@ -4,11 +4,11 @@
     <title>Ramiro Cerdá - Full-Stack Developer</title>
     <meta
       name="description"
-      content="Desarrollador Full-Stack especializado en React, React Native y TypeScript desde Buenos Aires, Argentina"
+      content="Desarrollador Full-Stack especializado en React, React Native y TypeScript desde Buenos Aires, Argentina. Creador de Rutinify - PWA para gestión de rutinas de gimnasio."
     />
     <meta
       name="keywords"
-      content="react, react native, typescript, javascript, developer, frontend, mobile, argentina"
+      content="react, react native, typescript, javascript, developer, frontend, mobile, argentina, rutinify, pwa, gimnasio, fitness"
     />
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -273,6 +273,52 @@
         color: #64ffda;
       }
 
+      /* Project specific styles */
+      .project-next {
+        margin-top: 15px;
+        padding: 12px;
+        background: rgba(100, 255, 218, 0.1);
+        border-radius: 8px;
+        border-left: 3px solid #64ffda;
+        font-size: 0.9rem;
+        color: #c0c0c0;
+      }
+
+      .project-vision {
+        margin-top: 10px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        border-left: 3px solid #a855f7;
+        font-size: 0.9rem;
+        color: #c0c0c0;
+        font-style: italic;
+      }
+
+      .project-link {
+        margin: 15px 0 0 0;
+        text-align: left;
+      }
+
+      .project-link a {
+        display: inline-block;
+        padding: 10px 20px;
+        background: rgba(100, 255, 218, 0.1);
+        color: #64ffda;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(100, 255, 218, 0.2);
+      }
+
+      .project-link a:hover {
+        background: rgba(100, 255, 218, 0.15);
+        border-color: rgba(100, 255, 218, 0.4);
+        transform: translateY(-1px);
+      }
+
       /* Skills */
       .skills-grid {
         display: grid;
@@ -512,6 +558,7 @@
         <ul>
           <li><a href="#about">Sobre mí</a></li>
           <li><a href="#experience">Experiencia</a></li>
+          <li><a href="#projects">Proyectos</a></li>
           <li><a href="#skills">Habilidades</a></li>
           <li><a href="#contact">Contacto</a></li>
         </ul>
@@ -637,6 +684,73 @@
         </div>
       </section>
 
+      <section id="projects" class="section">
+        <h2 class="section-title">Proyectos</h2>
+
+        <div class="experience-item">
+          <div class="job-header">
+            <div>
+              <h3 class="job-title">
+                Rutinify - Gestión de rutinas de gimnasio
+              </h3>
+              <p class="company">Proyecto Personal</p>
+            </div>
+            <span class="period">Ago 2025 - Actualidad</span>
+          </div>
+          <div class="job-description">
+            <p>
+              📱 Aplicación web progresiva para gestión inteligente de rutinas
+              de entrenamiento. Motivación: Eliminar de mi vida el Google Sheet
+              que contiene mis rutinas 🤣
+            </p>
+            <ul class="achievements">
+              <li>
+                <strong>Stack Técnico:</strong> React 19, TypeScript, Tailwind
+                CSS, Vite, Bun como package manager
+              </li>
+              <li>
+                <strong>Sistema de gestión de rutinas</strong> con creación de
+                superseries y diferentes tipos de ejercicios
+              </li>
+              <li>
+                <strong>Tracking de progreso semanal</strong> con memoria de
+                pesos y/o tiempos
+              </li>
+              <li>
+                <strong>Importación de rutinas desde CSV</strong> con sistema de
+                validación robusto
+              </li>
+              <li>
+                <strong>PWA con diseño adaptativo</strong> claro/oscuro
+                optimizada para móviles
+              </li>
+              <li>
+                <strong>Arquitectura escalable</strong> con TypeScript y
+                Shadcn/ui para la UI
+              </li>
+            </ul>
+            <p class="project-next">
+              <strong>Próximas funcionalidades:</strong> Implementación de
+              rutas, concepto de dropsets, exportación CSV, integración con
+              Google Sheets y testing.
+            </p>
+            <p class="project-vision">
+              <strong>Visión:</strong> Enfocado para uso personal pero diseñado
+              para ser lo más customizable posible.
+            </p>
+            <div class="project-link">
+              <a
+                href="https://rutinify.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                🔗 Ver Rutinify en vivo
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="skills" class="section">
         <h2 class="section-title">Habilidades</h2>
         <div class="skills-grid">
@@ -647,6 +761,7 @@
               <span class="skill-tag">React Native</span>
               <span class="skill-tag">TypeScript</span>
               <span class="skill-tag">JavaScript</span>
+              <span class="skill-tag">Tailwind CSS</span>
               <span class="skill-tag">CSS3</span>
               <span class="skill-tag">HTML5</span>
             </div>
@@ -665,6 +780,8 @@
             <h3>Tools & DevOps</h3>
             <div class="skill-tags">
               <span class="skill-tag">Git</span>
+              <span class="skill-tag">Vite</span>
+              <span class="skill-tag">Bun</span>
               <span class="skill-tag">Docker</span>
               <span class="skill-tag">CI/CD</span>
               <span class="skill-tag">Jest</span>
@@ -675,8 +792,10 @@
           <div class="skill-category">
             <h3>UI/UX</h3>
             <div class="skill-tags">
+              <span class="skill-tag">Shadcn/ui</span>
               <span class="skill-tag">Styled Components</span>
               <span class="skill-tag">Material UI</span>
+              <span class="skill-tag">PWA</span>
               <span class="skill-tag">Responsive Design</span>
               <span class="skill-tag">amCharts</span>
             </div>
