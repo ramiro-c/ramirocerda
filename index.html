@@ -987,7 +987,7 @@
       // Crear partículas animadas
       function createParticles() {
         const particlesContainer = document.getElementById("particles");
-        const particleCount = 50;
+        const particleCount = 150;
 
         for (let i = 0; i < particleCount; i++) {
           const particle = document.createElement("div");
@@ -995,6 +995,9 @@
           particle.style.left = Math.random() * 100 + "%";
           particle.style.animationDelay = Math.random() * 20 + "s";
           particle.style.animationDuration = Math.random() * 10 + 10 + "s";
+          particle.style.opacity = Math.random() * 0.3 + 0.1;
+          particle.style.width = Math.random() * 3 + 1 + "px";
+          particle.style.height = particle.style.width;
           particlesContainer.appendChild(particle);
         }
       }
