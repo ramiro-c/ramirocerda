@@ -581,7 +581,7 @@
         <div class="about-content">
           <div class="about-text">
             <p>
-              Soy <span class="highlight">Ingeniero en Sistemas de Información</span> (UTN, 2023) y Tech Lead con más de <span class="highlight">6 años</span> de experiencia construyendo productos digitales end-to-end.
+              Soy <span class="highlight">Ingeniero en Sistemas de Información</span> (UTN, 2023) y Tech Lead con más de <span class="highlight" id="experience-years">6</span> años de experiencia construyendo productos digitales end-to-end.
             </p>
             <p>
               Actualmente soy <span class="highlight">Tech Lead Full-Stack</span> en LDP, donde tengo ownership de módulos críticos, lidero auditorías de arquitectura, optimización de performance y mentoría de equipos.
@@ -623,13 +623,13 @@
               <h3 class="job-title">LDP — Trayectoria (4 años)</h3>
               <p class="company">Libro de Pases</p>
             </div>
-            <span class="period">Jun 2022 - Actualidad</span>
+            <span class="period" id="ldp-period">Jun 2022 - Actualidad</span>
           </div>
           <div class="job-description">
             <div style="margin-bottom: 20px; padding-left: 15px; border-left: 2px solid #64ffda;">
               <div style="margin-bottom: 15px;">
                 <p style="color: #64ffda; font-weight: 500; margin-bottom: 5px;">🚀 Tech Lead Full-Stack (Hands-on)</p>
-                <p style="color: #a0a0a0; font-size: 0.9rem; margin-bottom: 8px;">Abr 2025 - Actualidad</p>
+                <p style="color: #a0a0a0; font-size: 0.9rem; margin-bottom: 8px;" id="techlead-period">Abr 2025 - Actualidad</p>
                 <ul class="achievements" style="margin-top: 8px;">
                   <li>Features core: notificaciones, contratos, publicaciones, bugs críticos</li>
                   <li>Refactor motor de búsqueda + cobertura tests frontend/backend</li>
@@ -962,7 +962,7 @@
       </section>
 
       <footer class="footer">
-        <p>&copy; 2026 Ramiro Cerdá. Desarrollado con 💙</p>
+        <p>&copy; <span class="footer-year">2026</span> Ramiro Cerdá. Desarrollado con 💙</p>
       </footer>
     </div>
 
@@ -1002,6 +1002,21 @@
       // Smooth scrolling para navegación
       document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("age").textContent = calculateAge();
+        
+        // Actualizar año del footer dinámicamente
+        const footerYear = document.querySelector(".footer-year");
+        if (footerYear) {
+          footerYear.textContent = new Date().getFullYear();
+        }
+        
+        // Actualizar años de experiencia dinámicamente
+        const experienceEl = document.getElementById("experience-years");
+        if (experienceEl) {
+          const startYear = 2019; // Año de inicio de experiencia profesional
+          const yearsExp = new Date().getFullYear() - startYear;
+          experienceEl.textContent = yearsExp + "+";
+        }
+        
         createParticles();
 
         const navLinks = document.querySelectorAll(".nav a");
