@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
-    <title>Ramiro Cerdá - Full-Stack Developer</title>
+    <title>Ramiro Cerdá - Tech Lead & Full-Stack Developer</title>
     <meta
       name="description"
-      content="Desarrollador Full-Stack especializado en React, React Native y TypeScript desde Buenos Aires, Argentina. Creador de Rutinify - PWA para gestión de rutinas de gimnasio."
+      content="Ingeniero en Sistemas (UTN) y Tech Lead Full-Stack especializado en Node.js, TypeScript, React y React Native desde Buenos Aires, Argentina. +6 años de experiencia construyendo productos digitales end-to-end."
     />
     <meta
       name="keywords"
-      content="react, react native, typescript, javascript, developer, frontend, mobile, argentina, rutinify, pwa, gimnasio, fitness"
+      content="react, react native, typescript, node.js, full-stack, developer, tech lead, backend, frontend, mobile, argentina, aws, bigquery, rutinify, pwa"
     />
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -33,6 +33,54 @@
 
       html {
         scroll-behavior: smooth;
+        background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+        overscroll-behavior-y: none;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: transparent;
+        color: #e0e0e0;
+        line-height: 1.6;
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+
+/* Particles background */
+      .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .particle {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: #64ffda;
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: particleMove 20s infinite linear;
+      }
+
+      @keyframes particleMove {
+        0% {
+          transform: translateY(100vh) translateX(0);
+        }
+        100% {
+          transform: translateY(-100vh) translateX(100px);
+        }
+      }
+
+      .container {
+        position: relative;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 20px;
       }
 
       body {
@@ -41,6 +89,8 @@
         color: #e0e0e0;
         line-height: 1.6;
         overflow-x: hidden;
+        min-height: 100vh;
+        position: relative;
       }
 
       .container {
@@ -126,9 +176,9 @@
         width: 100%;
       }
 
-      /* Sections */
+/* Sections */
       .section {
-        padding: 80px 0;
+        padding: 10px 0;
         opacity: 0;
         transform: translateY(30px);
         animation: fadeInUp 1s ease-out forwards;
@@ -168,8 +218,7 @@
 
       /* About */
       .about-content {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: block;
         gap: 60px;
         align-items: center;
       }
@@ -520,31 +569,43 @@
 
       /* Particles background */
       .particles {
-        position: fixed;
+        position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         pointer-events: none;
-        z-index: -1;
+        z-index: 0;
+      }
+
+      .container {
+        position: relative;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 20px;
       }
 
       .particle {
         position: absolute;
-        width: 2px;
-        height: 2px;
         background: #64ffda;
         border-radius: 50%;
-        opacity: 0.3;
         animation: particleMove 20s infinite linear;
       }
 
       @keyframes particleMove {
         0% {
-          transform: translateY(100vh) translateX(0);
+          transform: translateY(0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
         }
         100% {
-          transform: translateY(-100vh) translateX(100px);
+          transform: translateY(-100vh);
+          opacity: 0;
         }
       }
     </style>
@@ -557,7 +618,7 @@
       <header class="header">
         <h1>Ramiro Cerdá</h1>
         <p class="subtitle">
-          Full-Stack Developer especializado en React & React Native
+          Tech Lead & Full-Stack Developer — Node.js, TypeScript, React
         </p>
         <p class="location">Buenos Aires, Argentina</p>
       </header>
@@ -568,6 +629,8 @@
           <li><a href="#experience">Experiencia</a></li>
           <li><a href="#projects">Proyectos</a></li>
           <li><a href="#skills">Habilidades</a></li>
+          <li><a href="#certifications">Certificaciones</a></li>
+          <li><a href="#education">Educación</a></li>
           <li><a href="#contact">Contacto</a></li>
         </ul>
       </nav>
@@ -577,40 +640,90 @@
         <div class="about-content">
           <div class="about-text">
             <p>
-              Soy un desarrollador <span class="highlight">Full-Stack</span> de
-              <span id="age">25</span> años con más de 4 años de experiencia,
-              especializado en <span class="highlight">React</span>,
-              <span class="highlight">React Native</span> y
-              <span class="highlight">TypeScript</span>.
+              Soy
+              <span class="highlight"
+                >Ingeniero en Sistemas de Información</span
+              >
+              (UTN, 2023) y Tech Lead con más de
+              <span class="highlight" id="experience-years">6</span> años de
+              experiencia construyendo productos digitales end-to-end.
             </p>
             <p>
-              Actualmente trabajo como
-              <span class="highlight">Desarrollador Mobile/Front-end SSR</span>
-              en LibroDePases, donde lidero proyectos técnicos y mentoría a
-              desarrolladores junior.
+              Actualmente soy
+              <span class="highlight">Tech Lead Full-Stack</span> en LDP, donde
+              tengo ownership de módulos críticos, lidero auditorías de
+              arquitectura, optimización de performance y mentoría de equipos.
             </p>
             <p>
-              Me apasiona crear soluciones tecnológicas innovadoras y tengo
-              experiencia en el desarrollo de aplicaciones móviles que impactan
-              positivamente en la vida de las personas.
+              Me apasiona la arquitectura de software, el liderazgo técnico y el
+              uso de IA como herramienta de ingeniería. Enfoque en ownership
+              real: propongo, arquitecto, implemento, deployo y monitoreo.
             </p>
-          </div>
-          <div class="stats floating">
-            <div class="stat-item">
-              <span class="stat-number">4+</span>
-              <span class="stat-label">años de experiencia</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number">50+</span>
-              <span class="stat-label">usuarios satisfechos</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number">8.04</span>
-              <span class="stat-label">promedio universitario</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-number">100%</span>
-              <span class="stat-label">satisfacción cliente</span>
+            <div
+              style="
+                margin-top: 25px;
+                padding: 20px;
+                background: rgba(100, 255, 218, 0.05);
+                border-radius: 10px;
+                border: 1px solid rgba(100, 255, 218, 0.1);
+              "
+            >
+              <p style="margin-bottom: 12px; color: #64ffda; font-weight: 500">
+                Key Highlights:
+              </p>
+              <div style="margin-bottom: 20px">
+                <p
+                  style="color: #a0a0a0; margin-bottom: 8px; font-size: 0.9rem"
+                >
+                  Trayectoria en LDP (4 años):
+                </p>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                  "
+                >
+                  <span style="color: #c0c0c0; font-size: 0.95rem"
+                    >📱 RN Dev</span
+                  >
+                  <span style="color: #64ffda">→</span>
+                  <span style="color: #c0c0c0; font-size: 0.95rem"
+                    >⚛️ React Dev</span
+                  >
+                  <span style="color: #64ffda">→</span>
+                  <span style="color: #64ffda; font-weight: 500"
+                    >🚀 Tech Lead</span
+                  >
+                </div>
+              </div>
+              <ul style="list-style: none; padding: 0; margin: 0">
+                <li style="margin-bottom: 8px; color: #c0c0c0">
+                  🛠️ <strong>Generalista / Builder</strong> — Node.js, React,
+                  AWS, BigQuery, Infra, IA workflows
+                </li>
+                <li style="margin-bottom: 8px; color: #c0c0c0">
+                  🚀 <strong>Productos end-to-end</strong> — Desde idea hasta
+                  producción: backend, frontend, infra, monitoreo
+                </li>
+                <li style="margin-bottom: 8px; color: #c0c0c0">
+                  🏗️ <strong>Arquitectura</strong> — Sistemas escalables,
+                  desacoplamiento de monolitos, patrones de diseño
+                </li>
+                <li style="margin-bottom: 8px; color: #c0c0c0">
+                  👥 <strong>Liderazgo técnico</strong> — Mentoría, hiring,
+                  capacitación, cultura de calidad
+                </li>
+                <li style="margin-bottom: 8px; color: #c0c0c0">
+                  🤖 <strong>IA-Augmented</strong> — Work-flows automatizados,
+                  productividad del equipo, herramientas AI-native
+                </li>
+                <li style="color: #c0c0c0">
+                  💡 <strong>Proyectos propios</strong> — Knowledge Vault,
+                  LactarIA, Rutinify
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -622,50 +735,113 @@
         <div class="experience-item">
           <div class="job-header">
             <div>
-              <h3 class="job-title">Desarrollador Mobile / Front-end SSR</h3>
-              <p class="company">LibroDePases</p>
+              <h3 class="job-title">LDP — Trayectoria (4 años)</h3>
+              <p class="company">Libro de Pases</p>
             </div>
-            <span class="period">Jun 2022 - Actualidad</span>
+            <span class="period" id="ldp-period">Jun 2022 - Actualidad</span>
           </div>
           <div class="job-description">
-            <p>
-              Liderazgo técnico en el desarrollo de aplicaciones móviles y web
-              con React Native y React.
-            </p>
-            <ul class="achievements">
-              <li>
-                Optimización del state management con Zustand y TypeScript
-              </li>
-              <li>
-                Implementación de CI/CD con Bitbucket Pipelines y SonarQube
-              </li>
-              <li>Desarrollo de visualizaciones interactivas con amCharts</li>
-              <li>Mentoría a desarrolladores junior y gestión de onboarding</li>
-              <li>
-                Implementación de pruebas unitarias y automatización de
-                estándares
-              </li>
-            </ul>
+            <div
+              style="
+                margin-bottom: 20px;
+                padding-left: 15px;
+                border-left: 2px solid #64ffda;
+              "
+            >
+              <div style="margin-bottom: 15px">
+                <p style="color: #64ffda; font-weight: 500; margin-bottom: 5px">
+                  🚀 Tech Lead Full-Stack (Hands-on)
+                </p>
+                <p
+                  style="color: #a0a0a0; font-size: 0.9rem; margin-bottom: 8px"
+                  id="techlead-period"
+                >
+                  Abr 2025 - Actualidad
+                </p>
+                <ul class="achievements" style="margin-top: 8px">
+                  <li>
+                    Features core: notificaciones, contratos, publicaciones,
+                    bugs críticos
+                  </li>
+                  <li>
+                    Refactor motor de búsqueda + cobertura tests
+                    frontend/backend
+                  </li>
+                  <li>Observabilidad: Sentry, New Relic, Pino Logger</li>
+                  <li>
+                    Auditoría backend ~400 endpoints: Repository Pattern + DI
+                  </li>
+                  <li>
+                    Performance: 75-90% reducción latencia con vistas
+                    materializadas
+                  </li>
+                  <li>CI/CD: tests API + unitarios en pipelines con Slack</li>
+                  <li>
+                    Liderazgo: mentoría, hiring, capacitación IA, QA Automation
+                  </li>
+                </ul>
+              </div>
+              <div style="margin-bottom: 15px">
+                <p style="color: #64ffda; font-weight: 500; margin-bottom: 5px">
+                  ⚛️ React Developer
+                </p>
+                <p
+                  style="color: #a0a0a0; font-size: 0.9rem; margin-bottom: 8px"
+                >
+                  Ene 2024 - Mar 2025
+                </p>
+                <ul class="achievements" style="margin-top: 8px">
+                  <li>
+                    Adopción de Zustand como estándar (lo propuse e implementé)
+                  </li>
+                  <li>React Query: demo al equipo + docs en Confluence</li>
+                  <li>Linters/formateadores (Biome)</li>
+                  <li>Mentoría de 2 pasantes + pipelines CI (SonarQube)</li>
+                </ul>
+              </div>
+              <div>
+                <p style="color: #64ffda; font-weight: 500; margin-bottom: 5px">
+                  📱 React Native Developer
+                </p>
+                <p
+                  style="color: #a0a0a0; font-size: 0.9rem; margin-bottom: 8px"
+                >
+                  Jun 2022 - Dic 2023
+                </p>
+                <ul class="achievements" style="margin-top: 8px">
+                  <li>Design System + migración JS → TypeScript</li>
+                  <li>
+                    State management: reestructuración almacenamiento de datos
+                  </li>
+                  <li>Features: perfiles, filtros, analytics, Sentry</li>
+                  <li>Propuestas: ESLint, Prettier, Zustand</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="experience-item">
           <div class="job-header">
             <div>
-              <h3 class="job-title">Desarrollador Mobile</h3>
-              <p class="company">LactarIA (Freelance)</p>
+              <h3 class="job-title">Desarrollador Full-stack</h3>
+              <p class="company">DevGAM (Freelance)</p>
             </div>
-            <span class="period">Oct 2024 - Nov 2024</span>
+            <span class="period">Dic 2020 - Dic 2021</span>
           </div>
           <div class="job-description">
             <p>
-              Desarrollo de aplicación móvil para apoyo en lactancia materna con
-              React Native y Expo.
+              Sistemas de gestión multi-rubro con PHP, JavaScript, jQuery y
+              MySQL.
             </p>
             <ul class="achievements">
-              <li>100% de satisfacción de usuarias (50 mamás)</li>
-              <li>77.3% reportó menor ansiedad con la aplicación</li>
-              <li>Backend serverless y despliegue en Play Store</li>
+              <li>
+                Funcionalidades en sistemas de gestión de stock, administración
+                contable, gestión de turnos y clientes para frigoríficos,
+                gimnasios, fletes, restaurantes y supermercados
+              </li>
+              <li>CMS desde cero para dichos sistemas</li>
+              <li>Administración de bases de datos MySQL</li>
             </ul>
           </div>
         </div>
@@ -680,14 +856,26 @@
           </div>
           <div class="job-description">
             <p>
-              Desarrollo de sistemas de gestión administrativa universitaria con
-              Vue.js y Laravel.
+              Sistema de gestión de trámites administrativos con Laravel y
+              Vue.js.
             </p>
             <ul class="achievements">
-              <li>Sistema de gestión de trámites administrativos</li>
               <li>Optimización de interfaces para mayor accesibilidad</li>
               <li>Corrección de errores en back-end y front-end</li>
             </ul>
+          </div>
+        </div>
+
+        <div class="experience-item">
+          <div class="job-header">
+            <div>
+              <h3 class="job-title">Desarrollador React</h3>
+              <p class="company">New Logic (Freelance)</p>
+            </div>
+            <span class="period">Ene 2020 - Dic 2020</span>
+          </div>
+          <div class="job-description">
+            <p>Blog con marketplace usando React y GCP.</p>
           </div>
         </div>
       </section>
@@ -703,7 +891,7 @@
               </h3>
               <p class="company">Proyecto Personal</p>
             </div>
-            <span class="period">Ago 2025 - Actualidad</span>
+            <span class="period">Ago 2025</span>
           </div>
           <div class="job-description">
             <p>
@@ -757,13 +945,83 @@
             </div>
           </div>
         </div>
+
+        <div class="experience-item">
+          <div class="job-header">
+            <div>
+              <h3 class="job-title">
+                LactarIA - App de apoyo en lactancia materna
+              </h3>
+              <p class="company">Proyecto Freelance</p>
+            </div>
+            <span class="period">Oct 2024 - Nov 2024</span>
+          </div>
+          <div class="job-description">
+            <p>
+              📱 Aplicación móvil para la tesis de dos puericultoras sobre
+              maternidad y crianza. Chatbot con Gemini API, FAQ interactivas y
+              página de contacto.
+            </p>
+            <ul class="achievements">
+              <li>
+                <strong>Stack Técnico:</strong> React Native, Expo, Google
+                Gemini API, serverless functions, Vercel
+              </li>
+              <li>~50 mamás probaron la app en piloto</li>
+              <li>77.3% reportó menor ansiedad con la aplicación</li>
+              <li>100% satisfacción de usuarias (8-10/10)</li>
+              <li>Desarrollado para tesis de dos puericultoras</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="experience-item">
+          <div class="job-header">
+            <div>
+              <h3 class="job-title">Knowledge Vault - PKM con IA</h3>
+              <p class="company">Proyecto Personal</p>
+            </div>
+            <span class="period">2026 - Actualidad</span>
+          </div>
+          <div class="job-description">
+            <p>
+              🧠 Vault personal de conocimiento en Obsidian sincronizado con
+              Git, procesado automáticamente por agentes de IA. Sistema para
+              capturar, procesar y relacionar ideas de forma escalable.
+            </p>
+            <ul class="achievements">
+              <li>
+                <strong>Flujo:</strong> Captura rápida → Procesamiento con IA →
+                Notas estructuradas con frontmatter, resúmenes y wikilinks
+              </li>
+              <li>
+                <strong>Skills personalizadas:</strong> Categorización,
+                extracción de conceptos clave, links semánticos, puntos de
+                acción
+              </li>
+              <li>
+                <strong>Chat con el vault:</strong> Consultas semánticas +
+                keyword sobre todo el conocimiento acumulado
+              </li>
+              <li>
+                Sincronización con GitHub e iCloud — accesible desde cualquier
+                dispositivo
+              </li>
+            </ul>
+            <p class="project-vision">
+              <strong>Visión:</strong> Reducir carga cognitiva y aumentar
+              retención real del conocimiento mediante procesamiento diferido
+              con IA.
+            </p>
+          </div>
+        </div>
       </section>
 
       <section id="skills" class="section">
         <h2 class="section-title">Habilidades</h2>
         <div class="skills-grid">
           <div class="skill-category">
-            <h3>Frontend</h3>
+            <h3>Frontend & Mobile</h3>
             <div class="skill-tags">
               <span class="skill-tag">React</span>
               <span class="skill-tag">React Native</span>
@@ -772,41 +1030,117 @@
               <span class="skill-tag">Tailwind CSS</span>
               <span class="skill-tag">CSS3</span>
               <span class="skill-tag">HTML5</span>
+              <span class="skill-tag">Shadcn/ui</span>
+              <span class="skill-tag">PWA</span>
             </div>
           </div>
           <div class="skill-category">
             <h3>Backend</h3>
             <div class="skill-tags">
               <span class="skill-tag">Node.js</span>
+              <span class="skill-tag">TypeScript</span>
+              <span class="skill-tag">Express</span>
+              <span class="skill-tag">NestJS</span>
               <span class="skill-tag">PHP</span>
               <span class="skill-tag">Laravel</span>
-              <span class="skill-tag">SQL</span>
               <span class="skill-tag">Python</span>
+            </div>
+          </div>
+          <div class="skill-category">
+            <h3>Database & Cloud</h3>
+            <div class="skill-tags">
+              <span class="skill-tag">PostgreSQL</span>
+              <span class="skill-tag">BigQuery</span>
+              <span class="skill-tag">Sequelize</span>
+              <span class="skill-tag">SQL</span>
+              <span class="skill-tag">AWS</span>
+              <span class="skill-tag">Vercel</span>
+              <span class="skill-tag">Serverless</span>
             </div>
           </div>
           <div class="skill-category">
             <h3>Tools & DevOps</h3>
             <div class="skill-tags">
               <span class="skill-tag">Git</span>
-              <span class="skill-tag">Vite</span>
-              <span class="skill-tag">Bun</span>
-              <span class="skill-tag">Docker</span>
               <span class="skill-tag">CI/CD</span>
-              <span class="skill-tag">Jest</span>
+              <span class="skill-tag">Bitbucket Pipelines</span>
+              <span class="skill-tag">Docker</span>
+              <span class="skill-tag">Vitest</span>
+              <span class="skill-tag">Playwright</span>
+              <span class="skill-tag">Bruno</span>
               <span class="skill-tag">SonarQube</span>
-              <span class="skill-tag">Jira</span>
+              <span class="skill-tag">New Relic</span>
+              <span class="skill-tag">Sentry</span>
             </div>
           </div>
           <div class="skill-category">
-            <h3>UI/UX</h3>
+            <h3>State & Data</h3>
             <div class="skill-tags">
-              <span class="skill-tag">Shadcn/ui</span>
-              <span class="skill-tag">Styled Components</span>
-              <span class="skill-tag">Material UI</span>
-              <span class="skill-tag">PWA</span>
-              <span class="skill-tag">Responsive Design</span>
-              <span class="skill-tag">amCharts</span>
+              <span class="skill-tag">Zustand</span>
+              <span class="skill-tag">React Query</span>
+              <span class="skill-tag">Redux</span>
+              <span class="skill-tag">REST APIs</span>
             </div>
+          </div>
+          <div class="skill-category">
+            <h3>AI & Productivity</h3>
+            <div class="skill-tags">
+              <span class="skill-tag">Cursor</span>
+              <span class="skill-tag">Claude Code</span>
+              <span class="skill-tag">GitHub Copilot</span>
+              <span class="skill-tag">Google Gemini API</span>
+              <span class="skill-tag">Spec-Driven Development</span>
+              <span class="skill-tag">Obsidian PKM</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="certifications" class="section">
+        <h2 class="section-title">Certificaciones</h2>
+        <div class="experience-item">
+          <div class="job-description">
+            <ul class="achievements">
+              <li>
+                <strong>Google (may 2026):</strong> Prompt Design in Agent
+                Platform, Create Your First Gemini Enterprise Application,
+                Introduction to AI Agents, Enterprise Agents and Use Cases,
+                Agent Fundamentals, Introduction to Responsible AI
+              </li>
+              <li>
+                <strong>LinkedIn (2025):</strong> Inteligencia artificial más
+                allá de la ingeniería, Ética en la era de la IA generativa,
+                Microsoft 365 Copilot, Liderazgo y trabajo en equipo, IA
+                generativa para gestión de proyectos
+              </li>
+              <li>
+                <strong>Udemy (2022):</strong> NestJS Zero to Hero, SQL Básico -
+                Intermedio
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="education" class="section">
+        <h2 class="section-title">Educación</h2>
+        <div class="experience-item">
+          <div class="job-header">
+            <div>
+              <h3 class="job-title">Ingeniería en Sistemas de Información</h3>
+              <p class="company">Universidad Tecnológica Nacional (UTN)</p>
+            </div>
+            <span class="period">2018 - May 2023</span>
+          </div>
+          <div class="job-description">
+            <p>Título: Ingeniero en Sistemas de Información</p>
+            <ul class="achievements">
+              <li>
+                Ayudantía de Sistemas Operativos (1 año, 2 comisiones) — C y
+                Bash
+              </li>
+              <li>Promedio universitario: <strong>8.04</strong></li>
+            </ul>
           </div>
         </div>
       </section>
@@ -833,7 +1167,10 @@
       </section>
 
       <footer class="footer">
-        <p>&copy; 2025 Ramiro Cerdá. Desarrollado con 💙</p>
+        <p>
+          &copy; <span class="footer-year">2026</span> Ramiro Cerdá.
+          Desarrollado con 💙
+        </p>
       </footer>
     </div>
 
@@ -855,7 +1192,7 @@
         return age;
       }
 
-      // Crear partículas animadas
+// Crear partículas animadas
       function createParticles() {
         const particlesContainer = document.getElementById("particles");
         const particleCount = 50;
@@ -864,6 +1201,7 @@
           const particle = document.createElement("div");
           particle.className = "particle";
           particle.style.left = Math.random() * 100 + "%";
+          particle.style.top = Math.random() * 100 + "%";
           particle.style.animationDelay = Math.random() * 20 + "s";
           particle.style.animationDuration = Math.random() * 10 + 10 + "s";
           particlesContainer.appendChild(particle);
@@ -872,7 +1210,20 @@
 
       // Smooth scrolling para navegación
       document.addEventListener("DOMContentLoaded", function () {
-        document.getElementById("age").textContent = calculateAge();
+        // Actualizar año del footer dinámicamente
+        const footerYear = document.querySelector(".footer-year");
+        if (footerYear) {
+          footerYear.textContent = new Date().getFullYear();
+        }
+
+        // Actualizar años de experiencia dinámicamente
+        const experienceEl = document.getElementById("experience-years");
+        if (experienceEl) {
+          const startYear = 2020; // Año de inicio de experiencia profesional
+          const yearsExp = new Date().getFullYear() - startYear;
+          experienceEl.textContent = yearsExp + "+";
+        }
+
         createParticles();
 
         const navLinks = document.querySelectorAll(".nav a");
@@ -909,7 +1260,7 @@
       // Observar elementos para animaciones
       document.addEventListener("DOMContentLoaded", function () {
         const elements = document.querySelectorAll(
-          ".experience-item, .skill-category, .contact-item"
+          ".experience-item, .skill-category, .contact-item",
         );
         elements.forEach((el) => {
           el.style.opacity = "0";
