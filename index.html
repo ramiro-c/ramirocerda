@@ -44,7 +44,6 @@
         line-height: 1.6;
         overflow-x: hidden;
         min-height: 100vh;
-        position: relative;
       }
 
 /* Particles background */
@@ -1202,6 +1201,7 @@
           const particle = document.createElement("div");
           particle.className = "particle";
           particle.style.left = Math.random() * 100 + "%";
+          particle.style.top = Math.random() * 100 + "%";
           particle.style.animationDelay = Math.random() * 20 + "s";
           particle.style.animationDuration = Math.random() * 10 + 10 + "s";
           particlesContainer.appendChild(particle);
