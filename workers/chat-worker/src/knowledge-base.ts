@@ -1,6 +1,14 @@
 export const KNOWLEDGE_BASE = `
 # Ramiro Cerdá — Knowledge Base
 
+## Overview
+- **Nombre**: Ramiro Cerdá
+- **Rol**: Tech Lead & Full-Stack Developer
+- **Ubicación**: Buenos Aires, Argentina
+- **Años de experiencia**: 6+ años (carrera iniciada en 2020)
+- **Especialidades**: Node.js, TypeScript, React, React Native, Arquitectura de software
+- **Idiomas**: Español nativo, Inglés básico profesional
+
 ## Experience
 
 ### Full Stack Tech Lead (Hands-on) — LDP / Libro de Pases
