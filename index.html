@@ -535,10 +535,6 @@
         transform: scale(0.95);
       }
 
-      .chat-island.hidden {
-        display: none;
-      }
-
       @keyframes chatPulse {
         0%, 100% {
           box-shadow: 0 4px 20px rgba(201, 168, 124, 0.3);
@@ -553,8 +549,8 @@
         position: fixed;
         bottom: 90px;
         right: 24px;
-        width: 420px;
-        max-height: 600px;
+        width: 45vw;
+        height: 80vh;
         background: #0a0a0a;
         border: 1px solid #222;
         border-radius: 14px;
@@ -629,8 +625,7 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-        min-height: 200px;
-        max-height: 340px;
+        min-height: 120px;
       }
 
       .chat-messages::-webkit-scrollbar {
@@ -868,8 +863,7 @@
         .chat-modal {
           bottom: 0;
           left: 8px;
-          right: 8px;
-          width: auto;
+          width: calc(100vw - 16px);
           max-height: 85vh;
           border-radius: 14px 14px 0 0;
           transform-origin: bottom center;
@@ -881,10 +875,6 @@
           width: 54px;
           height: 54px;
           font-size: 22px;
-        }
-
-        .chat-messages {
-          max-height: 60vh;
         }
       }
     </style>
@@ -1467,7 +1457,7 @@
         <button class="chat-close" id="chatClose" aria-label="Cerrar chat">✕</button>
       </div>
       <div class="chat-messages" id="chatMessages">
-        <div class="message welcome">🤖 ¡Hola! Soy Botardo, el bot de Ramiro. Preguntame sobre su experiencia, proyectos, habilidades o cualquier tema profesional.</div>
+        <div class="message welcome">🤖 ¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su experiencia, proyectos, habilidades o cualquier tema profesional.</div>
         <div class="typing-indicator" id="typingIndicator">
           <span class="typing-dot"></span>
           <span class="typing-dot"></span>
@@ -1580,7 +1570,6 @@
       function toggleChat() {
         isOpen = !isOpen;
         chatModal.classList.toggle("open", isOpen);
-        chatIsland.classList.toggle("hidden", isOpen);
         if (isOpen) {
           chatInput.focus();
         }
