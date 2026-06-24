@@ -8,6 +8,9 @@ export const KNOWLEDGE_BASE = `
 - **Años de experiencia**: 6+ años (carrera iniciada en 2020)
 - **Especialidades**: Node.js, TypeScript, React, React Native, Arquitectura de software
 - **Idiomas**: Español nativo, Inglés básico profesional
+- **Email**: rami992009@gmail.com
+- **LinkedIn**: https://www.linkedin.com/in/ramiro-cerdá-619983177/
+- **GitHub**: https://github.com/ramiro-c
 
 ## Experience
 
