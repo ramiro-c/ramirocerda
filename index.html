@@ -553,8 +553,8 @@
         position: fixed;
         bottom: 90px;
         right: 24px;
-        width: 380px;
-        max-height: 500px;
+        width: 420px;
+        max-height: 600px;
         background: #0a0a0a;
         border: 1px solid #222;
         border-radius: 14px;
@@ -681,6 +681,30 @@
         color: #d4d4d4;
         border: 1px solid #1f1f1f;
         border-bottom-left-radius: 4px;
+      }
+
+      .message.assistant p {
+        margin: 0 0 8px;
+      }
+      .message.assistant p:last-child {
+        margin-bottom: 0;
+      }
+      .message.assistant ul {
+        margin: 4px 0;
+        padding-left: 20px;
+      }
+      .message.assistant li {
+        margin-bottom: 4px;
+      }
+      .message.assistant code {
+        background: #1a1a1a;
+        color: #c9a87c;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 0.85em;
+      }
+      .message.assistant strong {
+        color: #fafafa;
       }
 
       /* Welcome Message */
@@ -843,11 +867,11 @@
       @media (max-width: 480px) {
         .chat-modal {
           bottom: 0;
-          right: 0;
-          left: 0;
-          width: 100%;
+          left: 8px;
+          right: 8px;
+          width: auto;
           max-height: 85vh;
-          border-radius: 12px 12px 0 0;
+          border-radius: 14px 14px 0 0;
           transform-origin: bottom center;
         }
 
@@ -860,7 +884,7 @@
         }
 
         .chat-messages {
-          max-height: 55vh;
+          max-height: 60vh;
         }
       }
     </style>
@@ -1617,10 +1641,60 @@
         }
       }
 
+      function renderMarkdown(text) {
+        // Escape HTML first
+        let html = text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+        // Bold: **text** or __text__
+        html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        html = html.replace(/__(.+?)__/g, "<strong>$1</strong>");
+
+        // Italic: *text* (only when not adjacent to a word character)
+        html = html.replace(/(?<!\w)\*(.+?)\*(?!\w)/g, "<em>$1</em>");
+
+        // Inline code: `code`
+        html = html.replace(/`(.+?)`/g, "<code>$1</code>");
+
+        // Links: https://...
+        html = html.replace(
+          /(https?:\/\/[^\s<]+)/g,
+          '<a href="$1" target="_blank" rel="noopener">$1</a>'
+        );
+
+        // Line breaks and paragraphs
+        const paragraphs = html.split(/\n\n+/);
+        html = paragraphs
+          .map((p) => {
+            p = p.trim();
+            if (!p) return "";
+            // Bullet list
+            if (p.match(/^[-*]\s/m)) {
+              const items = p.split(/\n/).map((line) => {
+                const trimmed = line.replace(/^[-*]\s/, "");
+                return `<li>${trimmed}</li>`;
+              });
+              return `<ul>${items.join("")}</ul>`;
+            }
+            // Single line break within paragraph
+            p = p.replace(/\n/g, "<br>");
+            return `<p>${p}</p>`;
+          })
+          .join("");
+
+        return html;
+      }
+
       function appendMessage(text, role) {
         const msg = document.createElement("div");
         msg.className = "message " + role;
-        msg.textContent = text;
+        if (role === "assistant") {
+          msg.innerHTML = renderMarkdown(text);
+        } else {
+          msg.textContent = text;
+        }
         chatMessages.insertBefore(msg, typingIndicator);
         scrollToBottom();
       }
