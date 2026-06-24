@@ -9,7 +9,7 @@ export const KNOWLEDGE_BASE = `
 - **Especialidades**: Node.js, TypeScript, React, React Native, Arquitectura de software
 - **Idiomas**: Español nativo, Inglés básico profesional
 - **Email**: rami992009@gmail.com
-- **LinkedIn**: https://www.linkedin.com/in/ramiro-cerdá-619983177/
+- **LinkedIn**: https://www.linkedin.com/in/ramiro-cerda-619983177/
 - **GitHub**: https://github.com/ramiro-c
 
 ## Experience

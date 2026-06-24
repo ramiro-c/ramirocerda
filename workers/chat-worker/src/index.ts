@@ -47,6 +47,10 @@ interface Env {
   };
 }
 
+function log(event: string, data: Record<string, unknown> = {}): void {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), event, ...data }));
+}
+
 function corsHeaders(): HeadersInit {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
@@ -83,6 +87,7 @@ export default {
 
     // Only accept POST
     if (request.method !== "POST") {
+      log("request.invalid", { reason: "method_not_allowed", method: request.method });
       return new Response(JSON.stringify({ error: "Method not allowed", code: "INVALID_REQUEST" }), {
         status: 405,
         headers: {
@@ -95,6 +100,7 @@ export default {
     // Validate origin
     const origin = request.headers.get("Origin");
     if (origin && origin !== ALLOWED_ORIGIN) {
+      log("request.origin_blocked", { origin });
       return new Response(JSON.stringify({ error: "Origin not allowed", code: "INVALID_REQUEST" }), {
         status: 403,
         headers: {
@@ -109,6 +115,7 @@ export default {
 
       // Validate request body
       if (!body || typeof body.message !== "string" || body.message.trim().length === 0) {
+        log("request.invalid", { reason: "missing_message" });
         return new Response(
           JSON.stringify({ error: "Message is required and must be a non-empty string", code: "INVALID_REQUEST" }),
           {
@@ -124,12 +131,20 @@ export default {
       // Build messages with KB grounding and conversation history
       const messages = buildMessages(body.message.trim(), body.history);
 
+      log("chat.start", {
+        msg_preview: body.message.trim().slice(0, 80),
+        history_turns: body.history?.length ?? 0,
+      });
+
       // Call Workers AI with chat messages format
+      const t0 = Date.now();
       const result = await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
         messages,
         max_tokens: 512,
         temperature: 0.3,
       });
+
+      log("chat.ai_done", { latency_ms: Date.now() - t0, reply_length: result.response.length });
 
       const response: AskResponse = {
         reply: result.response.trim(),
@@ -146,6 +161,7 @@ export default {
       // Check for rate limit errors
       const errorMessage = err instanceof Error ? err.message : String(err);
       if (errorMessage.includes("rate") || errorMessage.includes("429")) {
+        log("error.rate_limited", { error_message: errorMessage });
         return new Response(
           JSON.stringify({
             error: "Demasiadas consultas. Esperá un momento y volvé a intentar.",
@@ -162,7 +178,7 @@ export default {
       }
 
       // Generic model error
-      console.error("Chat worker error:", errorMessage);
+      log("error.model", { error_message: errorMessage });
       return new Response(
         JSON.stringify({
           error: "Ocurrió un error al procesar tu consulta. Intentá de nuevo.",

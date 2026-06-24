@@ -1649,7 +1649,7 @@
         html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
         html = html.replace(/__(.+?)__/g, "<strong>$1</strong>");
 
-        // Italic: *text* (only when not adjacent to a word character)
+        // Italic: *text*
         html = html.replace(/(?<!\w)\*(.+?)\*(?!\w)/g, "<em>$1</em>");
 
         // Inline code: `code`
@@ -1658,7 +1658,7 @@
         // Links: https://...
         html = html.replace(
           /(https?:\/\/[^\s<]+)/g,
-          '<a href="$1" target="_blank" rel="noopener">$1</a>'
+          '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
         );
 
         // Line breaks and paragraphs
