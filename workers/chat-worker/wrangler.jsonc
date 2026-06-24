@@ -1,0 +1,11 @@
+{
+  "name": "ramirocerda-chat",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-23",
+  "ai": {
+    "binding": "AI"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

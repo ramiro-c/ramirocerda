@@ -1,0 +1,177 @@
+import { KNOWLEDGE_BASE } from "./knowledge-base";
+
+interface AskRequest {
+  message: string;
+  history?: Array<{
+    role: "user" | "assistant";
+    content: string;
+  }>;
+}
+
+interface AskResponse {
+  reply: string;
+}
+
+const ALLOWED_ORIGIN = "https://ramirocerda.vercel.app";
+
+const SYSTEM_PROMPT = `Eres un asistente virtual que representa a Ramiro Cerdá, Tech Lead & Full-Stack Developer de Buenos Aires, Argentina.
+
+Tu función es responder preguntas sobre el perfil profesional de Ramiro basándote EXCLUSIVAMENTE en la siguiente knowledge base. No inventes información ni hables sobre temas que no estén cubiertos en la knowledge base.
+
+REGLAS IMPORTANTES:
+1. Respondé SIEMPRE en español, sin importar el idioma de la pregunta.
+2. Respondé SOLO sobre el perfil profesional de Ramiro: experiencia laboral, proyectos, habilidades, educación, certificaciones e idiomas.
+3. Si te preguntan sobre temas personales, opiniones políticas, religiosas, filosofía, o cualquier tema NO profesional, respondé educadamente: "Solo puedo responder preguntas sobre el perfil profesional de Ramiro. Consultame sobre su experiencia, proyectos, o habilidades."
+4. Sé conciso pero informativo. Las respuestas no deberían superar los 3-4 párrafos.
+5. Si no sabés la respuesta porque no está en la knowledge base, decí que no tenés esa información.
+
+=== KNOWLEDGE BASE ===
+${KNOWLEDGE_BASE}
+=== FIN KNOWLEDGE BASE ===`;
+
+interface Message {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+interface Env {
+  AI: {
+    run: (
+      model: string,
+      input: { messages: Message[]; max_tokens?: number; temperature?: number },
+    ) => Promise<{ response: string }>;
+  };
+}
+
+function corsHeaders(): HeadersInit {
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
+
+function buildMessages(message: string, history?: AskRequest["history"]): Message[] {
+  const messages: Message[] = [
+    { role: "system", content: SYSTEM_PROMPT },
+  ];
+
+  if (history && history.length > 0) {
+    const recentHistory = history.slice(-10);
+    for (const entry of recentHistory) {
+      messages.push({ role: entry.role, content: entry.content });
+    }
+  }
+
+  messages.push({ role: "user", content: message });
+  return messages;
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    // Handle CORS preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders(),
+      });
+    }
+
+    // Only accept POST
+    if (request.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Method not allowed", code: "INVALID_REQUEST" }), {
+        status: 405,
+        headers: {
+          ...corsHeaders(),
+          "Content-Type": "application/json",
+        },
+      });
+    }
+
+    // Validate origin
+    const origin = request.headers.get("Origin");
+    if (origin && origin !== ALLOWED_ORIGIN) {
+      return new Response(JSON.stringify({ error: "Origin not allowed", code: "INVALID_REQUEST" }), {
+        status: 403,
+        headers: {
+          ...corsHeaders(),
+          "Content-Type": "application/json",
+        },
+      });
+    }
+
+    try {
+      const body = (await request.json()) as AskRequest;
+
+      // Validate request body
+      if (!body || typeof body.message !== "string" || body.message.trim().length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Message is required and must be a non-empty string", code: "INVALID_REQUEST" }),
+          {
+            status: 400,
+            headers: {
+              ...corsHeaders(),
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      // Build messages with KB grounding and conversation history
+      const messages = buildMessages(body.message.trim(), body.history);
+
+      // Call Workers AI with chat messages format
+      const result = await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
+        messages,
+        max_tokens: 512,
+        temperature: 0.3,
+      });
+
+      const response: AskResponse = {
+        reply: result.response.trim(),
+      };
+
+      return new Response(JSON.stringify(response), {
+        status: 200,
+        headers: {
+          ...corsHeaders(),
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (err) {
+      // Check for rate limit errors
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (errorMessage.includes("rate") || errorMessage.includes("429")) {
+        return new Response(
+          JSON.stringify({
+            error: "Demasiadas consultas. Esperá un momento y volvé a intentar.",
+            code: "RATE_LIMITED",
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders(),
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      }
+
+      // Generic model error
+      console.error("Chat worker error:", errorMessage);
+      return new Response(
+        JSON.stringify({
+          error: "Ocurrió un error al procesar tu consulta. Intentá de nuevo.",
+          code: "MODEL_ERROR",
+        }),
+        {
+          status: 500,
+          headers: {
+            ...corsHeaders(),
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
+  },
+};
