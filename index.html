@@ -796,7 +796,7 @@
         border-radius: 8px;
         padding: 10px 14px;
         color: #d4d4d4;
-        font-size: 0.9rem;
+        font-size: 1rem;
         font-family: inherit;
         outline: none;
         transition: border-color 0.2s ease;
@@ -859,7 +859,7 @@
       }
 
       /* Responsive */
-      @media (max-width: 480px) {
+      @media (max-width: 768px) {
         .chat-modal {
           bottom: 0;
           left: 8px;
@@ -1626,7 +1626,6 @@
           chatInput.disabled = false;
           chatSend.disabled = false;
           chatInput.focus();
-          scrollToBottom();
         }
       }
 
@@ -1685,7 +1684,7 @@
           msg.textContent = text;
         }
         chatMessages.insertBefore(msg, typingIndicator);
-        scrollToBottom();
+        msg.scrollIntoView({ block: "start", behavior: "smooth" });
       }
 
       function showError(text) {
@@ -1731,8 +1730,18 @@
       // Send on button click
       chatSend.addEventListener("click", sendMessage);
 
-      // Auto-scroll on new content
-      const chatObserver = new MutationObserver(scrollToBottom);
+      // Auto-scroll on new content; scroll to start of bot messages instead of bottom
+      const chatObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.classList && node.classList.contains("assistant")) {
+              node.scrollIntoView({ block: "start", behavior: "smooth" });
+              return;
+            }
+          }
+        }
+        scrollToBottom();
+      });
       chatObserver.observe(chatMessages, { childList: true, subtree: true });
     </script>
   </body>
