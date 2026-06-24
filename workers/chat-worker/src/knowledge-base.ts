@@ -103,4 +103,10 @@ Udemy (2022): NestJS, SQL
 
 Español: Nativo
 Inglés: Competencia básica profesional
+
+## Contacto
+
+- **Email**: rami992009@gmail.com
+- **LinkedIn**: https://www.linkedin.com/in/ramiro-cerdá-619983177/
+- **GitHub**: https://github.com/ramiro-c
 `;
