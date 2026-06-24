@@ -551,27 +551,27 @@
       /* Chat Modal */
       .chat-modal {
         position: fixed;
-        bottom: 100px;
+        bottom: 90px;
         right: 24px;
         width: 380px;
         max-height: 500px;
         background: #0a0a0a;
-        border: 1px solid #1f1f1f;
-        border-radius: 12px;
+        border: 1px solid #222;
+        border-radius: 14px;
         z-index: 1001;
         display: none;
         flex-direction: column;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
         overflow: hidden;
         opacity: 0;
-        transform: translateY(10px) scale(0.95);
-        transition: opacity 0.25s ease, transform 0.25s ease;
+        transform: translateY(12px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
       }
 
       .chat-modal.open {
         display: flex;
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
       }
 
       /* Chat Header */
@@ -848,6 +848,7 @@
           width: 100%;
           max-height: 85vh;
           border-radius: 12px 12px 0 0;
+          transform-origin: bottom center;
         }
 
         .chat-island {
@@ -1620,7 +1621,7 @@
         const msg = document.createElement("div");
         msg.className = "message " + role;
         msg.textContent = text;
-        chatMessages.appendChild(msg);
+        chatMessages.insertBefore(msg, typingIndicator);
         scrollToBottom();
       }
 
@@ -1636,7 +1637,7 @@
         errorDiv.innerHTML =
           text +
           '<br><button class="retry-btn" onclick="retryMessage()">Reintentar</button>';
-        chatMessages.appendChild(errorDiv);
+        chatMessages.insertBefore(errorDiv, typingIndicator);
         scrollToBottom();
       }
 
