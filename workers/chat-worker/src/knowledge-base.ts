@@ -75,6 +75,16 @@ PWA para gestión inteligente de rutinas de entrenamiento. React 19, TypeScript,
 
 App móvil React Native + Expo con chatbot Gemini API. 50 mamás en piloto, 77.3% reportó menor ansiedad.
 
+### WorldCup 2026 — Explorador de datos del Mundial
+*2026 · Proyecto Personal*
+
+Web para explorar data de OpenFootball de forma visual: grupos, fixture, historial de mundiales desde 1930 y stats mezclando StatsBomb, OpenFootball y wheniskickoff. Stack: Cloudflare Workers. Repo: github.com/ramiro-c/worldcup-2026. Demo: worldcup-2026.rami992009.workers.dev
+
+### AI Agents Hub — Prácticas con Google ADK
+*2026 · Proyecto Personal*
+
+Agentes construidos en el curso Engineer AI Agents with ADK (Google Skills): tutor de matemáticas, extractor de productos con JSON estructurado, solucionador con planificación, y agente de customer support convertido en demo full-stack (React + FastAPI). Repo: github.com/ramiro-c/ai-agents-hub
+
 ### Knowledge Vault — PKM con IA
 *2026 - Actualidad · Proyecto Personal*
 
@@ -95,7 +105,7 @@ Ingeniería en Sistemas de Información — UTN (2018 - May 2023). Promedio: 8.0
 
 ## Certifications
 
-Google (2026): ADK agents, Prompt Design, Gemini Enterprise, AI Agents, Responsible AI
+Google (jun 2026): Add Agent Capabilities With Tools, Optimize Agent Behavior, Engineer AI Agents with ADK, Build Your First Agent with ADK, Build Agents with ADK; (may 2026): Prompt Design, Gemini Enterprise, Intro to AI Agents, Enterprise Agents, Responsible AI
 LinkedIn (2025): IA, Copilot, liderazgo
 Udemy (2022): NestJS, SQL
 
