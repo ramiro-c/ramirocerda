@@ -12,8 +12,12 @@
     />
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b0d10" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
     <script>
@@ -25,6 +29,13 @@
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
     <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0d10;
+        --accent: #c99b3a;
+        --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -38,11 +49,59 @@
 
       body {
         font-family: "Inter", sans-serif;
-        background: #0a0a0a;
+        background: var(--bg);
         color: #d4d4d4;
         line-height: 1.6;
         overflow-x: hidden;
         min-height: 100vh;
+      }
+
+      /* Visible keyboard focus on all interactive elements */
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 3px;
+      }
+
+      /* Skip link for keyboard users */
+      .skip-link {
+        position: absolute;
+        left: 12px;
+        top: -48px;
+        z-index: 1100;
+        background: var(--accent);
+        color: #0a0a0a;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: top 0.2s ease;
+      }
+
+      .skip-link:focus {
+        top: 12px;
+      }
+
+      /* Reduced motion: disable non-essential animation */
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+        .header,
+        .section {
+          opacity: 1 !important;
+          transform: none !important;
+        }
       }
 
       .container {
@@ -65,6 +124,7 @@
         color: #fafafa;
         margin-bottom: 12px;
         letter-spacing: -0.03em;
+        text-wrap: balance;
       }
 
       .header .subtitle {
@@ -76,7 +136,7 @@
 
       .header .location {
         font-size: 0.9rem;
-        color: #c9a87c;
+        color: var(--accent);
         margin-top: 12px;
         font-weight: 500;
         letter-spacing: 0.02em;
@@ -112,7 +172,7 @@
       }
 
       .nav a:hover {
-        color: #c9a87c;
+        color: var(--accent);
       }
 
       .nav a::after {
@@ -122,7 +182,7 @@
         left: 0;
         width: 0;
         height: 1px;
-        background: #c9a87c;
+        background: var(--accent);
         transition: width 0.2s ease;
       }
 
@@ -133,6 +193,7 @@
       /* Sections */
       .section {
         padding: 48px 0;
+        scroll-margin-top: 80px;
         opacity: 0;
         transform: translateY(20px);
         animation: fadeInUp 0.8s ease-out forwards;
@@ -149,6 +210,7 @@
         margin-bottom: 32px;
         color: #fafafa;
         letter-spacing: -0.02em;
+        text-wrap: balance;
       }
 
       .section-title::after {
@@ -157,7 +219,7 @@
         margin-top: 8px;
         width: 32px;
         height: 2px;
-        background: #c9a87c;
+        background: var(--accent);
       }
 
       /* About */
@@ -174,7 +236,7 @@
       }
 
       .about-text .highlight {
-        color: #c9a87c;
+        color: var(--accent);
         font-weight: 500;
       }
 
@@ -195,13 +257,15 @@
       }
 
       .stat-item:hover {
-        border-color: #333;
+        border-color: #3d3d3d;
       }
 
       .stat-number {
+        font-family: var(--mono);
         font-size: 1.8rem;
         font-weight: 600;
-        color: #c9a87c;
+        font-variant-numeric: tabular-nums;
+        color: var(--accent);
         display: block;
       }
 
@@ -222,7 +286,7 @@
       }
 
       .experience-item:hover {
-        border-color: #2a2a2a;
+        border-color: #3d3d3d;
       }
 
       .job-header {
@@ -241,15 +305,17 @@
       }
 
       .company {
-        color: #c9a87c;
+        color: var(--accent);
         font-weight: 500;
         font-size: 0.95rem;
         margin-top: 2px;
       }
 
       .period {
-        color: #666;
-        font-size: 0.85rem;
+        font-family: var(--mono);
+        color: #777;
+        font-size: 0.8rem;
+        font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
 
@@ -283,7 +349,7 @@
         padding: 14px 16px;
         background: #0f0f0f;
         border-radius: 4px;
-        border-left: 2px solid #c9a87c;
+        border-left: 2px solid var(--accent);
         font-size: 0.9rem;
         color: #999;
       }
@@ -297,29 +363,6 @@
         font-size: 0.9rem;
         color: #888;
         font-style: italic;
-      }
-
-      .project-link {
-        margin: 16px 0 0 0;
-        text-align: left;
-      }
-
-      .project-link a {
-        display: inline-block;
-        padding: 10px 20px;
-        background: transparent;
-        color: #c9a87c;
-        text-decoration: none;
-        border-radius: 4px;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        border: 1px solid #2a2a2a;
-      }
-
-      .project-link a:hover {
-        background: #161616;
-        border-color: #c9a87c;
       }
 
       /* Skills */
@@ -338,7 +381,7 @@
       }
 
       .skill-category:hover {
-        border-color: #2a2a2a;
+        border-color: #3d3d3d;
       }
 
       .skill-category h3 {
@@ -360,7 +403,8 @@
         color: #aaa;
         padding: 4px 10px;
         border-radius: 2px;
-        font-size: 0.82rem;
+        font-family: var(--mono);
+        font-size: 0.78rem;
         border: 1px solid #252525;
       }
 
@@ -377,7 +421,7 @@
         border-radius: 4px;
         text-align: center;
         border: 1px solid #1f1f1f;
-        transition: all 0.2s ease;
+        transition: border-color 0.2s ease, color 0.2s ease;
         color: #aaa;
         text-decoration: none;
         font-weight: 500;
@@ -385,8 +429,8 @@
       }
 
       .contact-item:hover {
-        border-color: #c9a87c;
-        color: #c9a87c;
+        border-color: var(--accent);
+        color: var(--accent);
       }
 
       /* Footer */
@@ -508,27 +552,29 @@
       /* Floating Island Trigger */
       .chat-island {
         position: fixed;
-        bottom: 24px;
-        right: 24px;
+        bottom: calc(24px + env(safe-area-inset-bottom));
+        right: calc(24px + env(safe-area-inset-right));
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        background: #c9a87c;
+        background: var(--accent);
         border: none;
         cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
         z-index: 1000;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 24px;
-        box-shadow: 0 4px 20px rgba(201, 168, 124, 0.3);
+        box-shadow: 0 4px 20px rgba(201, 155, 58, 0.3);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         animation: chatPulse 3s ease-in-out infinite;
       }
 
       .chat-island:hover {
         transform: scale(1.1);
-        box-shadow: 0 6px 28px rgba(201, 168, 124, 0.5);
+        box-shadow: 0 6px 28px rgba(201, 155, 58, 0.5);
       }
 
       .chat-island:active {
@@ -537,20 +583,20 @@
 
       @keyframes chatPulse {
         0%, 100% {
-          box-shadow: 0 4px 20px rgba(201, 168, 124, 0.3);
+          box-shadow: 0 4px 20px rgba(201, 155, 58, 0.3);
         }
         50% {
-          box-shadow: 0 4px 30px rgba(201, 168, 124, 0.6);
+          box-shadow: 0 4px 30px rgba(201, 155, 58, 0.6);
         }
       }
 
       /* Chat Modal */
       .chat-modal {
         position: fixed;
-        bottom: 90px;
-        right: 24px;
-        width: 45vw;
-        height: 80vh;
+        bottom: calc(90px + env(safe-area-inset-bottom));
+        right: calc(24px + env(safe-area-inset-right));
+        width: min(400px, calc(100vw - 48px));
+        height: min(560px, 80vh);
         background: #0a0a0a;
         border: 1px solid #222;
         border-radius: 14px;
@@ -559,6 +605,7 @@
         flex-direction: column;
         box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
         overflow: hidden;
+        overscroll-behavior: contain;
         opacity: 0;
         transform: translateY(12px);
         transition: opacity 0.2s ease, transform 0.2s ease;
@@ -593,7 +640,7 @@
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: #c9a87c;
+        background: var(--accent);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -621,6 +668,7 @@
       .chat-messages {
         flex: 1;
         overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 16px;
         display: flex;
         flex-direction: column;
@@ -644,11 +692,12 @@
       /* Message Bubbles */
       .message {
         max-width: 85%;
+        min-width: 0;
         padding: 10px 14px;
         border-radius: 12px;
         font-size: 0.9rem;
         line-height: 1.5;
-        word-wrap: break-word;
+        overflow-wrap: break-word;
         animation: messageIn 0.25s ease;
       }
 
@@ -665,7 +714,7 @@
 
       .message.user {
         align-self: flex-end;
-        background: #c9a87c;
+        background: var(--accent);
         color: #0a0a0a;
         border-bottom-right-radius: 4px;
       }
@@ -693,7 +742,7 @@
       }
       .message.assistant code {
         background: #1a1a1a;
-        color: #c9a87c;
+        color: var(--accent);
         padding: 1px 5px;
         border-radius: 3px;
         font-size: 0.85em;
@@ -702,7 +751,7 @@
         color: #fafafa;
       }
       .message.assistant a {
-        color: #c9a87c;
+        color: var(--accent);
         text-decoration: underline;
         text-underline-offset: 2px;
         transition: color 0.2s ease;
@@ -745,9 +794,9 @@
         animation: typingBounce 1.4s ease-in-out infinite;
       }
 
-      .typing-dot:nth-child(1) { animation-delay: 0s; background: #c9a87c; }
-      .typing-dot:nth-child(2) { animation-delay: 0.2s; background: #c9a87c; }
-      .typing-dot:nth-child(3) { animation-delay: 0.4s; background: #c9a87c; }
+      .typing-dot:nth-child(1) { animation-delay: 0s; background: var(--accent); }
+      .typing-dot:nth-child(2) { animation-delay: 0.2s; background: var(--accent); }
+      .typing-dot:nth-child(3) { animation-delay: 0.4s; background: var(--accent); }
 
       @keyframes typingBounce {
         0%, 60%, 100% {
@@ -775,18 +824,18 @@
         margin-top: 8px;
         padding: 6px 14px;
         background: transparent;
-        color: #c9a87c;
+        color: var(--accent);
         border: 1px solid #3a3020;
         border-radius: 6px;
         cursor: pointer;
         font-size: 0.82rem;
         font-family: inherit;
-        transition: all 0.2s ease;
+        transition: background 0.2s ease, border-color 0.2s ease;
       }
 
       .retry-btn:hover {
-        background: rgba(201, 168, 124, 0.1);
-        border-color: #c9a87c;
+        background: rgba(201, 155, 58, 0.1);
+        border-color: var(--accent);
       }
 
       /* Chat Input Area */
@@ -794,6 +843,7 @@
         display: flex;
         gap: 8px;
         padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
         border-top: 1px solid #1f1f1f;
         background: #111;
       }
@@ -816,7 +866,7 @@
       }
 
       .chat-input:focus {
-        border-color: #c9a87c;
+        border-color: var(--accent);
       }
 
       .chat-input.error {
@@ -836,13 +886,13 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: #c9a87c;
+        background: var(--accent);
         border: none;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s ease;
+        transition: background 0.2s ease, transform 0.2s ease;
         flex-shrink: 0;
       }
 
@@ -890,6 +940,7 @@
   </head>
 
   <body>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
     <div class="container">
       <header class="header">
         <h1>Ramiro Cerdá</h1>
@@ -911,6 +962,7 @@
         </ul>
       </nav>
 
+      <main id="main">
       <section id="about" class="section">
         <h2 class="section-title">Sobre mí</h2>
         <div class="about-content">
@@ -944,8 +996,8 @@
                 border: 1px solid #1f1f1f;
               "
             >
-              <p style="margin-bottom: 12px; color: #c9a87c; font-weight: 500">
-                Key Highlights:
+              <p style="margin-bottom: 12px; color: var(--accent); font-weight: 500">
+                Lo más destacado:
               </p>
               <div style="margin-bottom: 20px">
                 <p
@@ -962,41 +1014,41 @@
                   "
                 >
                   <span style="color: #aaa; font-size: 0.95rem"
-                    >📱 RN Dev</span
+                    >RN Dev</span
                   >
                   <span style="color: #444">→</span>
                   <span style="color: #aaa; font-size: 0.95rem"
-                    >⚛️ React Dev</span
+                    >React Dev</span
                   >
                   <span style="color: #444">→</span>
-                  <span style="color: #c9a87c; font-weight: 500"
-                    >🚀 Tech Lead</span
+                  <span style="color: var(--accent); font-weight: 500"
+                    >Tech Lead</span
                   >
                 </div>
               </div>
               <ul style="list-style: none; padding: 0; margin: 0">
                 <li style="margin-bottom: 8px; color: #999">
-                  🛠️ <strong style="color: #bbb">Generalista / Builder</strong> — Node.js, React,
+                  <strong style="color: #bbb">Generalista</strong> — Node.js, React,
                   AWS, BigQuery, Infra, IA workflows
                 </li>
                 <li style="margin-bottom: 8px; color: #999">
-                  🚀 <strong style="color: #bbb">Productos end-to-end</strong> — Desde idea hasta
+                  <strong style="color: #bbb">Productos end-to-end</strong> — Desde idea hasta
                   producción: backend, frontend, infra, monitoreo
                 </li>
                 <li style="margin-bottom: 8px; color: #999">
-                  🏗️ <strong style="color: #bbb">Arquitectura</strong> — Sistemas escalables,
+                  <strong style="color: #bbb">Arquitectura</strong> — Sistemas escalables,
                   desacoplamiento de monolitos, patrones de diseño
                 </li>
                 <li style="margin-bottom: 8px; color: #999">
-                  👥 <strong style="color: #bbb">Liderazgo técnico</strong> — Mentoría, hiring,
+                  <strong style="color: #bbb">Liderazgo técnico</strong> — Mentoría, hiring,
                   capacitación, cultura de calidad
                 </li>
                 <li style="margin-bottom: 8px; color: #999">
-                  🤖 <strong style="color: #bbb">IA-Augmented</strong> — Work-flows automatizados,
+                  <strong style="color: #bbb">IA-Augmented</strong> — Workflows automatizados,
                   productividad del equipo, herramientas AI-native
                 </li>
                 <li style="color: #999">
-                  💡 <strong style="color: #bbb">Proyectos propios</strong> — Knowledge Vault,
+                  <strong style="color: #bbb">Proyectos propios</strong> — Knowledge Vault,
                   LactarIA, Rutinify
                 </li>
               </ul>
@@ -1025,8 +1077,8 @@
               "
             >
               <div style="margin-bottom: 15px">
-                <p style="color: #c9a87c; font-weight: 500; margin-bottom: 5px">
-                  🚀 Tech Lead Full-Stack (Hands-on)
+                <p style="color: var(--accent); font-weight: 500; margin-bottom: 5px">
+                  Tech Lead Full-Stack (Hands-on)
                 </p>
                 <p
                   style="color: #777; font-size: 0.9rem; margin-bottom: 8px"
@@ -1058,8 +1110,8 @@
                 </ul>
               </div>
               <div style="margin-bottom: 15px">
-                <p style="color: #c9a87c; font-weight: 500; margin-bottom: 5px">
-                  ⚛️ React Developer
+                <p style="color: var(--accent); font-weight: 500; margin-bottom: 5px">
+                  React Developer
                 </p>
                 <p
                   style="color: #777; font-size: 0.9rem; margin-bottom: 8px"
@@ -1076,8 +1128,8 @@
                 </ul>
               </div>
               <div>
-                <p style="color: #c9a87c; font-weight: 500; margin-bottom: 5px">
-                  📱 React Native Developer
+                <p style="color: var(--accent); font-weight: 500; margin-bottom: 5px">
+                  React Native Developer
                 </p>
                 <p
                   style="color: #777; font-size: 0.9rem; margin-bottom: 8px"
@@ -1171,9 +1223,9 @@
           </div>
           <div class="job-description">
             <p>
-              📱 Aplicación web progresiva para gestión inteligente de rutinas
-              de entrenamiento. Motivación: Eliminar de mi vida el Google Sheet
-              que contiene mis rutinas 🤣
+              Aplicación web progresiva para gestión inteligente de rutinas
+              de entrenamiento. Motivación: eliminar de mi vida el Google Sheet
+              que contiene mis rutinas.
             </p>
             <ul class="achievements">
               <li>
@@ -1210,15 +1262,6 @@
               <strong>Visión:</strong> Enfocado para uso personal pero diseñado
               para ser lo más customizable posible.
             </p>
-            <div class="project-link">
-              <a
-                href="https://rutinify.vercel.app"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                🔗 Ver Rutinify en vivo
-              </a>
-            </div>
           </div>
         </div>
 
@@ -1234,7 +1277,7 @@
           </div>
           <div class="job-description">
             <p>
-              📱 Aplicación móvil para la tesis de dos puericultoras sobre
+              Aplicación móvil para la tesis de dos puericultoras sobre
               maternidad y crianza. Chatbot con Gemini API, FAQ interactivas y
               página de contacto.
             </p>
@@ -1261,7 +1304,7 @@
           </div>
           <div class="job-description">
             <p>
-              🧠 Vault personal de conocimiento en Obsidian sincronizado con
+              Vault personal de conocimiento en Obsidian sincronizado con
               Git, procesado automáticamente por agentes de IA. Sistema para
               capturar, procesar y relacionar ideas de forma escalable.
             </p>
@@ -1425,58 +1468,61 @@
         <h2 class="section-title">Contacto</h2>
         <div class="contact-grid">
           <a class="contact-item" href="mailto:rami992009@gmail.com"
-            >📧 Email</a
+            ><span aria-hidden="true">📧</span> Email</a
           >
           <a
             class="contact-item"
             href="https://www.linkedin.com/in/ramiro-cerdá-619983177/"
             target="_blank"
-            >🔗 LinkedIn</a
+            rel="noopener noreferrer"
+            ><span aria-hidden="true">🔗</span> LinkedIn</a
           >
           <a
             class="contact-item"
             href="https://github.com/ramiro-c"
             target="_blank"
-            >🐙 GitHub</a
+            rel="noopener noreferrer"
+            ><span aria-hidden="true">🐙</span> GitHub</a
           >
         </div>
       </section>
+      </main>
 
       <footer class="footer">
         <p>
-          &copy; <span class="footer-year">2026</span> Ramiro Cerdá.
-          Desarrollado con 💙
+          Diseñado y construido por Ramiro Cerdá · Buenos Aires ·
+          <span class="footer-year">2026</span>
         </p>
       </footer>
     </div>
 
     <!-- Chat Widget HTML -->
     <button class="chat-island" id="chatIsland" aria-label="Abrir chat">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
     </button>
 
-    <div class="chat-modal" id="chatModal">
+    <div class="chat-modal" id="chatModal" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
       <div class="chat-header">
         <div class="chat-header-title">
-          <span class="chat-header-icon">RC</span>
-          <span>Botardo</span>
+          <span class="chat-header-icon" aria-hidden="true">RC</span>
+          <span id="chatTitle">Botardo</span>
         </div>
         <button class="chat-close" id="chatClose" aria-label="Cerrar chat">✕</button>
       </div>
-      <div class="chat-messages" id="chatMessages">
-        <div class="message welcome">🤖 ¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su experiencia, proyectos, habilidades o cualquier tema profesional.</div>
-        <div class="typing-indicator" id="typingIndicator">
+      <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-relevant="additions">
+        <div class="message welcome">¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su experiencia, proyectos, habilidades o cualquier tema profesional.</div>
+        <div class="typing-indicator" id="typingIndicator" aria-label="Botardo está escribiendo…">
           <span class="typing-dot"></span>
           <span class="typing-dot"></span>
           <span class="typing-dot"></span>
         </div>
       </div>
       <div class="chat-input-area">
-        <input class="chat-input" id="chatInput" type="text" placeholder="Escribí tu pregunta..." autocomplete="off" />
+        <input class="chat-input" id="chatInput" type="text" inputmode="text" enterkeyhint="send" aria-label="Escribí tu pregunta para Botardo" placeholder="Escribí tu pregunta…" autocomplete="off" />
         <button class="chat-send" id="chatSend" aria-label="Enviar mensaje">
-          <svg viewBox="0 0 24 24">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
           </svg>
         </button>
@@ -1516,20 +1562,10 @@
           experienceEl.textContent = yearsExp + "+";
         }
 
-        const navLinks = document.querySelectorAll(".nav a");
-        navLinks.forEach((link) => {
-          link.addEventListener("click", function (e) {
-            e.preventDefault();
-            const targetId = this.getAttribute("href");
-            const targetSection = document.querySelector(targetId);
-            if (targetSection) {
-              targetSection.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-            }
-          });
-        });
+        // Navigation uses native anchor behavior: the browser handles
+        // smooth scroll (html { scroll-behavior: smooth }), scroll-margin-top
+        // offsets the sticky nav, and the URL hash + back button keep working.
+        // Cmd/Ctrl+click and middle-click open in new tabs as expected.
       });
 
       // Intersection Observer para animaciones
@@ -1547,15 +1583,20 @@
         });
       }, observerOptions);
 
-      // Observar elementos para animaciones
+      // Observar elementos para animaciones (respeta prefers-reduced-motion)
       document.addEventListener("DOMContentLoaded", function () {
+        const prefersReducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        if (prefersReducedMotion) return;
+
         const elements = document.querySelectorAll(
           ".experience-item, .skill-category, .contact-item",
         );
         elements.forEach((el) => {
           el.style.opacity = "0";
           el.style.transform = "translateY(20px)";
-          el.style.transition = "all 0.6s ease";
+          el.style.transition = "opacity 0.6s ease, transform 0.6s ease";
           observer.observe(el);
         });
       });
@@ -1574,13 +1615,48 @@
 
       let isOpen = false;
       let lastFailedMessage = null;
+      let savedScrollY = 0;
+      let scrollLocked = false;
+
+      const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
+
+      // On mobile the modal is full-width; lock the page behind it so a touch
+      // scroll inside the chat doesn't chain through to the body (iOS-safe
+      // position:fixed technique that overscroll-behavior alone doesn't cover).
+      function lockBodyScroll() {
+        if (scrollLocked) return;
+        savedScrollY = window.scrollY;
+        document.body.style.position = "fixed";
+        document.body.style.top = `-${savedScrollY}px`;
+        document.body.style.left = "0";
+        document.body.style.right = "0";
+        scrollLocked = true;
+      }
+
+      function unlockBodyScroll() {
+        if (!scrollLocked) return;
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        window.scrollTo(0, savedScrollY);
+        scrollLocked = false;
+      }
 
       // Toggle chat modal
       function toggleChat() {
         isOpen = !isOpen;
         chatModal.classList.toggle("open", isOpen);
         if (isOpen) {
-          chatInput.focus();
+          if (isMobile()) {
+            lockBodyScroll();
+          } else {
+            // Autofocus only on desktop — avoids forcing the virtual keyboard
+            // open and scrolling the page on mobile.
+            chatInput.focus();
+          }
+        } else {
+          unlockBodyScroll();
         }
       }
 
@@ -1705,14 +1781,19 @@
 
         const errorDiv = document.createElement("div");
         errorDiv.className = "message error";
-        errorDiv.innerHTML =
-          text +
-          '<br><button class="retry-btn" onclick="retryMessage()">Reintentar</button>';
+        errorDiv.setAttribute("role", "alert");
+        errorDiv.textContent = text;
+        errorDiv.appendChild(document.createElement("br"));
+        const retryBtn = document.createElement("button");
+        retryBtn.className = "retry-btn";
+        retryBtn.textContent = "Reintentar";
+        retryBtn.addEventListener("click", retryMessage);
+        errorDiv.appendChild(retryBtn);
         chatMessages.insertBefore(errorDiv, typingIndicator);
         scrollToBottom();
       }
 
-      window.retryMessage = function () {
+      function retryMessage() {
         // Remove error
         const errorEl = chatMessages.querySelector(".message.error");
         if (errorEl) {
@@ -1722,7 +1803,7 @@
           chatInput.value = lastFailedMessage;
           sendMessage();
         }
-      };
+      }
 
       function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
