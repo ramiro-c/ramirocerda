@@ -3,120 +3,83 @@ export const KNOWLEDGE_BASE = `
 
 ## Overview
 - **Nombre**: Ramiro Cerdá
-- **Rol**: Tech Lead & Full-Stack Developer
-- **Ubicación**: Buenos Aires, Argentina
-- **Años de experiencia**: 6+ años (carrera iniciada en 2020)
-- **Especialidades**: Node.js, TypeScript, React, React Native, Arquitectura de software
-- **Idiomas**: Español nativo, Inglés básico profesional
+- **Rol**: Full Stack Tech Lead (Hands-on)
+- **Ubicación**: La Plata, Buenos Aires, Argentina
+- **Años de experiencia**: 6+ años (carrera profesional iniciada en 2020)
+- **Especialidades**: Node.js, NestJS, Python, FastAPI, React (19), React Native, TypeScript, Arquitectura de software, Workflows de IA, Inferencia en el edge y automatizaciones.
+- **Idiomas**: Español (Nativo), Inglés (Intermedio/Avanzado)
 - **Email**: rami992009@gmail.com
-- **LinkedIn**: https://www.linkedin.com/in/ramiro-cerda-619983177/
+- **LinkedIn**: https://www.linkedin.com/in/ramiro-cerd%C3%A1-619983177/
 - **GitHub**: https://github.com/ramiro-c
+- **Web personal**: https://ramirocerda.vercel.app
 
-## Experience
+## Experiencia Profesional
 
-### Full Stack Tech Lead (Hands-on) — LDP / Libro de Pases
-*Abr 2025 - Actualidad · Buenos Aires, Argentina*
+### LIBRODEPASES | Full-time | Jun 2022 - Actualidad
 
-Desarrollo end-to-end de funcionalidades core de la plataforma SaaS de scouting y mercado de jugadores para fútbol profesional, incluyendo sistemas de notificaciones, flujos complejos de contratos y publicaciones, y resolución de bugs críticos en producción.
+#### Full Stack Tech Lead (Hands-on) | Abr 2025 - Actualidad
+Desarrollo end-to-end de funcionalidades core de la plataforma SaaS de scouting y mercado de jugadores profesionales de fútbol.
+* **Refactor de arquitectura backend:** lideré la migración de ~400 endpoints en clases monolíticas (hasta 15k líneas) hacia una arquitectura desacoplada con Patrón Repositorio e inyección de dependencias, reduciendo drásticamente la deuda técnica.
+* **Performance a escala:** eliminé cuellos de botella críticos (N+1, operaciones síncronas bloqueantes) con vistas materializadas, paralelización y singletons, logrando 75–90% de mejora en tiempos de respuesta en múltiples endpoints.
+* **Observabilidad y seguridad:** centralicé el monitoreo con Sentry, New Relic y logs estructurados (Pino); implementé sanitización de datos en middlewares y validación automatizada de identidad de usuarios.
+* **QA Automation y CI/CD:** definí la estrategia global de testing (unit + API + smoke + E2E) en pipelines con reportes a Slack, liderando la adopción de QA Automation en el equipo.
+* **IA y desarrollo core:** desarrollo end-to-end de flujos críticos; diseñé e implementé el front-end completo de un asistente conversacional con IA.
+* **Liderazgo técnico:** diseñé el challenge técnico de contratación full-stack (code review + entrevistas) y capacité al equipo en herramientas de IA (Cursor, Claude Code, sub-agentes, context management).
 
-- Refactor integral del motor de búsqueda avanzada con cobertura de tests frontend y backend
-- Centralización de observabilidad: Sentry, New Relic, logs estructurados con Pino Logger
-- Auditoría técnica de ~400 endpoints backend: detección de consultas N+1, dependencias vulnerables y clases monolíticas de hasta 15k líneas
-- Implementación de arquitectura desacoplada basada en patrón repositorio e inyección de dependencias
-- Identificación de cuellos de botella críticos con mejoras de 75-90% en tiempos de respuesta (vistas materializadas, paralelización, singletons)
-- Estrategia de testing y CI/CD: tests de API y suites unitarias automatizadas en pipelines con notificaciones a Slack
-- Mejoras de UI/UX en componentes de búsqueda con infinite scroll
-- Desarrollo frontend de asistente conversacional con IA
-- Diseño de desafío técnico full-stack, entrevistas y code reviews
-- Transición hacia QA Automation con smoke tests y regresiones
-- Capacitación del equipo en herramientas de IA (Claude, Cursor, OpenCode)
-- Automatizaciones con n8n y APIs externas como WhatsApp Business
+#### Desarrollador Mobile / Front-end SSR (React Native y React) | Jun 2022 - Abr 2025
+* **Frontend a escala con mentalidad de producto/MVP:** entregué features transversales en web y mobile con foco en lanzamientos rápidos y adaptabilidad al negocio.
+* **Modularización del ecosistema:** lideré propuestas técnicas aprobadas para estandarizar el frontend (Zustand, React Query, ESLint, Prettier) y armé pipelines en Bitbucket (Vitest, SonarQube, Husky).
+* **Mobile engineering:** reestructuré el state management global con Zustand (corrigiendo fugas de rendimiento), migré componentes clave a TypeScript y coordiné el refactor del Design System mobile.
+* **Mentoría:** onboarding y formación de devs junior (incluidas demos técnicas de React Query); acompañamiento hasta completar su período de prueba.
 
-### React Developer — LDP / Libro de Pases
-*Ene 2024 - Mar 2025*
+### EXPERIENCIA PREVIA | Desarrollador Full-stack Jr. | 2020 - 2021
+#### DevGAM, Secretaría de TIC (UTN FRLP) y New Logic
+Desarrollo full-stack para sistemas de administración comercial, gestión de stock, administración contable, gestión de turnos/clientes, trámites universitarios y plataformas web (marketplace y portal de noticias). Motor CMS propietario en PHP, optimización de bases de datos MySQL e implementación de frontends en React y Vue sobre Google Cloud Platform.
 
-- Implementación de tests unitarios con Vitest e integración con pipelines CI
-- Propuestas e implementación de ESLint, Prettier, Zustand y React Query
-- Colaboración con diseñadores y desarrolladores para implementar funcionalidades
+## Proyectos Destacados
 
-### React Native Developer — LDP / Libro de Pases
-*Jun 2022 - Dic 2023*
+### AI Agents Hub
+Monorepo de experimentación con arquitecturas avanzadas de agentes de IA. Implementé asistentes con capacidades de planificación multi-paso (PlanReAct), extracción de datos estructurados con Pydantic y ejecución nativa de código. Desarrollé y desplegué aplicaciones full-stack (Career Coach y Customer Support) en Cloud Run utilizando autenticación ADC y Vertex AI Agent Engine.
+* **Stack:** Python 3.13, Google ADK, LangGraph, FastAPI, React 19, Vertex AI, Cloud Run.
+* **Link:** https://github.com/ramiro-c/ai-agents-hub
 
-- Refactorización e implementación del Design System de la aplicación
-- Reestructuración del state management para gestión eficiente del estado
-- Propuestas de herramientas: ESLint, Prettier, Zustand, TypeScript
-- Implementación de secciones: perfiles de usuario, filtros avanzados, analytics, manejo de errores con Sentry
+### Mundial 2026
+Aplicación full-stack de alto rendimiento para el seguimiento del torneo. Diseñé el pipeline de cruce de datos en tiempo real desde múltiples APIs y fuentes históricas abiertas, implementando mapas interactivos y una UI responsive optimizada para mobile con carga inmediata.
+* **Stack:** FastAPI, React 19, TypeScript, Tailwind CSS v4, Cloudflare Workers.
+* **Links:** Demo: https://worldcup-2026.rami992009.workers.dev | GitHub: https://github.com/rami992009/mundial-2026
 
-### Desarrollador Full-stack — DevGAM (Freelance)
-*Dic 2020 - Dic 2021*
+### linkedin-markdownificator
+Herramienta para exportar perfiles de LinkedIn a Markdown, facilitando la sincronización con sitios web personales e interacción con agentes de IA. Para lograrlo, diseñé un extractor tolerante a cambios en el DOM adaptado al layout React post-2025, externalicé los selectores en JSON para evitar rupturas de scraping y aseguré la estabilidad con 26 pruebas de integración.
+* **Stack:** Python, Selenium, BeautifulSoup, Pytest, Ruff.
+* **Link:** https://github.com/ramiro-c/linkedin-markdownificator
 
-- Sistemas de gestión multi-rubro con PHP, JavaScript, jQuery, MySQL
-- CMS desde cero
+### Portafolio Personal y Asistente IA
+Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente conversacional configurado para responder consultas interactivas sobre mi experiencia y stack. Implementé el bot con Llama 3.2 utilizando Cloudflare Workers AI, logrando respuestas rápidas con latencia mínima y sin costos de infraestructura tradicional. La base de conocimiento la armé gracias al scraper linkedin-markdownificator.
+* **Stack:** HTML/CSS, JavaScript, Cloudflare Workers AI, Llama 3.2, Vercel.
+* **Link:** https://ramirocerda.vercel.app
 
-### Desarrollador Full-stack — Secretaría de TIC, UTN FRLP
-*Ene 2020 - Sep 2021*
+### LactarIA
+Desarrollé una app móvil en React Native + Expo para la tesis de dos puericultoras, usada por 50 madres como herramienta de apoyo en lactancia y crianza. Implementé un backend serverless integrado con la API de Gemini. Publicada como prueba cerrada en Play Store con 100% de satisfacción de usuarias, 77.3% reportó menor ansiedad gracias al chatbot en tiempo real y 95.5% destacó la facilidad de uso.
+* **Stack:** React Native, Expo, Serverless, Gemini.
 
-- Sistema de administración de trámites con Laravel y Vue.js
+### Knowledge Vault
+Sistema personal de gestión de conocimiento sobre Obsidian, sincronizado con Git (GitHub + iCloud). Capturo fuentes en crudo (artículos, papers, videos, PDFs) y agentes de IA las procesan automáticamente vía skills propias: categorización, extracción de ideas clave, links semánticos entre notas y resúmenes con puntos de acción. El resultado es una base con la que puedo conversar desde cualquier agente, no solo buscar por keyword.
+* **Stack:** Obsidian, Git, agentes de IA (Claude, OpenCode, modelos locales/cloud).
 
-### React Developer — New Logic (Freelance)
-*Ene 2020 - Dic 2020*
+## Stack Técnico
 
-- Blog con marketplace usando React y Google Cloud Platform
+* **Frontend & Mobile:** React (19), React Native, TypeScript, JavaScript, Expo, Zustand, React Query, Vue.js, Tailwind CSS (v4), Shadcn/ui, Leaflet, amCharts.
+* **Backend, Cloud & Data:** Node.js, NestJS, Python, FastAPI, MySQL, PostgreSQL, Google Cloud Platform (Vertex AI, Cloud Run), Cloudflare Workers (Edge Computing), Serverless, APIs REST, Pino Logger.
+* **IA & Automatización:** Google ADK, LangGraph, Cloudflare Workers AI (Llama 3.2), n8n, APIs de LLMs (Gemini, Anthropic), OpenRouter, Claude Code, Cursor (context management).
+* **DevOps, Calidad & Testing:** CI/CD (GitHub Actions, Bitbucket Pipelines), Docker, Git (worktrees), Bash, Sentry, New Relic, Pytest, Jest, Vitest, Playwright, SonarQube.
+* **Metodologías & Procesos:** SCRUM, GitFlow, Code Reviews, Jira, Confluence.
+* **Certificaciones:** 10 certificaciones de Google en AI Agents (ADK, Gemini Enterprise, Responsible AI), 2026.
+* **Idiomas:** Español (Nativo) | Inglés (Intermedio/Avanzado).
 
-## Projects
+## Educación
 
-### Rutinify — Gestión de rutinas de gimnasio
-*Ago 2025 · Proyecto Personal*
-
-PWA para gestión inteligente de rutinas de entrenamiento. React 19, TypeScript, Tailwind CSS, Vite, Bun.
-
-### LactarIA — App de apoyo en lactancia materna
-*Oct 2024 - Nov 2024 · Proyecto Freelance*
-
-App móvil React Native + Expo con chatbot Gemini API. 50 mamás en piloto, 77.3% reportó menor ansiedad.
-
-### WorldCup 2026 — Explorador de datos del Mundial
-*2026 · Proyecto Personal*
-
-Web para explorar data de OpenFootball de forma visual: grupos, fixture, historial de mundiales desde 1930 y stats mezclando StatsBomb, OpenFootball y wheniskickoff. Stack: Cloudflare Workers. Repo: github.com/ramiro-c/worldcup-2026. Demo: worldcup-2026.rami992009.workers.dev
-
-### AI Agents Hub — Prácticas con Google ADK
-*2026 · Proyecto Personal*
-
-Agentes construidos en el curso Engineer AI Agents with ADK (Google Skills): tutor de matemáticas, extractor de productos con JSON estructurado, solucionador con planificación, y agente de customer support convertido en demo full-stack (React + FastAPI). Repo: github.com/ramiro-c/ai-agents-hub
-
-### Knowledge Vault — PKM con IA
-*2026 - Actualidad · Proyecto Personal*
-
-Vault de conocimiento en Obsidian procesado por agentes de IA. Captura, procesamiento y consulta semántica.
-
-## Skills
-
-Frontend & Mobile: React, React Native, TypeScript, JavaScript, Tailwind CSS, CSS3, HTML5, Shadcn/ui, PWA
-Backend: Node.js, TypeScript, Express, NestJS, PHP, Laravel, Python
-Database & Cloud: PostgreSQL, BigQuery, Sequelize, SQL, AWS, Vercel, Serverless
-Tools & DevOps: Git, CI/CD, Docker, Vitest, Playwright, Brun, New Relic, Sentry
-State & Data: Zustand, React Query, Redux, REST APIs
-AI & Productivity: Cursor, Claude Code, GitHub Copilot, Gemini API, OpenCode, n8n
-
-## Education
-
-Ingeniería en Sistemas de Información — UTN (2018 - May 2023). Promedio: 8.04.
-
-## Certifications
-
-Google (jun 2026): Add Agent Capabilities With Tools, Optimize Agent Behavior, Engineer AI Agents with ADK, Build Your First Agent with ADK, Build Agents with ADK; (may 2026): Prompt Design, Gemini Enterprise, Intro to AI Agents, Enterprise Agents, Responsible AI
-LinkedIn (2025): IA, Copilot, liderazgo
-Udemy (2022): NestJS, SQL
-
-## Languages
-
-Español: Nativo
-Inglés: Competencia básica profesional
-
-## Contacto
-
-- **Email**: rami992009@gmail.com
-- **LinkedIn**: https://www.linkedin.com/in/ramiro-cerdá-619983177/
-- **GitHub**: https://github.com/ramiro-c
+* **Universidad Tecnológica Nacional - FRLP | Feb 2018 - May 2023**
+  * **Ingeniería en Sistemas de Información** — Promedio: 8.04
+  * **Ayudante de Cátedra** — Sistemas Operativos (2021): soporte práctico a dos comisiones de 30 estudiantes.
+  * **Becario de investigación** — LINSI (1 año): arquitecturas con Docker, Linux, redes de servidores y Blockchain.
 `;
