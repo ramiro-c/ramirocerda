@@ -7,14 +7,14 @@ tags: ["ADK", "LangGraph", "FastAPI"]
 repo: https://github.com/ramiro-c/ai-agents-hub
 es:
   title: "AI Agents Hub — Laboratorio de agentes de IA"
-  summary: "Monorepo para experimentar con arquitecturas de agentes (Google ADK y LangGraph): planificación multi-paso, salida JSON estructurada, ejecución de código y MCP. Incluye apps full-stack como Customer Support Chat y Career Coach, desplegadas en Cloud Run con Vertex AI."
-  problem: "Probar arquitecturas de agentes complejas sin una base compartida termina duplicando decisiones, prompts y wiring."
-  what: "Armé un laboratorio reutilizable: asistentes PlanReAct, extracción con Pydantic, análisis/ejecución de código, lectura de archivos vía MCP, Customer Support Chat (React 19 + FastAPI + ADK) y Career Coach (Vertex AI Agent Engine). Deploy en Cloud Run con autenticación ADC."
-  stack: ["Python 3.13", "Google ADK", "LangGraph", "FastAPI", "React 19", "Vertex AI", "Cloud Run"]
+  summary: "Monorepo de aprendizaje y referencia con Google ADK y LangGraph: de agentes chicos (PlanReAct, output_schema, MCP, code executor) a apps full-stack en producción. Incluye Customer Support Chat y Career Coach (Vertex AI Agent Engine + Cloud Run)."
+  problem: "Aprender agentes en serio implica mezclar frameworks, tools y deploys. Sin un monorepo ordenado terminás con notebooks sueltos, prompts duplicados y cero camino a prod."
+  what: "Armé el hub por capas: laboratorio ADK (tutor YAML/Python, PlanReAct vía LiteLLM/OpenRouter, product extractor con Pydantic, research con Google Search, file reader MCP, math con BuiltInCodeExecutor) + notebook LangGraph (email assistant) + dos productos. Customer Support Chat (React 19 + FastAPI + ADK). Career Coach con BuiltInPlanner, 3 tools deterministas, sesiones y deploy multi-stage a Cloud Run/Vertex AI con ADC. Ruff + pre-commit + docs de arquitectura ADK vs LangGraph."
+  stack: ["Python 3.13", "Google ADK", "LangGraph", "FastAPI", "React 19", "Vertex AI", "Cloud Run", "LiteLLM"]
 en:
   title: "AI Agents Hub — AI agent lab"
-  summary: "Monorepo for advanced agent architectures (Google ADK and LangGraph): multi-step planning, structured JSON output, code execution, and MCP. Includes full-stack apps like Customer Support Chat and Career Coach, deployed on Cloud Run with Vertex AI."
-  problem: "Testing complex agent architectures without a shared foundation quickly leads to duplicated prompts, wiring, and decisions."
-  what: "Built a reusable lab: PlanReAct assistants, Pydantic structured extraction, code analysis/execution, file reading via MCP, Customer Support Chat (React 19 + FastAPI + ADK), and Career Coach (Vertex AI Agent Engine). Deployed on Cloud Run with ADC auth."
-  stack: ["Python 3.13", "Google ADK", "LangGraph", "FastAPI", "React 19", "Vertex AI", "Cloud Run"]
+  summary: "Learning and reference monorepo for Google ADK and LangGraph: from small agents (PlanReAct, output_schema, MCP, code executor) to full-stack apps in production. Includes Customer Support Chat and Career Coach (Vertex AI Agent Engine + Cloud Run)."
+  problem: "Learning agents for real means juggling frameworks, tools, and deploys. Without a structured monorepo you end up with loose notebooks, duplicated prompts, and no path to prod."
+  what: "Built the hub in layers: ADK lab (YAML/Python tutors, PlanReAct via LiteLLM/OpenRouter, Pydantic product extractor, Google Search research agent, MCP file reader, BuiltInCodeExecutor math) + LangGraph notebook (email assistant) + two products. Customer Support Chat (React 19 + FastAPI + ADK). Career Coach with BuiltInPlanner, 3 deterministic tools, sessions, and a multi-stage Cloud Run/Vertex AI deploy with ADC. Ruff + pre-commit + ADK vs LangGraph architecture docs."
+  stack: ["Python 3.13", "Google ADK", "LangGraph", "FastAPI", "React 19", "Vertex AI", "Cloud Run", "LiteLLM"]
 ---

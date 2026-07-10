@@ -7,14 +7,14 @@ tags: ["Python", "Selenium", "OSS"]
 repo: https://github.com/ramiro-c/linkedin-markdownificator
 es:
   title: "linkedin-markdownificator"
-  summary: "CLI para exportar perfiles de LinkedIn a Markdown (webs personales + agentes de IA)."
-  problem: "Los perfiles de LinkedIn son difíciles de reutilizar en sitios personales o flujos con agentes si quedan atrapados en la interfaz."
-  what: "Adapté el scraper al DOM moderno de LinkedIn, externalicé selectores en JSON, añadí scroll lazy y 26 tests Pytest."
-  stack: ["Python", "Selenium", "BeautifulSoup", "Parsel", "Pytest", "Ruff"]
+  summary: "Fork OSS de una CLI que exporta el perfil completo de LinkedIn a Markdown (y JSON) para webs personales, CVs y agentes de IA. Sin API oficial: Selenium + HTML cacheado, pensado para no duplicar el CV a mano."
+  problem: "LinkedIn no da API a developers individuales. El perfil público es incompleto y mantener LinkedIn + web/CV al día es trabajo doble. Cuando LinkedIn cambia el DOM React, los scrapers se rompen."
+  what: "Retomé el fork y lo hice resiliente al DOM post-2025 (de clases artdeco a componentkey). Externalicé selectores en JSON, sumé scroll progresivo para componentes lazy, export JSON, templates Jinja2, modo headless/cached, y una suite de 26 tests de integración con Pytest + Ruff."
+  stack: ["Python", "Selenium", "BeautifulSoup", "Parsel", "Jinja2", "Pytest", "Ruff"]
 en:
   title: "linkedin-markdownificator"
-  summary: "CLI for exporting LinkedIn profiles to Markdown for personal sites and AI agents."
-  problem: "LinkedIn profiles are hard to reuse in personal sites or agent workflows when the data stays trapped in the UI."
-  what: "Adapted the scraper to LinkedIn's modern DOM, externalized selectors in JSON, added lazy scroll handling, and wrote 26 Pytest tests."
-  stack: ["Python", "Selenium", "BeautifulSoup", "Parsel", "Pytest", "Ruff"]
+  summary: "OSS fork of a CLI that exports a full LinkedIn profile to Markdown (and JSON) for personal sites, CVs, and AI agents. No official API: Selenium + cached HTML, so you stop maintaining LinkedIn and a separate CV by hand."
+  problem: "LinkedIn doesn’t give API access to individual developers. The public profile is incomplete, and keeping LinkedIn plus a site/CV in sync is double work. When LinkedIn ships a new React DOM, scrapers break."
+  what: "Took over the fork and made it resilient to the post-2025 DOM (artdeco classes → componentkey). Externalized selectors in JSON, added progressive scroll for lazy sections, JSON export, Jinja2 templates, headless/cached modes, and a 26-test Pytest integration suite with Ruff."
+  stack: ["Python", "Selenium", "BeautifulSoup", "Parsel", "Jinja2", "Pytest", "Ruff"]
 ---
