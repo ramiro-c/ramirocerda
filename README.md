@@ -1,59 +1,36 @@
-# Ramiro Cerdá - Portfolio Personal
+# Ramiro Cerda portfolio
 
-¡Hola! 👋 Soy Ramiro Cerdá, **Tech Lead Full-Stack** desde Buenos Aires, Argentina.
+This repository now contains the Astro portfolio site, not the old single-file CV monolith.
 
-## 🚀 Sobre mí
+## Overview
 
-Ingeniero en Sistemas de Información (UTN, 2023) con **6+ años de experiencia** construyendo productos digitales end-to-end.
+- Astro static site generator with localized routes for Spanish and English.
+- Main public routes live under `/es` and `/en`.
+- Content is driven by Astro content collections for projects and notes.
+- Botardo is the floating AI helper, powered by a Cloudflare Worker in `workers/chat-worker`.
+- The design direction is documented in `docs/superpowers/specs/2026-07-10-portfolio-redesign-design.md`.
 
-Actualmente soy **Tech Lead en LDP** (Libro de Pases), plataforma SaaS de scouting y mercado de jugadores para fútbol profesional. Trayaectoria de crecimiento en 4 años: React Native Dev → React Dev → Tech Lead.
+## Structure
 
-**Enfoque:** arquitectura full-stack, IA-augmented development, liderazgo técnico, calidad y observabilidad.
+- `src/pages/[lang]/` - localized pages for the portfolio
+- `src/components/Botardo.astro` - Botardo widget and client behavior
+- `src/content/projects` - project entries used on the site
+- `src/content/notes` - notes collection, ready for future posts
+- `workers/chat-worker` - Botardo Worker backend
+- `archive/index.html` - archived legacy CV homepage
 
-## 🛠️ Tecnologías y Especialidades
+## Scripts
 
-### Frontend & Mobile
-- **React** / **React Native** / **Next.js**
-- **TypeScript** / **JavaScript**
-- **Tailwind CSS** / **Shadcn/ui**
+- `npm run dev` - start the Astro dev server
+- `npm run build` - build the static site into `dist/`
+- `npm run preview` - preview a production build locally
 
-### Backend & Database
-- **Node.js** / **Express** / **NestJS**
-- **PostgreSQL** / **BigQuery** / **Sequelize**
-- **AWS** / **Serverless** / **Vercel**
+## Botardo
 
-### Tools & DevOps
-- **CI/CD** (Bitbucket Pipelines, GitHub Actions)
-- **Testing** (Vitest, Playwright, Bruno)
-- **Observability** (New Relic, Sentry, Pino)
-- **IA** (Cursor, Claude Code, n8n)
+Botardo is the conversational layer for deeper professional questions. The UI lives in the Astro site, while the answer API stays in the Cloudflare Worker. Keep the Worker knowledge base in sync with the portfolio content when making larger copy changes.
 
-## 📂 Contenido del Repositorio
+## Contact
 
-Este repositorio contiene mi sitio web portfolio personal:
-
-### `index.html`
-- Portfolio web personal completo
-- Diseño responsive moderno (dark theme)
-- Información profesional actualizada
-- Experiencia, proyectos, habilidades y certificaciones
-- Optimizado para SEO
-
-## 💼 Trayectoria
-
-| Empresa | Rol | Período |
-|---------|-----|---------|
-| **LDP** | Tech Lead → React Dev → RN Dev | Jun 2022 - Actualidad |
-| **DevGAM** | Full-stack Freelance | Dic 2020 - Dic 2021 |
-| **UTN FRLP** | Full-stack (Secretaría TIC) | Ene 2020 - Sep 2021 |
-| **New Logic** | React Freelance | Ene 2020 - Dic 2020 |
-
-## 📫 Contacto
-
-- **Email**: rami992009@gmail.com
-- **LinkedIn**: [linkedin.com/in/ramiro-cerdá](https://www.linkedin.com/in/ramiro-cerdá-619983177/)
-- **GitHub**: [@ramiro-c](https://github.com/ramiro-c)
-
----
-
-_Portfolio personal de Ramiro Cerdá - Tech Lead & Full-Stack Developer_
+- GitHub: [@ramiro-c](https://github.com/ramiro-c)
+- LinkedIn: [linkedin.com/in/ramiro-cerdá](https://www.linkedin.com/in/ramiro-cerdá-619983177/)
+- Email: rami992009@gmail.com
