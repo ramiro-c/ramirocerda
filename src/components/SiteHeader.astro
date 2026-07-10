@@ -1,0 +1,61 @@
+---
+import { getCollection } from "astro:content";
+import type { Lang } from "../i18n/ui";
+import { getLocalizedPath, useTranslations } from "../i18n/utils";
+import LanguageToggle from "./LanguageToggle.astro";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const showNotes = (await getCollection("notes")).some((note) => !note.data.draft);
+---
+
+<header class="header site-shell">
+  <a class="brand mono" href={getLocalizedPath(lang, "/")}>ramirocerda</a>
+  <nav class="nav" aria-label="Primary">
+    <a href={getLocalizedPath(lang, "/about/")}>{t("nav.about")}</a>
+    <a href={getLocalizedPath(lang, "/work/")}>{t("nav.work")}</a>
+    {showNotes && <a href={getLocalizedPath(lang, "/notes/")}>{t("nav.notes")}</a>}
+  </nav>
+  <LanguageToggle lang={lang} />
+</header>
+
+<style>
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2.5rem;
+  }
+  .brand {
+    font-weight: 500;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .nav {
+    display: flex;
+    gap: 1.25rem;
+    font-size: 0.95rem;
+  }
+  .nav a {
+    text-decoration: none;
+  }
+  .nav a:hover {
+    color: var(--accent);
+  }
+  @media (max-width: 640px) {
+    .header {
+      flex-wrap: wrap;
+    }
+    .nav {
+      order: 3;
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+</style>

@@ -1,0 +1,51 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import SiteHeader from "../../../components/SiteHeader.astro";
+import SiteFooter from "../../../components/SiteFooter.astro";
+import ProjectList from "../../../components/ProjectList.astro";
+import { languages, type Lang } from "../../../i18n/ui";
+import { useTranslations } from "../../../i18n/utils";
+
+export function getStaticPaths() {
+  return (Object.keys(languages) as Lang[]).map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const projects = (await getCollection("projects"))
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((project) => ({
+    slug: project.data.slug,
+    title: project.data[lang].title,
+    summary: project.data[lang].summary,
+  }));
+---
+
+<BaseLayout lang={lang} title={t("work.title")} description={t("work.title")}>
+  <SiteHeader slot="header" lang={lang} />
+
+  <section class="work">
+    <p class="mono label">01 / {t("work.title").toUpperCase()}</p>
+    <h1 class="display heading">{t("work.title")}</h1>
+    <ProjectList lang={lang} items={projects} />
+  </section>
+
+  <SiteFooter slot="footer" lang={lang} />
+</BaseLayout>
+
+<style>
+  .work {
+    padding: 1rem 0 2rem;
+  }
+  .label {
+    margin: 0 0 0.75rem;
+    color: var(--muted-2);
+    font-size: 0.8rem;
+  }
+  .heading {
+    margin: 0 0 1.5rem;
+    font-size: clamp(2.2rem, 7vw, 3.6rem);
+    line-height: 0.95;
+  }
+</style>

@@ -1,0 +1,124 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import SiteHeader from "../../../components/SiteHeader.astro";
+import SiteFooter from "../../../components/SiteFooter.astro";
+import { languages, type Lang } from "../../../i18n/ui";
+import { useTranslations } from "../../../i18n/utils";
+
+export async function getStaticPaths() {
+  const projects = await getCollection("projects");
+  const langs = Object.keys(languages) as Lang[];
+
+  return langs.flatMap((lang) =>
+    projects.map((project) => ({
+      params: { lang, slug: project.data.slug },
+      props: { project },
+    })),
+  );
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const { project } = Astro.props as { project: Awaited<ReturnType<typeof getCollection>>[number] };
+const data = project.data[lang];
+const links = [
+  project.data.repo ? { href: project.data.repo, label: "Repo" } : null,
+  project.data.demo ? { href: project.data.demo, label: "Demo" } : null,
+].filter(Boolean) as Array<{ href: string; label: string }>;
+---
+
+<BaseLayout lang={lang} title={data.title} description={data.summary}>
+  <SiteHeader slot="header" lang={lang} />
+
+  <article class="case-study">
+    <p class="mono label">PROJECT / {project.data.slug}</p>
+    <h1 class="display heading">{data.title}</h1>
+    <p class="summary">{data.summary}</p>
+
+    <section class="section">
+      <p class="mono section-label">{t("project.problem")}</p>
+      <p class="body">{data.problem}</p>
+    </section>
+
+    <section class="section">
+      <p class="mono section-label">{t("project.what")}</p>
+      <p class="body">{data.what}</p>
+    </section>
+
+    <section class="section">
+      <p class="mono section-label">{t("project.stack")}</p>
+      <p class="mono stack">{data.stack.join(", ")}</p>
+    </section>
+
+    <section class="section">
+      <p class="mono section-label">{t("project.links")}</p>
+      {links.length > 0 ? (
+        <ul class="links">
+          {links.map((link) => (
+            <li>
+              <a href={link.href} rel="noreferrer" target="_blank">
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="body muted">—</p>
+      )}
+    </section>
+  </article>
+
+  <SiteFooter slot="footer" lang={lang} />
+</BaseLayout>
+
+<style>
+  .case-study {
+    padding: 1rem 0 2rem;
+  }
+  .label,
+  .section-label {
+    margin: 0 0 0.75rem;
+    color: var(--muted-2);
+    font-size: 0.8rem;
+  }
+  .heading {
+    margin: 0 0 1rem;
+    font-size: clamp(2.2rem, 7vw, 3.8rem);
+    line-height: 0.95;
+  }
+  .summary {
+    max-width: 44rem;
+    margin: 0 0 2rem;
+    padding-left: 0.9rem;
+    border-left: 3px solid var(--accent);
+    color: var(--muted);
+  }
+  .section {
+    padding: 1rem 0 0;
+    border-top: 1px solid var(--border);
+    margin-top: 1rem;
+  }
+  .body {
+    margin: 0;
+    max-width: 44rem;
+  }
+  .muted {
+    color: var(--muted-2);
+  }
+  .stack {
+    margin: 0;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+  .links {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+  .links a {
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+</style>

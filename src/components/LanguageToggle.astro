@@ -1,0 +1,43 @@
+---
+import { languages, type Lang } from "../i18n/ui";
+import { switchLangPath } from "../i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const path = Astro.url.pathname;
+---
+
+<nav class="lang mono" aria-label="Language">
+  {
+    (Object.keys(languages) as Lang[]).map((code) => (
+      <a
+        href={switchLangPath(path, code)}
+        aria-current={code === lang ? "page" : undefined}
+        class:list={[{ active: code === lang }]}
+      >
+        {code}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .lang {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .lang a {
+    text-decoration: none;
+    color: var(--muted-2);
+    text-transform: uppercase;
+  }
+  .lang a.active,
+  .lang a[aria-current="page"] {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>

@@ -1,0 +1,25 @@
+---
+import type { Lang } from "../i18n/ui";
+import { useTranslations } from "../i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+---
+
+<footer class="footer site-shell">
+  <p>{t("footer.line")} · <span>{year}</span></p>
+</footer>
+
+<style>
+  .footer {
+    margin-top: 4rem;
+    padding: 1.5rem 0 3rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted-2);
+    font-size: 0.9rem;
+  }
+</style>

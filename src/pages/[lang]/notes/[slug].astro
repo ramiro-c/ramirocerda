@@ -1,0 +1,70 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import SiteHeader from "../../../components/SiteHeader.astro";
+import SiteFooter from "../../../components/SiteFooter.astro";
+import { languages, type Lang } from "../../../i18n/ui";
+import { useTranslations } from "../../../i18n/utils";
+
+export async function getStaticPaths() {
+  const notes = await getCollection("notes");
+  if (!notes.length) return [];
+
+  const langs = Object.keys(languages) as Lang[];
+  return notes
+    .filter((note) => !note.data.draft)
+    .flatMap((note) =>
+      langs
+        .filter((lang) => note.data.lang === lang)
+        .map((lang) => ({
+          params: { lang, slug: note.slug },
+          props: { note },
+        })),
+    );
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const { note } = Astro.props as { note: Awaited<ReturnType<typeof getCollection>>[number] };
+const { Content } = await note.render();
+---
+
+<BaseLayout lang={lang} title={note.data.title} description={note.data.description}>
+  <SiteHeader slot="header" lang={lang} />
+
+  <article class="note">
+    <p class="mono label">NOTE / {note.data.lang.toUpperCase()}</p>
+    <h1 class="display heading">{note.data.title}</h1>
+    <p class="summary">{note.data.description}</p>
+    <div class="content">
+      <Content />
+    </div>
+  </article>
+
+  <SiteFooter slot="footer" lang={lang} />
+</BaseLayout>
+
+<style>
+  .note {
+    padding: 1rem 0 2rem;
+  }
+  .label {
+    margin: 0 0 0.75rem;
+    color: var(--muted-2);
+    font-size: 0.8rem;
+  }
+  .heading {
+    margin: 0 0 1rem;
+    font-size: clamp(2.2rem, 7vw, 3.6rem);
+    line-height: 0.95;
+  }
+  .summary {
+    max-width: 44rem;
+    margin: 0 0 1.5rem;
+    color: var(--muted);
+  }
+  .content {
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+</style>
