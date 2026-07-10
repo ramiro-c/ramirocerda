@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Botardo from "../components/Botardo.astro";
 
 interface Props {
   title: string;
@@ -40,6 +41,6 @@ const { title, description, lang } = Astro.props;
       <slot />
     </main>
     <slot name="footer" />
-    <slot name="botardo" />
+    <Botardo />
   </body>
 </html>

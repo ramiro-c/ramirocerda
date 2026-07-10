@@ -1,0 +1,729 @@
+---
+---
+
+<button
+  class="botardo-island"
+  type="button"
+  aria-label="Abrir Botardo"
+  aria-controls="botardoDialog"
+  aria-expanded="false"
+  data-botardo-island
+>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M20 15.5a2 2 0 0 1-2 2H8l-4 3v-3H6a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"
+      fill="currentColor"
+    />
+    <path
+      d="M8 9.5h8M8 12.5h5.5"
+      stroke="var(--bg)"
+      stroke-width="1.5"
+      stroke-linecap="round"
+    />
+  </svg>
+</button>
+
+<section
+  class="botardo-modal"
+  id="botardoDialog"
+  role="dialog"
+  aria-modal="true"
+  aria-hidden="true"
+  aria-labelledby="botardoTitle"
+  inert
+>
+  <header class="botardo-header">
+    <div class="botardo-header-title">
+      <span class="botardo-mark" aria-hidden="true">RC</span>
+      <span id="botardoTitle" class="botardo-title mono">Botardo</span>
+    </div>
+    <button class="botardo-close" type="button" aria-label="Cerrar chat">✕</button>
+  </header>
+
+  <div class="botardo-messages" role="log" aria-live="polite" aria-relevant="additions">
+    <div class="botardo-message botardo-assistant botardo-welcome">
+      ¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su
+      experiencia, proyectos, habilidades o cualquier tema profesional.
+    </div>
+    <div class="botardo-typing" hidden aria-label="Botardo está escribiendo…">
+      <span class="botardo-dot"></span>
+      <span class="botardo-dot"></span>
+      <span class="botardo-dot"></span>
+    </div>
+  </div>
+
+  <form class="botardo-inputbar" novalidate>
+    <label class="sr-only" for="botardoInput">Escribí tu pregunta para Botardo</label>
+    <input
+      class="botardo-input"
+      id="botardoInput"
+      type="text"
+      inputmode="text"
+      enterkeyhint="send"
+      aria-label="Escribí tu pregunta para Botardo"
+      placeholder="Escribí tu pregunta…"
+      autocomplete="off"
+    />
+    <button class="botardo-send" type="submit" aria-label="Enviar mensaje">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor" />
+      </svg>
+    </button>
+  </form>
+</section>
+
+<script>
+  const WORKER_URL = "https://ramirocerda-chat.rami992009.workers.dev";
+
+  const modal = document.getElementById("botardoDialog");
+  const islandButton = document.querySelector("[data-botardo-island]");
+  const closeButton = modal?.querySelector(".botardo-close");
+  const messages = modal?.querySelector(".botardo-messages");
+  const typingIndicator = modal?.querySelector(".botardo-typing");
+  const input = modal?.querySelector(".botardo-input");
+  const form = modal?.querySelector(".botardo-inputbar");
+  const openTriggers = Array.from(document.querySelectorAll("[data-open-botardo]"));
+
+  if (!modal || !islandButton || !closeButton || !messages || !typingIndicator || !input || !form) {
+    throw new Error("Botardo widget could not initialize.");
+  }
+
+  const focusableSelector = [
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "a[href]",
+    "[tabindex]:not([tabindex='-1'])",
+  ].join(",");
+
+  let isOpen = false;
+  let lastFailedMessage = "";
+  let savedScrollY = 0;
+  let scrollLocked = false;
+  let lastFocusedElement = null;
+
+  const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
+  const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function setExpandedState(expanded) {
+    islandButton.setAttribute("aria-expanded", String(expanded));
+    for (const trigger of openTriggers) {
+      trigger.setAttribute("aria-expanded", String(expanded));
+    }
+  }
+
+  function lockBodyScroll() {
+    if (scrollLocked) return;
+    savedScrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${savedScrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    scrollLocked = true;
+  }
+
+  function unlockBodyScroll() {
+    if (!scrollLocked) return;
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    window.scrollTo(0, savedScrollY);
+    scrollLocked = false;
+  }
+
+  function getFocusableElements() {
+    return Array.from(modal.querySelectorAll(focusableSelector)).filter((el) => {
+      return el instanceof HTMLElement && !el.hasAttribute("disabled") && el.offsetParent !== null;
+    });
+  }
+
+  function scrollMessagesToBottom(behavior = "auto") {
+    messages.scrollTo({ top: messages.scrollHeight, behavior });
+  }
+
+  function updateModalState(open) {
+    isOpen = open;
+    modal.classList.toggle("is-open", open);
+    modal.setAttribute("aria-hidden", String(!open));
+    modal.toggleAttribute("inert", !open);
+    setExpandedState(open);
+
+    if (open) {
+      if (isMobile()) {
+        lockBodyScroll();
+      }
+      requestAnimationFrame(() => {
+        if (isMobile()) {
+          closeButton.focus({ preventScroll: true });
+        } else {
+          input.focus({ preventScroll: true });
+        }
+      });
+      scrollMessagesToBottom("auto");
+      return;
+    }
+
+    unlockBodyScroll();
+    if (lastFocusedElement instanceof HTMLElement) {
+      lastFocusedElement.focus({ preventScroll: true });
+    }
+  }
+
+  function openBotardo(source = null) {
+    lastFocusedElement = source instanceof HTMLElement ? source : document.activeElement;
+    if (isOpen) {
+      updateModalState(true);
+      return;
+    }
+    updateModalState(true);
+  }
+
+  function closeBotardo() {
+    if (!isOpen) return;
+    updateModalState(false);
+  }
+
+  function renderMarkdown(text) {
+    let html = String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(/__(.+?)__/g, "<strong>$1</strong>");
+    html = html.replace(/(?<!\w)\*(.+?)\*(?!\w)/g, "<em>$1</em>");
+    html = html.replace(/`(.+?)`/g, "<code>$1</code>");
+    html = html.replace(
+      /(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
+    );
+
+    return html
+      .split(/\n\n+/)
+      .map((chunk) => {
+        const block = chunk.trim();
+        if (!block) return "";
+        if (block.match(/^[-*]\s/m)) {
+          const items = block.split(/\n/).map((line) => {
+            const trimmed = line.replace(/^[-*]\s/, "");
+            return `<li>${trimmed}</li>`;
+          });
+          return `<ul>${items.join("")}</ul>`;
+        }
+        return `<p>${block.replace(/\n/g, "<br>")}</p>`;
+      })
+      .join("");
+  }
+
+  function appendMessage(text, role) {
+    const message = document.createElement("div");
+    message.className = `botardo-message botardo-${role}`;
+    if (role === "assistant") {
+      message.innerHTML = renderMarkdown(text);
+    } else {
+      message.textContent = text;
+    }
+    messages.insertBefore(message, typingIndicator);
+    scrollMessagesToBottom(prefersReducedMotion() ? "auto" : "smooth");
+  }
+
+  function showError(text) {
+    const existingError = messages.querySelector(".botardo-error");
+    if (existingError) existingError.remove();
+
+    const error = document.createElement("div");
+    error.className = "botardo-message botardo-error";
+    error.setAttribute("role", "alert");
+    error.textContent = text;
+
+    error.appendChild(document.createElement("br"));
+
+    const retryButton = document.createElement("button");
+    retryButton.className = "botardo-retry";
+    retryButton.type = "button";
+    retryButton.textContent = "Reintentar";
+    retryButton.addEventListener("click", retryMessage);
+
+    error.appendChild(retryButton);
+    messages.insertBefore(error, typingIndicator);
+    scrollMessagesToBottom("smooth");
+  }
+
+  async function sendMessage(messageOverride = "") {
+    const text = (messageOverride || input.value).trim();
+    if (!text) {
+      input.classList.add("is-error");
+      window.setTimeout(() => input.classList.remove("is-error"), 500);
+      return;
+    }
+
+    input.disabled = true;
+
+    const sendButton = form.querySelector(".botardo-send");
+    if (sendButton instanceof HTMLButtonElement) {
+      sendButton.disabled = true;
+    }
+
+    appendMessage(text, "user");
+    input.value = "";
+    typingIndicator.hidden = false;
+    scrollMessagesToBottom("auto");
+
+    try {
+      const response = await fetch(`${WORKER_URL}/ask`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: text }),
+      });
+
+      typingIndicator.hidden = true;
+
+      if (!response.ok) {
+        let errorMessage = "Error del servidor";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = (await response.text()) || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      appendMessage(data.reply, "assistant");
+      lastFailedMessage = "";
+    } catch (error) {
+      typingIndicator.hidden = true;
+      lastFailedMessage = text;
+      showError(error instanceof Error ? error.message : "Error de conexión. Intentá de nuevo.");
+    } finally {
+      input.disabled = false;
+      if (sendButton instanceof HTMLButtonElement) {
+        sendButton.disabled = false;
+      }
+      if (!isMobile()) {
+        input.focus({ preventScroll: true });
+      }
+    }
+  }
+
+  function retryMessage() {
+    const existingError = messages.querySelector(".botardo-error");
+    if (existingError) existingError.remove();
+    if (lastFailedMessage) {
+      input.value = lastFailedMessage;
+      sendMessage(lastFailedMessage);
+    }
+  }
+
+  function onOpenTriggerClick(event) {
+    event.preventDefault();
+    openBotardo(event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+  }
+
+  for (const trigger of openTriggers) {
+    trigger.addEventListener("click", onOpenTriggerClick);
+  }
+
+  islandButton.addEventListener("click", () => {
+    if (isOpen) {
+      closeBotardo();
+      return;
+    }
+    openBotardo(islandButton);
+  });
+
+  closeButton.addEventListener("click", closeBotardo);
+
+  document.addEventListener("keydown", (event) => {
+    if (!isOpen) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeBotardo();
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+
+    const focusableElements = getFocusableElements();
+    if (!focusableElements.length) return;
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+      return;
+    }
+
+    if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  });
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    sendMessage();
+  });
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+
+  modal.addEventListener("transitionend", () => {
+    if (!isOpen) {
+      typingIndicator.hidden = true;
+    }
+  });
+</script>
+
+<style>
+  :global(.sr-only) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .botardo-island {
+    position: fixed;
+    right: calc(20px + env(safe-area-inset-right));
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--bg);
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: none;
+    transition:
+      transform 160ms ease,
+      background-color 160ms ease,
+      color 160ms ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .botardo-island:hover {
+    transform: translateY(-1px);
+  }
+
+  .botardo-island:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .botardo-island svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .botardo-modal {
+    position: fixed;
+    right: calc(20px + env(safe-area-inset-right));
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    width: min(400px, calc(100vw - 40px));
+    height: min(560px, calc(100vh - 112px));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transform: translateY(10px) scale(0.985);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease,
+      visibility 0s linear 160ms;
+    box-shadow: 0 18px 42px rgba(17, 17, 17, 0.16);
+  }
+
+  .botardo-modal.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease,
+      visibility 0s;
+  }
+
+  .botardo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 0.95rem;
+    border-bottom: 1.5px solid var(--border);
+    background: var(--bg);
+  }
+
+  .botardo-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+  }
+
+  .botardo-mark {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .botardo-title {
+    font-size: 0.92rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .botardo-close {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(17, 17, 17, 0.25);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .botardo-close:hover {
+    border-color: var(--border);
+  }
+
+  .botardo-messages {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.95rem;
+  }
+
+  .botardo-message {
+    max-width: 94%;
+    padding: 0.8rem 0.85rem;
+    font-size: 0.98rem;
+    line-height: 1.5;
+    border: 1px solid rgba(17, 17, 17, 0.14);
+    border-radius: var(--radius);
+    background: #fffefb;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .botardo-message p {
+    margin: 0;
+  }
+
+  .botardo-message ul {
+    margin: 0.55rem 0 0 1.2rem;
+    padding: 0;
+  }
+
+  .botardo-message li + li {
+    margin-top: 0.35rem;
+  }
+
+  .botardo-message strong {
+    font-weight: 700;
+  }
+
+  .botardo-message em {
+    font-style: italic;
+  }
+
+  .botardo-message a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+  }
+
+  .botardo-message code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    padding: 0.08rem 0.25rem;
+    border: 1px solid rgba(17, 17, 17, 0.18);
+    border-radius: 2px;
+    background: rgba(17, 17, 17, 0.05);
+  }
+
+  .botardo-assistant {
+    align-self: flex-start;
+  }
+
+  .botardo-user {
+    align-self: flex-end;
+    margin-left: auto;
+    border-left: 3px solid var(--accent);
+    background: #fff7f2;
+  }
+
+  .botardo-error {
+    align-self: flex-start;
+    border-left: 3px solid var(--text);
+    background: #fff4f0;
+  }
+
+  .botardo-retry {
+    margin-top: 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--text);
+    color: var(--bg);
+    padding: 0.45rem 0.7rem;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .botardo-typing {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: fit-content;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid rgba(17, 17, 17, 0.14);
+    border-radius: var(--radius);
+    background: #fffefb;
+  }
+
+  .botardo-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--text);
+    opacity: 0.36;
+    animation: botardoTyping 900ms infinite ease-in-out;
+  }
+
+  .botardo-dot:nth-child(2) {
+    animation-delay: 120ms;
+  }
+
+  .botardo-dot:nth-child(3) {
+    animation-delay: 240ms;
+  }
+
+  .botardo-inputbar {
+    display: flex;
+    gap: 0.55rem;
+    padding: 0.9rem;
+    border-top: 1.5px solid var(--border);
+    background: var(--bg);
+  }
+
+  .botardo-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.8rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+  }
+
+  .botardo-input.is-error {
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+
+  .botardo-input::placeholder {
+    color: rgba(17, 17, 17, 0.5);
+  }
+
+  .botardo-send {
+    width: 3rem;
+    height: 3rem;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--border);
+    color: var(--bg);
+    cursor: pointer;
+  }
+
+  .botardo-send svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .botardo-send:disabled,
+  .botardo-input:disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+  }
+
+  @keyframes botardoTyping {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.34;
+    }
+    40% {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .botardo-modal {
+      right: 16px;
+      left: 16px;
+      width: auto;
+      bottom: calc(82px + env(safe-area-inset-bottom));
+      height: min(68vh, 520px);
+    }
+
+    .botardo-island {
+      right: 16px;
+      bottom: 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .botardo-island,
+    .botardo-modal,
+    .botardo-dot {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>
