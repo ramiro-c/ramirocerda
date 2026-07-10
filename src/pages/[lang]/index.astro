@@ -43,11 +43,9 @@ const projects = (await getCollection("projects"))
   <section class="block">
     <p class="mono label">{t("home.workLabel")}</p>
     <ProjectList lang={lang} items={projects} />
-  </section>
-
-  <section class="block">
-    <p class="mono label">{t("home.notesLabel")}</p>
-    <p class="empty">{t("home.notesEmpty")}</p>
+    <p class="more">
+      <a class="more-link" href={getLocalizedPath(lang, "/work/")}>{t("home.workAll")} →</a>
+    </p>
   </section>
 
   <SiteFooter slot="footer" lang={lang} />
@@ -100,6 +98,20 @@ const projects = (await getCollection("projects"))
     font-size: 0.8rem;
     color: var(--muted-2);
     margin-bottom: 0.75rem;
+  }
+  .more {
+    margin: 1rem 0 0;
+  }
+  .more-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.1rem;
+  }
+  .more-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
   }
   .empty {
     color: var(--muted);

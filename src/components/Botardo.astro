@@ -1,10 +1,19 @@
 ---
+import type { Lang } from "../i18n/ui";
+import { useTranslations } from "../i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
 ---
 
 <button
   class="botardo-island"
   type="button"
-  aria-label="Abrir Botardo"
+  aria-label={t("botardo.open")}
   aria-controls="botardoDialog"
   aria-expanded="false"
   data-botardo-island
@@ -30,6 +39,7 @@
   aria-modal="true"
   aria-hidden="true"
   aria-labelledby="botardoTitle"
+  data-retry-label={t("botardo.retry")}
   inert
 >
   <header class="botardo-header">
@@ -37,15 +47,14 @@
       <span class="botardo-mark" aria-hidden="true">RC</span>
       <span id="botardoTitle" class="botardo-title mono">Botardo</span>
     </div>
-    <button class="botardo-close" type="button" aria-label="Cerrar chat">✕</button>
+    <button class="botardo-close" type="button" aria-label={t("botardo.close")}>✕</button>
   </header>
 
   <div class="botardo-messages" role="log" aria-live="polite" aria-relevant="additions">
     <div class="botardo-message botardo-assistant botardo-welcome">
-      ¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su
-      experiencia, proyectos, habilidades o cualquier tema profesional.
+      {t("botardo.welcome")}
     </div>
-    <div class="botardo-typing" hidden aria-label="Botardo está escribiendo…">
+    <div class="botardo-typing" hidden aria-label={t("botardo.typing")}>
       <span class="botardo-dot"></span>
       <span class="botardo-dot"></span>
       <span class="botardo-dot"></span>
@@ -53,18 +62,18 @@
   </div>
 
   <form class="botardo-inputbar" novalidate>
-    <label class="sr-only" for="botardoInput">Escribí tu pregunta para Botardo</label>
+    <label class="sr-only" for="botardoInput">{t("botardo.inputLabel")}</label>
     <input
       class="botardo-input"
       id="botardoInput"
       type="text"
       inputmode="text"
       enterkeyhint="send"
-      aria-label="Escribí tu pregunta para Botardo"
-      placeholder="Escribí tu pregunta…"
+      aria-label={t("botardo.inputLabel")}
+      placeholder={t("botardo.placeholder")}
       autocomplete="off"
     />
-    <button class="botardo-send" type="submit" aria-label="Enviar mensaje">
+    <button class="botardo-send" type="submit" aria-label={t("botardo.send")}>
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor" />
       </svg>
@@ -241,7 +250,7 @@
     const retryButton = document.createElement("button");
     retryButton.className = "botardo-retry";
     retryButton.type = "button";
-    retryButton.textContent = "Reintentar";
+    retryButton.textContent = modal.getAttribute("data-retry-label") || "Retry";
     retryButton.addEventListener("click", retryMessage);
 
     error.appendChild(retryButton);
@@ -620,6 +629,11 @@
     border: 1px solid rgba(17, 17, 17, 0.14);
     border-radius: var(--radius);
     background: #fffefb;
+  }
+
+  /* `display: flex` above beats the UA [hidden] rule without this. */
+  .botardo-typing[hidden] {
+    display: none !important;
   }
 
   .botardo-dot {

@@ -1,4 +1,5 @@
 ---
+import { getCollection } from "astro:content";
 import type { Lang } from "../i18n/ui";
 import { getLocalizedPath, useTranslations } from "../i18n/utils";
 import LanguageToggle from "./LanguageToggle.astro";
@@ -8,6 +9,7 @@ interface Props {
 }
 const { lang } = Astro.props;
 const t = useTranslations(lang);
+const showNotes = (await getCollection("notes")).some((note) => !note.data.draft);
 ---
 
 <header class="header site-shell">
@@ -15,7 +17,7 @@ const t = useTranslations(lang);
   <nav class="nav" aria-label="Primary">
     <a href={getLocalizedPath(lang, "/about/")}>{t("nav.about")}</a>
     <a href={getLocalizedPath(lang, "/work/")}>{t("nav.work")}</a>
-    <a href={getLocalizedPath(lang, "/notes/")}>{t("nav.notes")}</a>
+    {showNotes && <a href={getLocalizedPath(lang, "/notes/")}>{t("nav.notes")}</a>}
   </nav>
   <LanguageToggle lang={lang} />
 </header>
