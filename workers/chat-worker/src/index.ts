@@ -68,14 +68,16 @@ function corsHeaders(origin: string | null): HeadersInit {
 }
 
 function detectLanguage(message: string): "es" | "en" {
-  if (/[áéíóúñ¿¡]/i.test(message)) {
-    return "es";
-  }
+  const text = message.toLowerCase();
+  if (/[áéíóúñ¿¡]/i.test(text)) return "es";
 
-  if (/[a-z]/i.test(message)) {
-    return "en";
-  }
+  const esHints =
+    /\b(hola|qué|que|cuál|cual|cómo|como|quién|quien|dónde|donde|años|experiencia|proyectos|habilidades|sos|tenés|ramiro|sobre)\b/;
+  const enHints =
+    /\b(what|who|where|how|when|why|his|about|experience|projects|skills|tell|me|current|role)\b/;
 
+  if (esHints.test(text)) return "es";
+  if (enHints.test(text)) return "en";
   return "es";
 }
 
@@ -101,20 +103,6 @@ function buildMessages(message: string, history?: AskRequest["history"]): Messag
 
   messages.push({ role: "user", content: message });
   return messages;
-}
-
-async function translateReplyIfNeeded(reply: string, language: "es" | "en", env: Env): Promise<string> {
-  if (language !== "en") {
-    return reply;
-  }
-
-  const translated = await env.AI.run("@cf/meta/m2m100-1.2b", {
-    text: reply,
-    source_lang: "es",
-    target_lang: "en",
-  });
-
-  return translated.response.trim();
 }
 
 export default {
@@ -189,9 +177,9 @@ export default {
 
       log("chat.ai_done", { latency_ms: Date.now() - t0, reply_length: result.response.length });
 
-      const response: AskResponse = {
-        reply: await translateReplyIfNeeded(result.response.trim(), detectLanguage(body.message.trim()), env),
-      };
+        const response: AskResponse = {
+          reply: result.response.trim(),
+        };
 
       return new Response(JSON.stringify(response), {
         status: 200,
