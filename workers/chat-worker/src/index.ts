@@ -12,7 +12,10 @@ interface AskResponse {
   reply: string;
 }
 
-const ALLOWED_ORIGIN = "https://ramirocerda.vercel.app";
+const ALLOWED_ORIGINS = new Set([
+  "https://ramirocerda.vercel.app",
+  "http://localhost:4321",
+]);
 
 const SYSTEM_PROMPT = `Sos Botardo, el asistente virtual de la web personal de Ramiro Cerdá. Tu trabajo es responder preguntas sobre el perfil profesional de Ramiro de forma clara y con buena onda.
 
@@ -23,7 +26,10 @@ QUIÉN SOS (identidad):
   - Incorrecto: "Soy Tech Lead. He trabajado en LDP."
 
 REGLAS:
-1. Respondé SIEMPRE en español rioplatense (voseo), sin importar el idioma de la pregunta.
+1. Respondé en el mismo idioma del último mensaje del usuario (al menos español o inglés).
+   - Si escriben en español: español rioplatense (voseo), tono cercano.
+   - Si escriben en inglés: inglés claro y profesional, still referring to Ramiro in third person.
+   - No fuerces español si la pregunta está en inglés.
 2. Basate EXCLUSIVAMENTE en la knowledge base de abajo. No inventes datos.
 3. Respondé solo sobre el perfil profesional de Ramiro: experiencia, proyectos, habilidades, educación, certificaciones e idiomas. Si te preguntan algo personal, opiniones políticas/religiosas u otro tema no profesional, respondé: "Solo respondo sobre el perfil profesional de Ramiro. Preguntame por su experiencia, proyectos o skills."
 4. Solo si te piden una OPINIÓN o valoración sobre Ramiro ("¿es bueno?", "¿es crack?"), no opines como fan ni te quedes en una frase hecha: contá con onda 1 o 2 logros concretos de la KB y dejá que el lector saque sus conclusiones. Lo importante son los hechos, no la muletilla. Esta vuelta es exclusiva para opiniones — para datos respondé normal, y si no tenés la info decilo según la regla 5.
@@ -52,17 +58,38 @@ function log(event: string, data: Record<string, unknown> = {}): void {
   console.log(JSON.stringify({ ts: new Date().toISOString(), event, ...data }));
 }
 
-function corsHeaders(): HeadersInit {
+function corsHeaders(origin: string | null): HeadersInit {
+  const allowedOrigin = origin && ALLOWED_ORIGINS.has(origin) ? origin : "https://ramirocerda.vercel.app";
   return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
+function detectLanguage(message: string): "es" | "en" {
+  if (/[áéíóúñ¿¡]/i.test(message)) {
+    return "es";
+  }
+
+  if (/[a-z]/i.test(message)) {
+    return "en";
+  }
+
+  return "es";
+}
+
 function buildMessages(message: string, history?: AskRequest["history"]): Message[] {
+  const language = detectLanguage(message);
   const messages: Message[] = [
     { role: "system", content: SYSTEM_PROMPT },
+    {
+      role: "system",
+      content:
+        language === "es"
+          ? "El último mensaje del usuario está en español. Respondé en español rioplatense (voseo), tono cercano."
+          : "The last user message is in English. Respond in clear, professional English and keep referring to Ramiro in third person.",
+    },
   ];
 
   if (history && history.length > 0) {
@@ -76,13 +103,29 @@ function buildMessages(message: string, history?: AskRequest["history"]): Messag
   return messages;
 }
 
+async function translateReplyIfNeeded(reply: string, language: "es" | "en", env: Env): Promise<string> {
+  if (language !== "en") {
+    return reply;
+  }
+
+  const translated = await env.AI.run("@cf/meta/m2m100-1.2b", {
+    text: reply,
+    source_lang: "es",
+    target_lang: "en",
+  });
+
+  return translated.response.trim();
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const origin = request.headers.get("Origin");
+
     // Handle CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
-        headers: corsHeaders(),
+        headers: corsHeaders(origin),
       });
     }
 
@@ -92,20 +135,19 @@ export default {
       return new Response(JSON.stringify({ error: "Method not allowed", code: "INVALID_REQUEST" }), {
         status: 405,
         headers: {
-          ...corsHeaders(),
+          ...corsHeaders(origin),
           "Content-Type": "application/json",
         },
       });
     }
 
     // Validate origin
-    const origin = request.headers.get("Origin");
-    if (origin && origin !== ALLOWED_ORIGIN) {
+    if (origin && !ALLOWED_ORIGINS.has(origin)) {
       log("request.origin_blocked", { origin });
       return new Response(JSON.stringify({ error: "Origin not allowed", code: "INVALID_REQUEST" }), {
         status: 403,
         headers: {
-          ...corsHeaders(),
+          ...corsHeaders(origin),
           "Content-Type": "application/json",
         },
       });
@@ -122,7 +164,7 @@ export default {
           {
             status: 400,
             headers: {
-              ...corsHeaders(),
+              ...corsHeaders(origin),
               "Content-Type": "application/json",
             },
           },
@@ -148,13 +190,13 @@ export default {
       log("chat.ai_done", { latency_ms: Date.now() - t0, reply_length: result.response.length });
 
       const response: AskResponse = {
-        reply: result.response.trim(),
+        reply: await translateReplyIfNeeded(result.response.trim(), detectLanguage(body.message.trim()), env),
       };
 
       return new Response(JSON.stringify(response), {
         status: 200,
         headers: {
-          ...corsHeaders(),
+          ...corsHeaders(origin),
           "Content-Type": "application/json",
         },
       });
@@ -171,7 +213,7 @@ export default {
           {
             status: 429,
             headers: {
-              ...corsHeaders(),
+              ...corsHeaders(origin),
               "Content-Type": "application/json",
             },
           },
@@ -188,7 +230,7 @@ export default {
         {
           status: 500,
           headers: {
-            ...corsHeaders(),
+            ...corsHeaders(origin),
             "Content-Type": "application/json",
           },
         },
