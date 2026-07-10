@@ -21,9 +21,12 @@ This repository now contains the Astro portfolio site, not the old single-file C
 
 ## Scripts
 
-- `npm run dev` - start the Astro dev server
-- `npm run build` - build the static site into `dist/`
-- `npm run preview` - preview a production build locally
+Uses **pnpm** (see `packageManager` in `package.json`).
+
+- `pnpm install` - install dependencies
+- `pnpm dev` - start the Astro dev server
+- `pnpm build` - build the static site into `dist/`
+- `pnpm preview` - preview a production build locally
 
 ## Botardo
 
