@@ -1,0 +1,136 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import { languages, type Lang } from "../../i18n/ui";
+import { useTranslations } from "../../i18n/utils";
+
+export function getStaticPaths() {
+  return (Object.keys(languages) as Lang[]).map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+
+const copy = {
+  es: {
+    bio: "Tech Lead Full-Stack en LDP (Libro de Pases). Ingeniero en Sistemas de Información de UTN (2023), Buenos Aires. Me ocupo de módulos críticos, auditorías de arquitectura, performance y mentoring. Me interesa la arquitectura de software, el liderazgo técnico y usar IA como herramienta de ingeniería.",
+    rolesLabel: "Trayectoria",
+    roles: [
+      "LDP: RN Dev → React Dev → Tech Lead · 4 años",
+      "DevGAM",
+      "UTN FRLP / Secretaría de TIC",
+      "New Logic",
+    ],
+    educationLabel: "Educación",
+    education: "UTN — Ingeniería en Sistemas de Información (2023)",
+    linksLabel: "Links",
+  },
+  en: {
+    bio: "Tech Lead Full-Stack at LDP (Libro de Pases). Systems Engineering graduate from UTN (2023), based in Buenos Aires. I own critical modules, architecture audits, performance work, and mentoring. I care about software architecture, technical leadership, and using AI as an engineering tool.",
+    rolesLabel: "Trajectory",
+    roles: [
+      "LDP: RN Dev → React Dev → Tech Lead · 4 years",
+      "DevGAM",
+      "UTN FRLP / Secretaría de TIC",
+      "New Logic",
+    ],
+    educationLabel: "Education",
+    education: "UTN — Systems Engineering (2023)",
+    linksLabel: "Links",
+  },
+} as const;
+
+const about = copy[lang];
+---
+
+<BaseLayout lang={lang} title={t("about.title")} description={about.bio}>
+  <SiteHeader slot="header" lang={lang} />
+
+  <section class="about">
+    <p class="mono label">{t("about.title")}</p>
+    <h1 class="display">{t("about.title")}</h1>
+    <p class="bio">{about.bio}</p>
+
+    <div class="grid">
+      <section class="section">
+        <p class="mono section-label">{about.rolesLabel}</p>
+        <ul class="bullets">
+          {about.roles.map((role) => <li>{role}</li>)}
+        </ul>
+      </section>
+
+      <section class="section">
+        <p class="mono section-label">{about.educationLabel}</p>
+        <p class="line">{about.education}</p>
+      </section>
+
+      <section class="section">
+        <p class="mono section-label">{about.linksLabel}</p>
+        <ul class="links">
+          <li><a href="https://www.linkedin.com/in/ramiro-cerdá-619983177/" rel="noreferrer" target="_blank">LinkedIn</a></li>
+          <li><a href="https://github.com/ramiro-c" rel="noreferrer" target="_blank">GitHub</a></li>
+          <li><a href="mailto:rami992009@gmail.com">rami992009@gmail.com</a></li>
+        </ul>
+      </section>
+    </div>
+  </section>
+
+  <SiteFooter slot="footer" lang={lang} />
+</BaseLayout>
+
+<style>
+  .about {
+    padding: 1rem 0 2rem;
+  }
+  .label {
+    margin: 0 0 0.5rem;
+    color: var(--muted-2);
+    font-size: 0.8rem;
+  }
+  .display {
+    margin: 0 0 1rem;
+    font-size: clamp(2.2rem, 7vw, 3.6rem);
+    line-height: 0.95;
+  }
+  .bio {
+    max-width: 44rem;
+    margin: 0 0 2rem;
+    color: var(--muted);
+    font-size: 1.02rem;
+  }
+  .grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .section {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .section-label {
+    margin: 0 0 0.75rem;
+    font-size: 0.8rem;
+    color: var(--muted-2);
+  }
+  .bullets,
+  .links {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.45rem;
+  }
+  .line {
+    margin: 0;
+    color: var(--text);
+  }
+  .links a {
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+  @media (min-width: 760px) {
+    .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 2rem;
+    }
+  }
+</style>
