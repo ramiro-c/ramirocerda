@@ -1,0 +1,96 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import SiteHeader from "../../../components/SiteHeader.astro";
+import SiteFooter from "../../../components/SiteFooter.astro";
+import { languages, type Lang } from "../../../i18n/ui";
+import { getLocalizedPath, useTranslations } from "../../../i18n/utils";
+
+export function getStaticPaths() {
+  return (Object.keys(languages) as Lang[]).map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const notes = (await getCollection("notes"))
+  .filter((note) => note.data.lang === lang && !note.data.draft)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+---
+
+<BaseLayout lang={lang} title={t("notes.title")} description={t("notes.title")}>
+  <SiteHeader slot="header" lang={lang} />
+
+  <section class="notes">
+    <p class="mono label">02 / {t("notes.title").toUpperCase()}</p>
+    <h1 class="display heading">{t("notes.title")}</h1>
+
+    {notes.length === 0 ? (
+      <p class="empty">{t("notes.empty")}</p>
+    ) : (
+      <ul class="list">
+        {notes.map((note) => (
+          <li>
+            <a href={getLocalizedPath(lang, `/notes/${note.slug}/`)}>
+              <span class="title">{note.data.title}</span>
+              <span class="summary">{note.data.description}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+
+  <SiteFooter slot="footer" lang={lang} />
+</BaseLayout>
+
+<style>
+  .notes {
+    padding: 1rem 0 2rem;
+  }
+  .label {
+    margin: 0 0 0.75rem;
+    color: var(--muted-2);
+    font-size: 0.8rem;
+  }
+  .heading {
+    margin: 0 0 1.5rem;
+    font-size: clamp(2.2rem, 7vw, 3.6rem);
+    line-height: 0.95;
+  }
+  .empty {
+    color: var(--muted);
+  }
+  .list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.85rem;
+  }
+  .list li a {
+    display: grid;
+    gap: 0.25rem;
+    text-decoration: none;
+    border-left: 3px solid var(--accent);
+    padding: 0.55rem 0 0.55rem 0.85rem;
+    transition: transform 0.2s ease;
+  }
+  .list li a:hover {
+    transform: translateX(4px);
+  }
+  .title {
+    font-weight: 700;
+  }
+  .summary {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .list li a {
+      transition: none;
+    }
+    .list li a:hover {
+      transform: none;
+    }
+  }
+</style>
