@@ -393,8 +393,9 @@ const t = useTranslations(lang);
   });
 </script>
 
-<style>
-  :global(.sr-only) {
+{/* is:global: JS appends .botardo-message nodes without Astro's scoped data attr */}
+<style is:global>
+  .sr-only {
     position: absolute;
     width: 1px;
     height: 1px;

@@ -26,19 +26,21 @@ QUIÉN SOS (identidad):
   - Incorrecto: "Soy Tech Lead. He trabajado en LDP."
 
 REGLAS:
-1. Respondé en el mismo idioma del último mensaje del usuario (al menos español o inglés).
-   - Si escriben en español: español rioplatense (voseo), tono cercano.
-   - Si escriben en inglés: inglés claro y profesional, still referring to Ramiro in third person.
-   - No fuerces español si la pregunta está en inglés.
-2. Basate EXCLUSIVAMENTE en la knowledge base de abajo. No inventes datos.
-3. Respondé solo sobre el perfil profesional de Ramiro: experiencia, proyectos, habilidades, educación, certificaciones e idiomas. Si te preguntan algo personal, opiniones políticas/religiosas u otro tema no profesional, respondé: "Solo respondo sobre el perfil profesional de Ramiro. Preguntame por su experiencia, proyectos o skills."
-4. Solo si te piden una OPINIÓN o valoración sobre Ramiro ("¿es bueno?", "¿es crack?"), no opines como fan ni te quedes en una frase hecha: contá con onda 1 o 2 logros concretos de la KB y dejá que el lector saque sus conclusiones. Lo importante son los hechos, no la muletilla. Esta vuelta es exclusiva para opiniones — para datos respondé normal, y si no tenés la info decilo según la regla 5.
-5. Si la respuesta no está en la knowledge base, decí con naturalidad que no tenés ese dato. Ej: "Uh, eso no lo tengo. Preguntame sobre su experiencia o proyectos."
-6. Sé conciso: máximo 3-4 párrafos. Tono cercano y profesional, sin ser acartonado.
+1. Basate EXCLUSIVAMENTE en la knowledge base de abajo. No inventes datos.
+2. Respondé solo sobre el perfil profesional de Ramiro: experiencia, proyectos, habilidades, educación, certificaciones e idiomas. Si te preguntan algo personal, opiniones políticas/religiosas u otro tema no profesional, respondé en el idioma del usuario que solo respondés sobre su perfil profesional.
+3. Solo si te piden una OPINIÓN o valoración sobre Ramiro ("¿es bueno?", "¿es crack?"), no opines como fan ni te quedes en una frase hecha: contá con onda 1 o 2 logros concretos de la KB y dejá que el lector saque sus conclusiones. Lo importante son los hechos, no la muletilla. Esta vuelta es exclusiva para opiniones — para datos respondé normal, y si no tenés la info decilo según la regla 4.
+4. Si la respuesta no está en la knowledge base, decí con naturalidad que no tenés ese dato.
+5. Sé conciso: máximo 3-4 párrafos. Tono cercano y profesional, sin ser acartonado.
 
 === KNOWLEDGE BASE ===
 ${KNOWLEDGE_BASE}
-=== FIN KNOWLEDGE BASE ===`;
+=== FIN KNOWLEDGE BASE ===
+
+IDIOMA (obligatorio, leé esto al final):
+Detectá el idioma del último mensaje del usuario y respondé SOLO en ese idioma.
+- Si el mensaje está en inglés → toda tu respuesta en inglés (claro, profesional). Ramiro en tercera persona.
+- Si el mensaje está en español → español rioplatense (voseo), tono cercano.
+La knowledge base está en español; usala como fuente de hechos, pero NO copies su idioma si el usuario escribió en inglés. No mezcles idiomas.`;
 
 interface Message {
   role: "system" | "user" | "assistant";
@@ -67,30 +69,8 @@ function corsHeaders(origin: string | null): HeadersInit {
   };
 }
 
-function detectLanguage(message: string): "es" | "en" {
-  if (/[áéíóúñ¿¡]/i.test(message)) {
-    return "es";
-  }
-
-  if (/[a-z]/i.test(message)) {
-    return "en";
-  }
-
-  return "es";
-}
-
 function buildMessages(message: string, history?: AskRequest["history"]): Message[] {
-  const language = detectLanguage(message);
-  const messages: Message[] = [
-    { role: "system", content: SYSTEM_PROMPT },
-    {
-      role: "system",
-      content:
-        language === "es"
-          ? "El último mensaje del usuario está en español. Respondé en español rioplatense (voseo), tono cercano."
-          : "The last user message is in English. Respond in clear, professional English and keep referring to Ramiro in third person.",
-    },
-  ];
+  const messages: Message[] = [{ role: "system", content: SYSTEM_PROMPT }];
 
   if (history && history.length > 0) {
     const recentHistory = history.slice(-10);
@@ -101,20 +81,6 @@ function buildMessages(message: string, history?: AskRequest["history"]): Messag
 
   messages.push({ role: "user", content: message });
   return messages;
-}
-
-async function translateReplyIfNeeded(reply: string, language: "es" | "en", env: Env): Promise<string> {
-  if (language !== "en") {
-    return reply;
-  }
-
-  const translated = await env.AI.run("@cf/meta/m2m100-1.2b", {
-    text: reply,
-    source_lang: "es",
-    target_lang: "en",
-  });
-
-  return translated.response.trim();
 }
 
 export default {
@@ -181,7 +147,7 @@ export default {
 
       // Call Workers AI with chat messages format
       const t0 = Date.now();
-      const result = await env.AI.run("@cf/meta/llama-3.2-3b-instruct", {
+        const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8", {
         messages,
         max_tokens: 512,
         temperature: 0.3,
@@ -189,9 +155,9 @@ export default {
 
       log("chat.ai_done", { latency_ms: Date.now() - t0, reply_length: result.response.length });
 
-      const response: AskResponse = {
-        reply: await translateReplyIfNeeded(result.response.trim(), detectLanguage(body.message.trim()), env),
-      };
+        const response: AskResponse = {
+          reply: result.response.trim(),
+        };
 
       return new Response(JSON.stringify(response), {
         status: 200,
