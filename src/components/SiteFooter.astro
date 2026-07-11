@@ -12,6 +12,12 @@ const year = new Date().getFullYear();
 
 <footer class="footer site-shell">
   <p>{t("footer.line")} · <span>{year}</span></p>
+  <p class="footer-referral">
+    {t("footer.builtWith")}
+    <a href="https://opencode.ai/go?ref=TW9S4SF2FB" rel="noreferrer" target="_blank"
+      >OpenCode</a
+    > · {t("footer.referralNote")}
+  </p>
 </footer>
 
 <style>
@@ -21,5 +27,15 @@ const year = new Date().getFullYear();
     border-top: 1px solid var(--border);
     color: var(--muted-2);
     font-size: 0.9rem;
+  }
+
+  .footer-referral {
+    margin-top: 0.35rem;
+    font-size: 0.85rem;
+  }
+
+  .footer-referral a {
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
   }
 </style>

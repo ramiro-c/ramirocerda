@@ -43,6 +43,8 @@ export const ui = {
     "notes.empty":
       "Todavía no hay notas. Vuelvo cuando tenga algo que valga la pena publicar.",
     "footer.line": "Diseñado y construido por Ramiro Cerdá · Buenos Aires",
+    "footer.builtWith": "Hecho con",
+    "footer.referralNote": "link de referido",
     "project.problem": "Problema",
     "project.what": "Qué hice",
     "project.stack": "Stack",
@@ -83,6 +85,8 @@ export const ui = {
     "notes.empty":
       "No notes yet. Back when there’s something worth publishing.",
     "footer.line": "Designed and built by Ramiro Cerdá · Buenos Aires",
+    "footer.builtWith": "Built with",
+    "footer.referralNote": "referral link",
     "project.problem": "Problem",
     "project.what": "What I did",
     "project.stack": "Stack",
