@@ -1,11 +1,14 @@
 ---
 import type { Lang } from "../i18n/ui";
-import { getLocalizedPath } from "../i18n/utils";
+import { getLocalizedPath, useTranslations } from "../i18n/utils";
 
 interface Item {
   slug: string;
   title: string;
   summary: string;
+  kind: string;
+  status?: string;
+  year?: string;
   tags?: string[];
 }
 
@@ -14,6 +17,7 @@ interface Props {
   items: Item[];
 }
 const { lang, items } = Astro.props;
+const t = useTranslations(lang);
 ---
 
 <ul class="list">
@@ -21,8 +25,22 @@ const { lang, items } = Astro.props;
     items.map((item) => (
       <li>
         <a href={getLocalizedPath(lang, `/work/${item.slug}/`)}>
+          <span class="meta mono">
+            <span class="kind">{t(`kind.${item.kind}`)}</span>
+            {item.status && <span class="dot" aria-hidden="true">·</span>}
+            {item.status && <span class="status">{t(`status.${item.status}`)}</span>}
+            {item.year && <span class="dot" aria-hidden="true">·</span>}
+            {item.year && <span class="year">{item.year}</span>}
+          </span>
           <span class="title">{item.title}</span>
           <span class="summary">{item.summary}</span>
+          {item.tags && item.tags.length > 0 && (
+            <span class="tags">
+              {item.tags.map((tag) => (
+                <span class="tag mono">{tag}</span>
+              ))}
+            </span>
+          )}
         </a>
       </li>
     ))
@@ -39,23 +57,53 @@ const { lang, items } = Astro.props;
   }
   .list li a {
     display: grid;
-    gap: 0.25rem;
+    gap: 0.3rem;
     text-decoration: none;
     border-left: 3px solid var(--accent);
-    padding: 0.55rem 0 0.55rem 0.85rem;
+    padding: 0.6rem 0 0.6rem 0.85rem;
     transition: transform 0.2s ease;
   }
   .list li a:hover {
     transform: translateX(4px);
   }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+  .status {
+    color: var(--accent);
+  }
+  .dot {
+    color: var(--muted-2);
+  }
   .title {
     font-weight: 700;
+    font-size: 1.05rem;
   }
   .summary {
     color: var(--muted);
     font-size: 0.95rem;
     max-width: 42rem;
     line-height: 1.45;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.15rem;
+  }
+  .tag {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
   }
   @media (prefers-reduced-motion: reduce) {
     .list li a {

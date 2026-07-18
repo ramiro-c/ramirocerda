@@ -34,7 +34,20 @@ const links = [
   <article class="case-study">
     <p class="mono label">PROJECT / {project.data.slug}</p>
     <h1 class="display heading">{data.title}</h1>
+
+    <p class="mono meta">
+      <span class="kind">{t(`kind.${project.data.kind}`)}</span>
+      {project.data.status && <span class="dot" aria-hidden="true">·</span>}
+      {project.data.status && <span class="status">{t(`status.${project.data.status}`)}</span>}
+      {project.data.year && <span class="dot" aria-hidden="true">·</span>}
+      {project.data.year && <span class="year">{project.data.year}</span>}
+    </p>
+
     <p class="summary">{data.summary}</p>
+
+    {project.data.image && (
+      <img class="cover" src={project.data.image} alt={data.title} loading="lazy" />
+    )}
 
     <section class="section">
       <p class="mono section-label">{t("project.problem")}</p>
@@ -46,9 +59,24 @@ const links = [
       <p class="body">{data.what}</p>
     </section>
 
+    {data.highlights.length > 0 && (
+      <section class="section">
+        <p class="mono section-label">{t("project.highlights")}</p>
+        <ul class="highlights">
+          {data.highlights.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+      </section>
+    )}
+
     <section class="section">
       <p class="mono section-label">{t("project.stack")}</p>
-      <p class="mono stack">{data.stack.join(", ")}</p>
+      <ul class="stack">
+        {data.stack.map((item) => (
+          <li class="mono">{item}</li>
+        ))}
+      </ul>
     </section>
 
     <section class="section">
@@ -83,9 +111,23 @@ const links = [
     font-size: 0.8rem;
   }
   .heading {
-    margin: 0 0 1rem;
+    margin: 0 0 0.75rem;
     font-size: clamp(2.2rem, 7vw, 3.8rem);
     line-height: 0.95;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 1.5rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+  .meta .status {
+    color: var(--accent);
   }
   .summary {
     max-width: 44rem;
@@ -93,6 +135,14 @@ const links = [
     padding-left: 0.9rem;
     border-left: 3px solid var(--accent);
     color: var(--muted);
+  }
+  .cover {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0 0 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
   }
   .section {
     padding: 1rem 0 0;
@@ -106,10 +156,30 @@ const links = [
   .muted {
     color: var(--muted-2);
   }
-  .stack {
+  .highlights {
     margin: 0;
+    max-width: 44rem;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .highlights li {
+    line-height: 1.5;
+  }
+  .stack {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .stack li {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     color: var(--text);
-    overflow-wrap: anywhere;
   }
   .links {
     margin: 0;
