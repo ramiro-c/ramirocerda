@@ -20,6 +20,10 @@ const projects = (await getCollection("projects"))
     slug: p.data.slug,
     title: p.data[lang].title,
     summary: p.data[lang].summary,
+    kind: p.data.kind,
+    status: p.data.status,
+    year: p.data.year,
+    tags: p.data.tags,
   }));
 ---
 

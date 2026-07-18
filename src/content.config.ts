@@ -6,6 +6,7 @@ const localized = z.object({
   summary: z.string(),
   problem: z.string(),
   what: z.string(),
+  highlights: z.array(z.string()).default([]),
   stack: z.array(z.string()),
 });
 
@@ -13,10 +14,14 @@ const projects = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/projects" }),
   schema: z.object({
     slug: z.string(),
-    kind: z.string(),
+    kind: z.enum(["personal", "freelance", "oss-fork"]),
+    status: z.enum(["live", "active", "wip", "pilot", "archived"]).optional(),
+    year: z.string().optional(),
     featured: z.boolean().default(false),
     order: z.number(),
     tags: z.array(z.string()).default([]),
+    // Optional cover image served from /public, e.g. "/projects/mundial-2026.webp".
+    image: z.string().optional(),
     repo: z.string().url().optional(),
     demo: z.string().url().optional(),
     es: localized,
