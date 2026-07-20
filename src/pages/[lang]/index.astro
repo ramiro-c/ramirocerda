@@ -39,8 +39,9 @@ const projects = (await getCollection("projects"))
     <h1 class="display">{t("home.thesis")}</h1>
     <p class="support">{t("home.support")}</p>
     <div class="ctas">
+      <a class="btn solid" href="mailto:rami992009@gmail.com">{t("cta.email")}</a>
       <a class="btn" href={getLocalizedPath(lang, "/work/")}>{t("cta.work")}</a>
-      <button class="btn solid" type="button" data-open-botardo>{t("cta.botardo")}</button>
+      <button class="btn" type="button" data-open-botardo>{t("cta.botardo")}</button>
     </div>
   </section>
 

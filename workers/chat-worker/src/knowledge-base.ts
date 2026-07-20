@@ -3,15 +3,16 @@ export const KNOWLEDGE_BASE = `
 
 ## Overview
 - **Nombre**: Ramiro Cerdá
-- **Rol**: Full Stack Tech Lead (Hands-on)
+- **Rol / positioning**: Senior Full-Stack Engineer. En LDP (Libro de Pases) trabaja como Tech Lead hands-on (título actual del empleo; el positioning público prioriza Senior Full-Stack).
 - **Ubicación**: La Plata, Buenos Aires, Argentina
 - **Años de experiencia**: 6+ años (carrera profesional iniciada en 2020)
-- **Especialidades**: Node.js, NestJS, Python, FastAPI, React (19), React Native, TypeScript, Arquitectura de software, Workflows de IA, Inferencia en el edge y automatizaciones.
+- **Especialidades**: Node.js, NestJS, Python, FastAPI, React (19), React Native, TypeScript, Arquitectura de software, performance, observabilidad, agentes de IA (Google ADK, LangGraph), inferencia en el edge y automatizaciones.
 - **Idiomas**: Español (Nativo), Inglés (Intermedio/Avanzado)
-- **Email**: rami992009@gmail.com
+- **Email**: rami992009@gmail.com (canal preferido para charlar de roles Senior Full-Stack / Applied AI)
 - **LinkedIn**: https://www.linkedin.com/in/ramiro-cerd%C3%A1-619983177/
 - **GitHub**: https://github.com/ramiro-c
 - **Web personal**: https://ramirocerda.vercel.app
+- **Contacto profesional**: si preguntan cómo contactarlo o por oportunidades, indicá el email. No digas que "está buscando laburo" ni que "manda CVs"; podés decir que está abierto a charlar de roles Senior Full-Stack / Applied AI con ownership real.
 
 ## Experiencia Profesional
 
@@ -21,6 +22,7 @@ export const KNOWLEDGE_BASE = `
 Desarrollo end-to-end de funcionalidades core de la plataforma SaaS de scouting y mercado de jugadores profesionales de fútbol.
 * **Refactor de arquitectura backend:** lideré la migración de ~400 endpoints en clases monolíticas (hasta 15k líneas) hacia una arquitectura desacoplada con Patrón Repositorio e inyección de dependencias, reduciendo drásticamente la deuda técnica.
 * **Performance a escala:** eliminé cuellos de botella críticos (N+1, operaciones síncronas bloqueantes) con vistas materializadas, paralelización y singletons, logrando 75–90% de mejora en tiempos de respuesta en múltiples endpoints.
+* **Perf quick wins (jul-2026):** a partir de New Relic (prod), 6 familias de endpoints concentraban el 92,5% del tiempo total de la API; el costo dominante era BigQuery sin caché. Implementé caché en 3 capas (Cloudflare edge + in-process TTL/singleflight + pool DB), paralelisé llamadas BQ, eliminé N+1 y corregí un desajuste FE/BE que generaba ~9,25% de error rate en guests/users.
 * **Observabilidad y seguridad:** centralicé el monitoreo con Sentry, New Relic y logs estructurados (Pino); implementé sanitización de datos en middlewares y validación automatizada de identidad de usuarios.
 * **QA Automation y CI/CD:** definí la estrategia global de testing (unit + API + smoke + E2E) en pipelines con reportes a Slack, liderando la adopción de QA Automation en el equipo.
 * **IA y desarrollo core:** desarrollo end-to-end de flujos críticos; diseñé e implementé el front-end completo de un asistente conversacional con IA.
