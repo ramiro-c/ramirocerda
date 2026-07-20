@@ -1,36 +1,33 @@
 # Ramiro Cerda portfolio
 
-This repository now contains the Astro portfolio site, not the old single-file CV monolith.
+Astro portfolio site with localized Spanish/English routes.
 
 ## Overview
 
-- Astro static site generator with localized routes for Spanish and English.
-- Main public routes live under `/es` and `/en`.
-- Content is driven by Astro content collections for projects and notes.
+- Astro static site; main public routes under `/es` and `/en`.
+- Content via Astro collections for projects and notes.
 - Botardo is the floating AI helper, powered by a Cloudflare Worker in `workers/chat-worker`.
-- The design direction is documented in `docs/superpowers/specs/2026-07-10-portfolio-redesign-design.md`.
 
 ## Structure
 
-- `src/pages/[lang]/` - localized pages for the portfolio
-- `src/components/Botardo.astro` - Botardo widget and client behavior
-- `src/content/projects` - project entries used on the site
-- `src/content/notes` - notes collection, ready for future posts
-- `workers/chat-worker` - Botardo Worker backend
-- `archive/index.html` - archived legacy CV homepage
+- `src/pages/[lang]/` — localized pages
+- `src/components/Botardo.astro` — Botardo widget
+- `src/content/projects` — project entries
+- `src/content/notes` — notes collection
+- `workers/chat-worker` — Botardo Worker backend
 
 ## Scripts
 
 Uses **pnpm** (see `packageManager` in `package.json`).
 
-- `pnpm install` - install dependencies
-- `pnpm dev` - start the Astro dev server
-- `pnpm build` - build the static site into `dist/`
-- `pnpm preview` - preview a production build locally
+- `pnpm install` — install dependencies
+- `pnpm dev` — Astro dev server
+- `pnpm build` — build into `dist/`
+- `pnpm preview` — preview production build
 
 ## Botardo
 
-Botardo is the conversational layer for deeper professional questions. The UI lives in the Astro site, while the answer API stays in the Cloudflare Worker. Keep the Worker knowledge base in sync with the portfolio content when making larger copy changes.
+UI in the Astro site; answer API in the Cloudflare Worker. Keep the Worker knowledge base in sync with portfolio content when making larger copy changes.
 
 ## Contact
 
