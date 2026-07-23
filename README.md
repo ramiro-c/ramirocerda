@@ -32,5 +32,5 @@ UI in the Astro site; answer API in the Cloudflare Worker. Keep the Worker knowl
 ## Contact
 
 - GitHub: [@ramiro-c](https://github.com/ramiro-c)
-- LinkedIn: [linkedin.com/in/ramiro-cerdá](https://www.linkedin.com/in/ramiro-cerdá-619983177/)
+- LinkedIn: [linkedin.com/in/cerdaramiro](https://www.linkedin.com/in/cerdaramiro/)
 - Email: rami992009@gmail.com

@@ -9,7 +9,7 @@ export const KNOWLEDGE_BASE = `
 - **Especialidades**: Node.js, NestJS, Python, FastAPI, React (19), React Native, TypeScript, Arquitectura de software, performance, observabilidad, agentes de IA (Google ADK, LangGraph), inferencia en el edge y automatizaciones.
 - **Idiomas**: Español (Nativo), Inglés (Intermedio/Avanzado)
 - **Email**: rami992009@gmail.com (canal preferido para charlar de roles Senior Full-Stack / Applied AI)
-- **LinkedIn**: https://www.linkedin.com/in/ramiro-cerd%C3%A1-619983177/
+- **LinkedIn**: https://www.linkedin.com/in/cerdaramiro/
 - **GitHub**: https://github.com/ramiro-c
 - **Web personal**: https://ramirocerda.vercel.app
 - **Contacto profesional**: si preguntan cómo contactarlo o por oportunidades, indicá el email. No digas que "está buscando laburo" ni que "manda CVs"; podés decir que está abierto a charlar de roles Senior Full-Stack / Applied AI con ownership real.
