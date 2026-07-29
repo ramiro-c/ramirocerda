@@ -11,6 +11,7 @@ export const ui = {
   es: {
     "nav.about": "Sobre mí",
     "nav.work": "Proyectos",
+    "nav.workflow": "Workflow",
     "nav.notes": "Notas",
     "nav.home": "Inicio",
     "cta.email": "Escribime",
@@ -40,6 +41,12 @@ export const ui = {
       "about.skillsLabel": "Skills",
       "about.linksLabel": "Links",
       "about.personalLabel": "Fuera del teclado",
+      "workflow.title": "Card Loop Pipeline",
+      "workflow.eyebrow": "Cómo trabajo con AI agents",
+      "workflow.legend.forward": "Autónomo (forward)",
+      "workflow.legend.return": "Fix / iteración (return)",
+      "workflow.legend.hitl": "Human-in-the-loop",
+      "workflow.howTerminates": "El pipeline termina cuando card-pr publica el PR, Judgment Day da veredicto limpio, y el canal de Partners recibe la notificación. No hay auto-merge: la decisión final siempre es humana.",
     "work.title": "Proyectos",
     "notes.title": "Notas",
     "notes.empty":
@@ -64,6 +71,7 @@ export const ui = {
   en: {
     "nav.about": "About",
     "nav.work": "Work",
+    "nav.workflow": "Workflow",
     "nav.notes": "Notes",
     "nav.home": "Home",
     "cta.email": "Email me",
@@ -93,6 +101,12 @@ export const ui = {
       "about.skillsLabel": "Skills",
       "about.linksLabel": "Links",
       "about.personalLabel": "Off the keyboard",
+      "workflow.title": "Card Loop Pipeline",
+      "workflow.eyebrow": "How I work with AI agents",
+      "workflow.legend.forward": "Autonomous (forward)",
+      "workflow.legend.return": "Fix / iteration (return)",
+      "workflow.legend.hitl": "Human-in-the-loop",
+      "workflow.howTerminates": "The pipeline ends when card-pr publishes the PR, Judgment Day returns a clean verdict, and the Partners channel receives the notification. No auto-merge: the final decision is always human.",
     "work.title": "Work",
     "notes.title": "Notes",
     "notes.empty":

@@ -17,6 +17,7 @@ const showNotes = (await getCollection("notes")).some((note) => !note.data.draft
   <nav class="nav" aria-label="Primary">
     <a href={getLocalizedPath(lang, "/about/")}>{t("nav.about")}</a>
     <a href={getLocalizedPath(lang, "/work/")}>{t("nav.work")}</a>
+    <a href={getLocalizedPath(lang, "/workflow/")}>{t("nav.workflow")}</a>
     {showNotes && <a href={getLocalizedPath(lang, "/notes/")}>{t("nav.notes")}</a>}
   </nav>
   <LanguageToggle lang={lang} />
