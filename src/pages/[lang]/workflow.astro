@@ -1,0 +1,363 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import WorkflowGraph from "../../components/WorkflowGraph.astro";
+import type { WorkflowNode } from "../../components/WorkflowGraph.astro";
+import { languages, type Lang } from "../../i18n/ui";
+import { useTranslations } from "../../i18n/utils";
+
+export function getStaticPaths() {
+  return (Object.keys(languages) as Lang[]).map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+
+const copy = {
+  es: {
+    thesis:
+      "Así itero con agentes de IA: cada card pasa por siete etapas conectadas. El loop alterna entre fases autónomas y puntos de decisión humana.",
+    cta: "¿Querés verlo en acción en un proyecto real?",
+    ctaLink: "Mirá los proyectos",
+    nodes: [
+      {
+        id: "triage",
+        number: "01",
+        label: "Triage",
+        role: "Tomar + clasificar",
+        panelTitle: "Triage inicial",
+        panelBody:
+          "Se toma una card del backlog en To Do. El loop dispara automáticamente cuando una card con label agent:loop entra en el estado correspondiente. Clasifica tipo de tarea y asigna prioridad.",
+        isHitl: false,
+      },
+      {
+        id: "card-start",
+        number: "02",
+        label: "card-start",
+        role: "Worktree + rama",
+        panelTitle: "card-start",
+        panelBody:
+          "Crea un worktree aislado con su propia rama a partir de la card de Jira. Resuelve el repo y la rama base desde los labels de la card. Listo para trabajar sin tocar el checkout principal.",
+        isHitl: false,
+      },
+      {
+        id: "sdd-auto",
+        number: "03",
+        label: "SDD auto",
+        role: "Explorar → Spec → Diseño → Tareas",
+        panelTitle: "SDD auto",
+        panelBody:
+          "Pipeline completo de 5 fases: Explore (contexto), Propose (intención), Spec (requisitos + escenarios), Design (arquitectura técnica), Tasks (desglose en tareas). Todo generado por agentes antes de tocar código.",
+        isHitl: true,
+      },
+      {
+        id: "card-review",
+        number: "04",
+        label: "card-review",
+        role: "Revisión pre-PR 4R",
+        panelTitle: "card-review",
+        panelBody:
+          "Revisión pre-PR usando los cuatro lentes 4R (Requirements, Reliability, Readability, Risk). Report-only: encuentra issues antes de abrir el PR. Opcionalmente simplifica código si el usuario lo pide.",
+        isHitl: false,
+      },
+      {
+        id: "card-pr",
+        number: "05",
+        label: "card-pr",
+        role: "Abrir PR",
+        panelTitle: "card-pr",
+        panelBody:
+          "Push de la rama y apertura del PR en GitHub. No mergea: deja el diff listo para la revisión adversarial del paso siguiente.",
+        isHitl: false,
+      },
+      {
+        id: "judgment-day",
+        number: "06",
+        label: "Judgment Day",
+        role: "Revisión ciega dual",
+        panelTitle: "Judgment Day",
+        panelBody:
+          "Revisión adversarial ciega: dos agentes revisan el diff de forma independiente, comparan hallazgos y emiten un veredicto. Si encuentra issues, vuelve a SDD para fix + re-judgment (máximo 2 rondas).",
+        isHitl: true,
+      },
+      {
+        id: "partners-slack",
+        number: "07",
+        label: "Partners / Slack",
+        role: "Code Review + notificar",
+        panelTitle: "Partners / Slack",
+        panelBody:
+          "La card se mueve a Partners/Code Review en Jira y se manda una sola notificación al canal de Slack (backend o frontend). El merge es humano — el loop nunca auto-mergea.",
+        isHitl: false,
+      },
+    ],
+    edgeLabels: {
+      forward: "Autónomo (forward)",
+      return: "Fix / iteración (return)",
+      hitl: "Human-in-the-loop",
+    },
+    panelHint: "Click o hover sobre un nodo para ver detalles",
+  },
+  en: {
+    thesis:
+      "This is how I iterate with AI agents: each card moves through seven connected stages. The loop alternates between autonomous phases and human decision points.",
+    cta: "Want to see it in action on a real project?",
+    ctaLink: "Browse projects",
+    nodes: [
+      {
+        id: "triage",
+        number: "01",
+        label: "Triage",
+        role: "Pick up + classify",
+        panelTitle: "Initial Triage",
+        panelBody:
+          "A card is picked up from the backlog in To Do. The loop triggers automatically when a card with the agent:loop label enters the right state. Classifies task type and assigns priority.",
+        isHitl: false,
+      },
+      {
+        id: "card-start",
+        number: "02",
+        label: "card-start",
+        role: "Worktree + branch",
+        panelTitle: "card-start",
+        panelBody:
+          "Creates an isolated worktree with its own branch from the Jira card. Resolves the repo and base branch from the card's labels. Ready to work without touching the main checkout.",
+        isHitl: false,
+      },
+      {
+        id: "sdd-auto",
+        number: "03",
+        label: "SDD auto",
+        role: "Explore → Spec → Design → Tasks",
+        panelTitle: "SDD auto",
+        panelBody:
+          "Full 5-phase pipeline: Explore (context), Propose (intent), Spec (requirements + scenarios), Design (technical architecture), Tasks (breakdown). All generated by agents before touching code.",
+        isHitl: true,
+      },
+      {
+        id: "card-review",
+        number: "04",
+        label: "card-review",
+        role: "Pre-PR 4R review",
+        panelTitle: "card-review",
+        panelBody:
+          "Pre-PR review using the four 4R lenses (Requirements, Reliability, Readability, Risk). Report-only: catches issues before opening the PR. Optionally simplifies code if requested.",
+        isHitl: false,
+      },
+      {
+        id: "card-pr",
+        number: "05",
+        label: "card-pr",
+        role: "Open PR",
+        panelTitle: "card-pr",
+        panelBody:
+          "Pushes the branch and opens the GitHub PR. Does not merge — leaves the diff ready for the adversarial review in the next step.",
+        isHitl: false,
+      },
+      {
+        id: "judgment-day",
+        number: "06",
+        label: "Judgment Day",
+        role: "Dual blind review",
+        panelTitle: "Judgment Day",
+        panelBody:
+          "Blind adversarial review: two agents review the diff independently, compare findings, and deliver a verdict. If issues are found, it loops back to SDD for fixes + re-judgment (max 2 rounds).",
+        isHitl: true,
+      },
+      {
+        id: "partners-slack",
+        number: "07",
+        label: "Partners / Slack",
+        role: "Code Review + notify",
+        panelTitle: "Partners / Slack",
+        panelBody:
+          "The card moves to Partners/Code Review in Jira and a single Slack notice goes to the backend or frontend channel. Merge is human — the loop never auto-merges.",
+        isHitl: false,
+      },
+    ],
+    edgeLabels: {
+      forward: "Autonomous (forward)",
+      return: "Fix / iteration (return)",
+      hitl: "Human-in-the-loop",
+    },
+    panelHint: "Click or hover a node to see details",
+  },
+} as const;
+
+const workflow = copy[lang];
+const nodes: WorkflowNode[] = workflow.nodes;
+const edgeLabels = workflow.edgeLabels;
+const panelHint = workflow.panelHint;
+---
+
+<BaseLayout lang={lang} title={t("workflow.title")} description={workflow.thesis}>
+  <SiteHeader slot="header" lang={lang} />
+
+  <section class="workflow">
+    <p class="mono eyebrow">{t("workflow.eyebrow")}</p>
+    <h1 class="display">{t("workflow.title")}</h1>
+    <p class="thesis">{workflow.thesis}</p>
+
+    <WorkflowGraph nodes={nodes} edgeLabels={edgeLabels} panelHint={panelHint} />
+
+    <!-- Legend -->
+    <div class="legend" aria-label="Graph legend">
+      <p class="mono legend-label">{lang === "es" ? "Leyenda" : "Legend"}</p>
+      <div class="legend-items">
+        <div class="legend-item">
+          <svg class="legend-swatch" width="24" height="12" aria-hidden="true">
+            <line x1="0" y1="6" x2="20" y2="6" stroke="var(--accent)" stroke-width="2" />
+            <polygon points="16,2 24,6 16,10" fill="var(--accent)" />
+          </svg>
+          <span>{t("workflow.legend.forward")}</span>
+        </div>
+        <div class="legend-item">
+          <svg class="legend-swatch" width="24" height="12" aria-hidden="true">
+            <line
+              x1="0" y1="6" x2="20" y2="6"
+              stroke="var(--muted-2)" stroke-width="1.5" stroke-dasharray="6 4"
+            />
+            <polygon points="16,2 24,6 16,10" fill="var(--muted-2)" />
+          </svg>
+          <span>{t("workflow.legend.return")}</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-hitl-pill" aria-hidden="true">HITL</span>
+          <span>{t("workflow.legend.hitl")}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- How it terminates -->
+    <section class="how-terminates">
+      <h2 class="mono section-label">{lang === "es" ? "Cómo termina" : "How it terminates"}</h2>
+      <p class="terminates-text">{t("workflow.howTerminates")}</p>
+    </section>
+
+    <!-- CTA -->
+    <div class="cta-block">
+      <p class="cta-text">{workflow.cta}</p>
+      <a class="btn" href={lang === "es" ? "/es/work/" : "/en/work/"}>{workflow.ctaLink}</a>
+    </div>
+  </section>
+
+  <SiteFooter slot="footer" lang={lang} />
+</BaseLayout>
+
+<style>
+  .workflow {
+    padding: 1rem 0 2rem;
+  }
+  .eyebrow {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted-2);
+  }
+  .display {
+    margin: 0 0 0.75rem;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    line-height: 1.05;
+  }
+  .thesis {
+    max-width: 42rem;
+    margin: 0 0 0.5rem;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    margin: 1.5rem 0;
+    padding: 1rem 0 0;
+    border-top: 1px solid var(--border);
+  }
+  .legend-label {
+    margin: 0 0 0.75rem;
+    font-size: 0.8rem;
+    color: var(--muted-2);
+  }
+  .legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .legend-swatch {
+    flex-shrink: 0;
+  }
+  .legend-hitl-pill {
+    flex-shrink: 0;
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    border: 1.25px solid var(--accent);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  }
+
+  /* ── How it terminates ── */
+  .how-terminates {
+    margin: 1.5rem 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .section-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted-2);
+  }
+  .terminates-text {
+    max-width: 44rem;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  /* ── CTA ── */
+  .cta-block {
+    margin: 2rem 0 0;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+  }
+  .cta-text {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  .btn {
+    border: 1.5px solid var(--border);
+    background: var(--border);
+    color: var(--bg);
+    padding: 0.55rem 0.85rem;
+    text-decoration: none;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border-radius: var(--radius);
+    white-space: nowrap;
+  }
+  .btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+</style>

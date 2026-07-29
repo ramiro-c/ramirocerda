@@ -1,0 +1,700 @@
+---
+export interface WorkflowNode {
+  id: string;
+  number: string;
+  label: string;
+  role: string;
+  panelTitle: string;
+  panelBody: string;
+  isHitl?: boolean;
+}
+
+interface Props {
+  nodes: WorkflowNode[];
+  edgeLabels: {
+    forward: string;
+    return: string;
+    hitl: string;
+  };
+  panelHint: string;
+}
+
+const { nodes, edgeLabels, panelHint } = Astro.props;
+
+/* ── Desktop: generous single-row pipeline ── */
+const D_W = 148;
+const D_H = 78;
+const D_GAP = 44;
+const D_PAD_X = 24;
+const D_Y = 48;
+const D_RETURN_Y = 210;
+const D_X = nodes.map((_, i) => D_PAD_X + i * (D_W + D_GAP));
+const D_VB_W = D_PAD_X * 2 + nodes.length * D_W + (nodes.length - 1) * D_GAP;
+const D_VB_H = 280;
+
+function dForward(i: number): string {
+  const x1 = D_X[i] + D_W;
+  const y = D_Y + D_H / 2;
+  const x2 = D_X[i + 1];
+  return `M ${x1} ${y} L ${x2} ${y}`;
+}
+
+function dReturn(fromI: number, toI: number): string {
+  const x1 = D_X[fromI] + D_W / 2;
+  const x2 = D_X[toI] + D_W / 2;
+  const y1 = D_Y + D_H;
+  const y2 = D_Y + D_H;
+  return `M ${x1} ${y1} V ${D_RETURN_Y} H ${x2} V ${y2}`;
+}
+
+/* ── Mobile: vertical column ── */
+const M_W = 240;
+const M_H = 72;
+const M_X = 28;
+const M_GAP = 56;
+const M_PAD_Y = 28;
+const M_Y = nodes.map((_, i) => M_PAD_Y + i * (M_H + M_GAP));
+const M_RETURN_X = 300;
+const M_VB_W = 340;
+const M_VB_H = M_PAD_Y * 2 + nodes.length * M_H + (nodes.length - 1) * M_GAP;
+
+function mForward(i: number): string {
+  const x = M_X + M_W / 2;
+  const y1 = M_Y[i] + M_H;
+  const y2 = M_Y[i + 1];
+  return `M ${x} ${y1} L ${x} ${y2}`;
+}
+
+function mReturn(fromI: number, toI: number): string {
+  const y1 = M_Y[fromI] + M_H / 2;
+  const y2 = M_Y[toI] + M_H / 2;
+  const xR = M_RETURN_X;
+  return `M ${M_X + M_W} ${y1} H ${xR} V ${y2} H ${M_X + M_W}`;
+}
+
+const panelData = Object.fromEntries(
+  nodes.map((n) => [n.id, { title: n.panelTitle, body: n.panelBody, isHitl: !!n.isHitl }]),
+);
+---
+
+<div class="graph-wrapper">
+  <div class="graph-stage">
+    <!-- Desktop -->
+    <svg
+      class="graph-svg graph-desktop"
+      viewBox={`0 0 ${D_VB_W} ${D_VB_H}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      role="img"
+      data-graph="main"
+    >
+      <title>Card Loop pipeline — horizontal</title>
+      <defs>
+        <marker
+          id="arrow-fwd"
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth="8"
+          markerHeight="8"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent, #e4572e)" />
+        </marker>
+        <marker
+          id="arrow-ret"
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted-2, #666)" />
+        </marker>
+      </defs>
+
+      {nodes.slice(0, -1).map((_, i) => (
+        <path
+          class="edge edge-forward"
+          d={dForward(i)}
+          data-from={nodes[i].id}
+          data-to={nodes[i + 1].id}
+          marker-end="url(#arrow-fwd)"
+          pathLength="1"
+        />
+      ))}
+
+      <path
+        class="edge edge-return"
+        d={dReturn(3, 2)}
+        data-from={nodes[3].id}
+        data-to={nodes[2].id}
+        marker-end="url(#arrow-ret)"
+      />
+      <path
+        class="edge edge-return"
+        d={dReturn(5, 2)}
+        data-from={nodes[5].id}
+        data-to={nodes[2].id}
+        marker-end="url(#arrow-ret)"
+      />
+
+      <text class="edge-label" x={(D_X[2] + D_X[3]) / 2 + D_W / 2} y={D_RETURN_Y - 12} text-anchor="middle">
+        fix-cycle
+      </text>
+      <text class="edge-label" x={(D_X[2] + D_X[5]) / 2 + D_W / 2} y={D_RETURN_Y + 18} text-anchor="middle">
+        escalation
+      </text>
+
+      {nodes.map((node, i) => (
+        <g
+          class:list={["node-group", { "is-hitl": node.isHitl }]}
+          data-node={node.id}
+          role="button"
+          tabindex="0"
+          aria-label={`${node.number}: ${node.label} — ${node.role}${node.isHitl ? ", human-in-the-loop" : ""}`}
+        >
+          <rect class="node-rect" x={D_X[i]} y={D_Y} width={D_W} height={D_H} rx="3" />
+          <text class="node-num" x={D_X[i] + 12} y={D_Y + 22}>
+            {node.number}
+          </text>
+          <text class="node-label" x={D_X[i] + 12} y={D_Y + 42}>
+            {node.label}
+          </text>
+          <text class="node-role" x={D_X[i] + 12} y={D_Y + 62}>
+            {node.role.length > 22 ? `${node.role.slice(0, 20)}…` : node.role}
+          </text>
+          {node.isHitl && (
+            <g class="hitl-badge" transform={`translate(${D_X[i] + D_W - 46}, ${D_Y + 8})`}>
+              <rect class="hitl-pill" x="0" y="0" width="38" height="16" rx="2" />
+              <text class="hitl-text" x="19" y="12" text-anchor="middle">
+                HITL
+              </text>
+            </g>
+          )}
+        </g>
+      ))}
+    </svg>
+
+    <!-- Mobile -->
+    <svg
+      class="graph-svg graph-mobile"
+      viewBox={`0 0 ${M_VB_W} ${M_VB_H}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      role="img"
+      data-graph="main"
+    >
+      <title>Card Loop pipeline — vertical</title>
+      <defs>
+        <marker
+          id="arrow-fwd-m"
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth="8"
+          markerHeight="8"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent, #e4572e)" />
+        </marker>
+        <marker
+          id="arrow-ret-m"
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted-2, #666)" />
+        </marker>
+      </defs>
+
+      {nodes.slice(0, -1).map((_, i) => (
+        <path
+          class="edge edge-forward"
+          d={mForward(i)}
+          data-from={nodes[i].id}
+          data-to={nodes[i + 1].id}
+          marker-end="url(#arrow-fwd-m)"
+          pathLength="1"
+        />
+      ))}
+
+      <path
+        class="edge edge-return"
+        d={mReturn(3, 2)}
+        data-from={nodes[3].id}
+        data-to={nodes[2].id}
+        marker-end="url(#arrow-ret-m)"
+      />
+      <path
+        class="edge edge-return"
+        d={mReturn(5, 2)}
+        data-from={nodes[5].id}
+        data-to={nodes[2].id}
+        marker-end="url(#arrow-ret-m)"
+      />
+
+      <text class="edge-label" x={M_RETURN_X + 6} y={(M_Y[2] + M_Y[3]) / 2 + M_H / 2} text-anchor="start">
+        fix
+      </text>
+      <text class="edge-label" x={M_RETURN_X + 6} y={(M_Y[2] + M_Y[5]) / 2 + M_H / 2} text-anchor="start">
+        esc.
+      </text>
+
+      {nodes.map((node, i) => (
+        <g
+          class:list={["node-group", { "is-hitl": node.isHitl }]}
+          data-node={node.id}
+          role="button"
+          tabindex="0"
+          aria-label={`${node.number}: ${node.label} — ${node.role}${node.isHitl ? ", human-in-the-loop" : ""}`}
+        >
+          <rect class="node-rect" x={M_X} y={M_Y[i]} width={M_W} height={M_H} rx="3" />
+          <text class="node-num" x={M_X + 14} y={M_Y[i] + 22}>
+            {node.number}
+          </text>
+          <text class="node-label" x={M_X + 14} y={M_Y[i] + 42}>
+            {node.label}
+          </text>
+          <text class="node-role" x={M_X + 14} y={M_Y[i] + 60}>
+            {node.role.length > 34 ? `${node.role.slice(0, 32)}…` : node.role}
+          </text>
+          {node.isHitl && (
+            <g class="hitl-badge" transform={`translate(${M_X + M_W - 50}, ${M_Y[i] + 10})`}>
+              <rect class="hitl-pill" x="0" y="0" width="38" height="16" rx="2" />
+              <text class="hitl-text" x="19" y="12" text-anchor="middle">
+                HITL
+              </text>
+            </g>
+          )}
+        </g>
+      ))}
+    </svg>
+
+    <ol class="timeline-a11y" aria-label="Card Loop pipeline steps">
+      {nodes.map((node) => (
+        <li>
+          <strong>
+            {node.number}. {node.label}
+          </strong>
+          <span class="timeline-role">— {node.role}</span>
+          <p class="timeline-desc">{node.panelBody}</p>
+          {node.isHitl && <span class="timeline-hitl-tag">{edgeLabels.hitl}</span>}
+        </li>
+      ))}
+    </ol>
+  </div>
+
+  <aside class="detail-panel" id="graph-panel" aria-live="polite">
+    <p class="panel-placeholder mono">
+      <span class="panel-icon" aria-hidden="true">→</span>
+      {panelHint}
+    </p>
+  </aside>
+</div>
+
+<script define:vars={{ panelData, hitlLabel: edgeLabels.hitl, panelHint }}>
+  function setup() {
+    const wrapper = document.querySelector(".graph-wrapper");
+    if (!wrapper) return;
+
+    const panel = document.getElementById("graph-panel");
+    if (!panel) return;
+
+    const nodeGroups = wrapper.querySelectorAll(".node-group");
+    const edges = wrapper.querySelectorAll(".edge");
+    const allSvgs = wrapper.querySelectorAll("[data-graph]");
+
+    let activeNodeId = null;
+
+    function clearActive() {
+      activeNodeId = null;
+      wrapper.classList.remove("is-active");
+      nodeGroups.forEach((g) => g.classList.remove("is-active"));
+      edges.forEach((e) => e.classList.remove("edge-incident"));
+      panel.innerHTML = `<p class="panel-placeholder mono"><span class="panel-icon" aria-hidden="true">→</span>${panelHint}</p>`;
+    }
+
+    function setActive(nodeId) {
+      activeNodeId = nodeId;
+      wrapper.classList.add("is-active");
+
+      nodeGroups.forEach((g) => g.classList.toggle("is-active", g.dataset.node === nodeId));
+
+      edges.forEach((e) => {
+        const incident = e.dataset.from === nodeId || e.dataset.to === nodeId;
+        e.classList.toggle("edge-incident", incident);
+      });
+
+      const data = panelData[nodeId];
+      if (!data) return;
+
+      const hitlTag = data.isHitl ? `<span class="panel-hitl-tag">${hitlLabel}</span>` : "";
+      panel.innerHTML = `
+        <div class="panel-has-body">
+          <p class="panel-title">${data.title}</p>
+          <p class="panel-body">${data.body}</p>
+          ${hitlTag}
+        </div>
+      `;
+    }
+
+    nodeGroups.forEach((g) => {
+      g.addEventListener("mouseenter", () => {
+        const id = g.dataset.node;
+        if (id) setActive(id);
+      });
+      g.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = g.dataset.node;
+        if (!id) return;
+        if (activeNodeId === id) clearActive();
+        else setActive(id);
+      });
+      g.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        const id = g.dataset.node;
+        if (!id) return;
+        if (activeNodeId === id) clearActive();
+        else setActive(id);
+      });
+    });
+
+    allSvgs.forEach((svg) => {
+      svg.addEventListener("click", (e) => {
+        if (!e.target.closest || !e.target.closest(".node-group")) clearActive();
+      });
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") clearActive();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setup);
+  } else {
+    setup();
+  }
+</script>
+
+<style>
+  .graph-wrapper {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin: 2rem 0 2.5rem;
+  }
+
+  .graph-stage {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--bg) 92%, #fff);
+    padding: 1.25rem 0.75rem 0.75rem;
+  }
+
+  .graph-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-width: 920px;
+    overflow: visible;
+  }
+
+  .graph-desktop {
+    display: block;
+  }
+
+  .graph-mobile {
+    display: none;
+  }
+
+  /* Edges — solid forward, dashed return; pathLength animation only */
+  .edge {
+    fill: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .edge-forward {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .edge-return {
+    stroke: var(--muted-2);
+    stroke-width: 2;
+    stroke-dasharray: 7 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .edge-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    fill: var(--muted-2);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .edge-forward {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: draw-path 0.65s ease forwards;
+    }
+
+    .edge-return {
+      /* Keep dashed look: animate opacity instead of dashoffset */
+      opacity: 0;
+      animation: fade-edge 0.45s ease 0.2s forwards;
+    }
+  }
+
+  @keyframes draw-path {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes fade-edge {
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* After draw, restore solid stroke (pathLength unit) */
+  @media (prefers-reduced-motion: no-preference) {
+    .edge-forward {
+      animation:
+        draw-path 0.65s ease forwards,
+        solidify-fwd 0.01s linear 0.65s forwards;
+    }
+  }
+
+  @keyframes solidify-fwd {
+    to {
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  .node-group {
+    cursor: pointer;
+    outline: none;
+  }
+
+  .node-rect {
+    fill: var(--bg);
+    stroke: var(--border);
+    stroke-width: 1.5;
+    transition:
+      stroke 0.15s ease,
+      fill 0.15s ease;
+  }
+
+  .node-group:hover .node-rect,
+  .node-group.is-active .node-rect {
+    stroke: var(--accent);
+    stroke-width: 2.25;
+    fill: color-mix(in srgb, var(--accent) 6%, var(--bg));
+  }
+
+  .node-group:focus-visible .node-rect {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+  }
+
+  .node-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    fill: var(--muted-2);
+    pointer-events: none;
+  }
+
+  .node-label {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    fill: var(--text);
+    pointer-events: none;
+  }
+
+  .node-role {
+    font-family: var(--font-body);
+    font-size: 11px;
+    fill: var(--muted);
+    pointer-events: none;
+  }
+
+  /* HITL text pill — no broken glyph */
+  .hitl-pill {
+    fill: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    stroke: var(--accent);
+    stroke-width: 1.25;
+  }
+
+  .hitl-text {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    fill: var(--accent);
+    pointer-events: none;
+  }
+
+  .graph-wrapper.is-active .edge {
+    opacity: 0.22;
+  }
+
+  .graph-wrapper.is-active .edge.edge-incident {
+    opacity: 1;
+  }
+
+  .detail-panel {
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 7.5rem;
+  }
+
+  .panel-placeholder {
+    margin: 0;
+    color: var(--muted-2);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .panel-icon {
+    display: inline-block;
+    margin-right: 0.35rem;
+    color: var(--accent);
+  }
+
+  .panel-title {
+    margin: 0 0 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+  }
+
+  .panel-body {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .panel-hitl-tag {
+    display: inline-block;
+    margin-top: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+  }
+
+  .timeline-a11y {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .timeline-role {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .timeline-desc {
+    margin: 0.15rem 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .timeline-hitl-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+  }
+
+  .graph-fallback .graph-svg {
+    display: none !important;
+  }
+
+  .graph-fallback .timeline-a11y {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0 0 0 1.25rem;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  .graph-fallback .timeline-a11y li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .graph-fallback .graph-stage {
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  @media (max-width: 759px) {
+    .graph-stage {
+      padding: 1rem 0.5rem;
+      overflow-x: visible;
+    }
+
+    .graph-desktop {
+      display: none;
+    }
+
+    .graph-mobile {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    /* Mobile: graph only — no detail panel scroll tax */
+    .detail-panel {
+      display: none;
+    }
+
+    .node-group {
+      cursor: default;
+    }
+  }
+
+  @media (min-width: 760px) {
+    .graph-mobile {
+      display: none;
+    }
+  }
+</style>
