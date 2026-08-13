@@ -28,7 +28,7 @@ const copy = {
         role: "Tomar + clasificar",
         panelTitle: "Triage inicial",
         panelBody:
-          "Se toma una card del backlog en To Do. El loop dispara automáticamente cuando una card con label agent:loop entra en el estado correspondiente. Clasifica tipo de tarea y asigna prioridad.",
+          "Se toma una card del backlog en To Do con label agent:loop. Todavía lo disparo yo (no hay cron): cada tick agarra como máximo una card. Clasifica tipo de tarea y asigna prioridad.",
         isHitl: false,
       },
       {
@@ -112,7 +112,7 @@ const copy = {
         role: "Pick up + classify",
         panelTitle: "Initial Triage",
         panelBody:
-          "A card is picked up from the backlog in To Do. The loop triggers automatically when a card with the agent:loop label enters the right state. Classifies task type and assigns priority.",
+          "A card is picked up from the backlog in To Do with the agent:loop label. I still trigger it myself (no cron): each tick takes at most one card. Classifies task type and assigns priority.",
         isHitl: false,
       },
       {
