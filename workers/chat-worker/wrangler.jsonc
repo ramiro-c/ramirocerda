@@ -5,6 +5,20 @@
   "ai": {
     "binding": "AI"
   },
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "botardo-kb"
+    }
+  ],
+  "vars": {
+    "RAG_ENABLED": "false",
+    "TOP_K": "5",
+    "SIMILARITY_THRESHOLD": "0.30",
+    "GENERATION_MODEL": "deepseek-v4-flash",
+    "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
+    "EMBEDDING_MODEL": "@cf/baai/bge-m3"
+  },
   "observability": {
     "enabled": true
   }
