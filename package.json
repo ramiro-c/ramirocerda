@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "chat:populate": "node workers/chat-worker/scripts/populate-index.mjs"
   },
   "dependencies": {
     "astro": "^5.10.0"

@@ -1,0 +1,19 @@
+{
+  "index": "botardo-kb",
+  "embeddingModel": "@cf/baai/bge-m3",
+  "generatedAt": "2026-08-13T22:39:01.597Z",
+  "ids": [
+    "kb-ai-agents-hub-052c5b92",
+    "kb-desarrollador-mobile-front-end-ssr-react-native--9a3f9045",
+    "kb-devgam-secretaria-de-tic-utn-frlp-y-new-logic-ae916f6a",
+    "kb-educacion-b6e347c6",
+    "kb-full-stack-tech-lead-hands-on-abr-2025-actualida-a17cf555",
+    "kb-knowledge-vault-665f7171",
+    "kb-lactaria-edaccbe8",
+    "kb-linkedin-markdownificator-55f4b3f5",
+    "kb-mundial-2026-baf29053",
+    "kb-overview-27beffd1",
+    "kb-portafolio-personal-y-asistente-ia-c7f17025",
+    "kb-stack-tecnico-413b6abf"
+  ]
+}
