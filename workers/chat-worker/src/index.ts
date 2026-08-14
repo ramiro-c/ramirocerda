@@ -1,4 +1,3 @@
-import { KNOWLEDGE_BASE } from "./knowledge-base";
 import { detectLanguage, FALLBACK_MESSAGES } from "./language";
 import { buildRagPrompt, retrieveChunks, type ChatMessage } from "./rag";
 import { generateReply } from "./generate";
@@ -20,10 +19,10 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:4321",
 ]);
 
-// Identity + rules. Kept verbatim from the pre-RAG prompt (R7). The legacy
-// SYSTEM_PROMPT below renders the original prompt byte-for-byte; the RAG path
+// Identity + rules. Kept verbatim from the pre-RAG prompt (R7). The RAG path
 // uses this block plus retrieved chunks + a firm language instruction instead
-// of the static KB.
+// of the static KB (which was removed with the legacy path; the KB now lives in
+// the Vectorize index, source module in scripts/knowledge-base.js).
 const IDENTITY_PROMPT = `Sos Botardo, el asistente virtual de la web personal de Ramiro Cerdá. Tu trabajo es responder preguntas sobre el perfil profesional de Ramiro de forma clara y con buena onda.
 
 QUIÉN SOS (identidad):
@@ -38,19 +37,6 @@ REGLAS:
 3. Solo si te piden una OPINIÓN o valoración sobre Ramiro ("¿es bueno?", "¿es crack?"), no opines como fan ni te quedes en una frase hecha: contá con onda 1 o 2 logros concretos de la KB y dejá que el lector saque sus conclusiones. Lo importante son los hechos, no la muletilla. Esta vuelta es exclusiva para opiniones — para datos respondé normal, y si no tenés la info decilo según la regla 4.
 4. Si la respuesta no está en la knowledge base, decí con naturalidad que no tenés ese dato.
 5. Sé conciso: máximo 3-4 párrafos. Tono cercano y profesional, sin ser acartonado.`;
-
-// Legacy prompt: identity + static KB + soft language rule (unchanged).
-const SYSTEM_PROMPT = `${IDENTITY_PROMPT}
-
-=== KNOWLEDGE BASE ===
-${KNOWLEDGE_BASE}
-=== FIN KNOWLEDGE BASE ===
-
-IDIOMA (obligatorio, leé esto al final):
-Detectá el idioma del último mensaje del usuario y respondé SOLO en ese idioma.
-- Si el mensaje está en inglés → toda tu respuesta en inglés (claro, profesional). Ramiro en tercera persona.
-- Si el mensaje está en español → español rioplatense (voseo), tono cercano.
-La knowledge base está en español; usala como fuente de hechos, pero NO copies su idioma si el usuario escribió en inglés. No mezcles idiomas.`;
 
 interface Env {
   AI: {
@@ -92,7 +78,7 @@ function corsHeaders(origin: string | null): HeadersInit {
   };
 }
 
-// R7: 429/500 bodies preserved verbatim (shared by both paths).
+// R7: 429/500 bodies preserved verbatim.
 function rateLimitedResponse(origin: string | null): Response {
   log("error.rate_limited");
   return new Response(
@@ -125,20 +111,6 @@ function modelErrorResponse(origin: string | null): Response {
       },
     },
   );
-}
-
-function buildMessages(message: string, history?: AskRequest["history"]): ChatMessage[] {
-  const messages: ChatMessage[] = [{ role: "system", content: SYSTEM_PROMPT }];
-
-  if (history && history.length > 0) {
-    const recentHistory = history.slice(-10);
-    for (const entry of recentHistory) {
-      messages.push({ role: entry.role, content: entry.content });
-    }
-  }
-
-  messages.push({ role: "user", content: message });
-  return messages;
 }
 
 async function handleRag(
@@ -272,43 +244,11 @@ export default {
 
       const message = body.message.trim();
 
-      // RAG path (gated): detectLanguage -> retrieve chunks -> generate via
-      // OpenCode Go. Legacy path below stays untouched (rollback path).
-      if (env.RAG_ENABLED === "true") {
-        return await handleRag(message, body.history, env, origin);
-      }
-
-      // Legacy: static KB grounding + Workers AI llama generation.
-      const messages = buildMessages(message, body.history);
-
-      log("chat.start", {
-        msg_preview: message.slice(0, 80),
-        history_turns: body.history?.length ?? 0,
-      });
-
-      const t0 = Date.now();
-      const result = (await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8", {
-        messages,
-        max_tokens: 512,
-        temperature: 0.3,
-      })) as { response: string };
-
-      log("chat.ai_done", {
-        latency_ms: Date.now() - t0,
-        reply_length: result.response.length,
-      });
-
-      const response: AskResponse = {
-        reply: result.response.trim(),
-      };
-
-      return new Response(JSON.stringify(response), {
-        status: 200,
-        headers: {
-          ...corsHeaders(origin),
-          "Content-Type": "application/json",
-        },
-      });
+      // RAG pipeline (detectLanguage -> retrieve chunks -> generate via
+      // OpenCode Go) is the only path since the legacy static-KB + llama
+      // branch was removed. RAG_ENABLED is retained as a vestigial flag
+      // (cleanup is a documented follow-up); the flag stays "true" in config.
+      return await handleRag(message, body.history, env, origin);
     } catch (err) {
       // Check for rate limit errors
       const errorMessage = err instanceof Error ? err.message : String(err);

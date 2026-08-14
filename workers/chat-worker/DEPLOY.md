@@ -36,27 +36,20 @@ wrangler secret put OPENCODE_GO_API_KEY
 
 ## Deploy sequence (order matters)
 
-1. `wrangler deploy` — committed config ships with `RAG_ENABLED="false"`:
-   legacy llama path, behavior unchanged (R7).
-2. Set the secret (above) and populate the index (above) BEFORE step 3.
-3. Flip `RAG_ENABLED` to `"true"` in `wrangler.jsonc`, then `wrangler deploy`.
-   Rollback at any time by flipping `RAG_ENABLED` back to `"false"` and redeploying.
+1. Set the secret (below) and populate the index (above) BEFORE the first deploy.
+2. `wrangler deploy` — committed config ships with `RAG_ENABLED="true"`; the RAG
+   pipeline is the only path since the legacy static-KB + llama branch was
+   removed (commit "chore(chat-worker): remove legacy kb path").
+3. `RAG_ENABLED` is now a **vestigial flag**: kept in config while its removal
+   is a documented follow-up; it no longer switches behavior. If it is ever
+   flipped, the pipeline still runs the RAG path. Rollback to the pre-cleanup
+   state is a git revert of the removal commit, not a flag flip.
 
 ## Local probes
 
 ```bash
 wrangler dev --remote --port 8787        # remote mode: real AI + Vectorize bindings
 ```
-
-### Legacy path (RAG_ENABLED=false)
-
-| Probe | Command | Expected |
-|-------|---------|----------|
-| Chat reply | `curl -X POST localhost:8787/ -H 'Content-Type: application/json' -d '{"message":"Hola, contame quién es Ramiro"}'` | `200` with a reply in the visitor's language |
-| CORS preflight | `curl -X OPTIONS localhost:8787/ -H 'Origin: http://localhost:4321' -H 'Access-Control-Request-Method: POST'` | `204` + `Access-Control-Allow-Origin` |
-| Method guard | `curl localhost:8787/` | `405` `INVALID_REQUEST` |
-| Origin guard | `curl -X POST localhost:8787/ -H 'Origin: https://evil.example' -d '{"message":"hola"}'` | `403` `INVALID_REQUEST` |
-| Body validation | `curl -X POST localhost:8787/ -d '{"message":"  "}'` | `400` `INVALID_REQUEST` |
 
 ### RAG path (RAG_ENABLED=true, after secret set)
 

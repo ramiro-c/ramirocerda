@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { chunkKB, sha1Hex } from "./populate-index.mjs";
-import { KNOWLEDGE_BASE } from "../src/knowledge-base.js";
+import { KNOWLEDGE_BASE } from "./knowledge-base.js";
 
 const headingRe = /^(#{2,4})\s+.+$/;
 
@@ -17,9 +17,9 @@ describe("chunkKB", () => {
     }
   });
 
-  it("splits the real KB into heading-boundary chunks (12)", () => {
+  it("splits the real KB into heading-boundary chunks (13)", () => {
     const chunks = chunkKB(KNOWLEDGE_BASE);
-    expect(chunks.length).toBe(12);
+    expect(chunks.length).toBe(13);
 
     const sections = chunks.map((c) => c.section);
     expect(sections).toContain("Overview");
@@ -27,6 +27,7 @@ describe("chunkKB", () => {
     expect(sections).toContain("Educación");
     expect(sections).toContain("AI Agents Hub");
     expect(sections).toContain("LactarIA");
+    expect(sections).toContain("Sitio Web y Arquitectura del Bot");
   });
 
   it("keeps every KB content line in exactly one chunk (R1 content unchanged)", () => {

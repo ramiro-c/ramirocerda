@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-08-13T22:39:01.597Z",
+  "generatedAt": "2026-08-14T01:20:44.853Z",
   "ids": [
     "kb-ai-agents-hub-052c5b92",
     "kb-desarrollador-mobile-front-end-ssr-react-native--9a3f9045",
@@ -13,7 +13,8 @@
     "kb-linkedin-markdownificator-55f4b3f5",
     "kb-mundial-2026-baf29053",
     "kb-overview-27beffd1",
-    "kb-portafolio-personal-y-asistente-ia-c7f17025",
-    "kb-stack-tecnico-413b6abf"
+    "kb-portafolio-personal-y-asistente-ia-c8c5b252",
+    "kb-sitio-web-y-arquitectura-del-bot-d50ed0ed",
+    "kb-stack-tecnico-99975dc7"
   ]
 }

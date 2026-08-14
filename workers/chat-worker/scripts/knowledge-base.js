@@ -56,9 +56,22 @@ Herramienta para exportar perfiles de LinkedIn a Markdown, facilitando la sincro
 * **Link:** https://github.com/ramiro-c/linkedin-markdownificator
 
 ### Portafolio Personal y Asistente IA
-Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente conversacional configurado para responder consultas interactivas sobre mi experiencia y stack. Implementé el bot con Llama 3.2 utilizando Cloudflare Workers AI, logrando respuestas rápidas con latencia mínima y sin costos de infraestructura tradicional. La base de conocimiento la armé gracias al scraper linkedin-markdownificator.
-* **Stack:** HTML/CSS, JavaScript, Cloudflare Workers AI, Llama 3.2, Vercel.
+Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente conversacional con RAG (retrieval-augmented generation) que responde consultas interactivas sobre mi experiencia y stack. El bot corre en Cloudflare Workers con recuperación vectorial sobre Cloudflare Vectorize y generación con DeepSeek V4 Flash a través de OpenCode Go. La base de conocimiento la armé gracias al scraper linkedin-markdownificator.
+* **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4 Flash), Vercel.
 * **Link:** https://ramirocerda.vercel.app
+
+## Sitio Web y Arquitectura del Bot
+
+* **Sitio:** https://ramirocerda.vercel.app, desarrollado con Astro y TypeScript, desplegado en Vercel.
+* **Botardo:** agente conversacional serverless que vive en un Cloudflare Worker junto a la web personal.
+* **Pipeline RAG por pregunta:**
+  1. Se detecta el idioma del último mensaje del visitante (español o inglés) de forma determinística.
+  2. El mensaje se convierte en embedding con el modelo bge-m3 de Workers AI.
+  3. Se recuperan los chunks más relevantes de la base de conocimiento desde Cloudflare Vectorize (top-k con umbral de similitud).
+  4. Se genera la respuesta con DeepSeek V4 Flash vía la API de OpenCode Go, usando solo el contexto recuperado y el historial de los últimos 10 turnos.
+* **Idioma:** responde en el mismo idioma del visitante: español rioplatense (voseo) o inglés.
+* **Sin información:** si la pregunta no tiene contexto en la base, Botardo lo aclara con elegancia en el idioma del visitante, sin inventar contenido.
+* **Seguridad:** la API key de OpenCode Go vive como secret del Worker, nunca en el repositorio.
 
 ### LactarIA
 Desarrollé una app móvil en React Native + Expo para la tesis de dos puericultoras, usada por 50 madres como herramienta de apoyo en lactancia y crianza. Implementé un backend serverless integrado con la API de Gemini. Publicada como prueba cerrada en Play Store con 100% de satisfacción de usuarias, 77.3% reportó menor ansiedad gracias al chatbot en tiempo real y 95.5% destacó la facilidad de uso.
@@ -72,7 +85,7 @@ Sistema personal de gestión de conocimiento sobre Obsidian, sincronizado con Gi
 
 * **Frontend & Mobile:** React (19), React Native, TypeScript, JavaScript, Expo, Zustand, React Query, Vue.js, Tailwind CSS (v4), Shadcn/ui, Leaflet, amCharts.
 * **Backend, Cloud & Data:** Node.js, NestJS, Python, FastAPI, MySQL, PostgreSQL, Google Cloud Platform (Vertex AI, Cloud Run), Cloudflare Workers (Edge Computing), Serverless, APIs REST, Pino Logger.
-* **IA & Automatización:** Google ADK, LangGraph, Cloudflare Workers AI (Llama 3.2), n8n, APIs de LLMs (Gemini, Anthropic), OpenRouter, Claude Code, Cursor (context management).
+* **IA & Automatización:** Google ADK, LangGraph, Cloudflare Workers AI (embeddings bge-m3), Cloudflare Vectorize (RAG), OpenCode Go (DeepSeek V4 Flash), n8n, APIs de LLMs (Gemini, Anthropic), OpenRouter, Claude Code, Cursor (context management).
 * **DevOps, Calidad & Testing:** CI/CD (GitHub Actions, Bitbucket Pipelines), Docker, Git (worktrees), Bash, Sentry, New Relic, Pytest, Jest, Vitest, Playwright, SonarQube.
 * **Metodologías & Procesos:** SCRUM, GitFlow, Code Reviews, Jira, Confluence.
 * **Certificaciones:** 10 certificaciones de Google en AI Agents (ADK, Gemini Enterprise, Responsible AI), 2026.

@@ -2,7 +2,7 @@
 /**
  * populate-index.mjs — KB -> Vectorize index population and sync.
  *
- * Reads the profile knowledge base (src/knowledge-base.js), splits it into
+ * Reads the profile knowledge base (scripts/knowledge-base.js), splits it into
  * deterministic heading-boundary chunks, embeds them with bge-m3 via Workers AI,
  * upserts them into the `botardo-kb` Vectorize index, prunes vectors that are no
  * longer part of the KB (manifest-based), and writes vectorize-manifest.json.
@@ -21,7 +21,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
-import { KNOWLEDGE_BASE } from "../src/knowledge-base.js";
+import { KNOWLEDGE_BASE } from "./knowledge-base.js";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const MANIFEST_PATH = path.join(SCRIPT_DIR, "..", "vectorize-manifest.json");
@@ -149,7 +149,7 @@ async function upsertVectors(vectors, { accountId, apiToken }) {
 
 async function deleteByIds(ids, { accountId, apiToken }) {
   if (ids.length === 0) return { count: 0 };
-  const res = await cloudflareFetch(`/vectorize/v2/indexes/${INDEX_NAME}/delete-by-ids`, {
+  const res = await cloudflareFetch(`/vectorize/v2/indexes/${INDEX_NAME}/delete_by_ids`, {
     accountId,
     apiToken,
     body: { ids },
