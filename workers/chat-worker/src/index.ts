@@ -16,6 +16,8 @@ interface AskResponse {
 
 const ALLOWED_ORIGINS = new Set([
   "https://ramirocerda.vercel.app",
+  "https://ramirocerda.com.ar",
+  "https://www.ramirocerda.com.ar",
   "http://localhost:4321",
 ]);
 
