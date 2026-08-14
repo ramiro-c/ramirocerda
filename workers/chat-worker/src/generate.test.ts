@@ -45,28 +45,70 @@ describe("generateReply (D8/D9, R5/R7)", () => {
   it("maps other HTTP errors to MODEL_ERROR 500 (D9)", async () => {
     for (const status of [401, 403, 500, 502, 503]) {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(status, {})));
-      const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages });
+      const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 1 });
       expect(result, `status ${status}`).toEqual({ status: 500, code: "MODEL_ERROR" });
     }
   });
 
   it("maps network failures and timeouts to MODEL_ERROR 500 (D9)", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
-    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages });
+    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 1 });
     expect(result).toEqual({ status: 500, code: "MODEL_ERROR" });
   });
 
   it("treats a missing or empty completion as MODEL_ERROR", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, { choices: [] })));
-    expect(await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages })).toEqual({
+    expect(await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 1 })).toEqual({
       status: 500,
       code: "MODEL_ERROR",
     });
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: "   " } }] })));
-    expect(await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages })).toEqual({
+    expect(await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 1 })).toEqual({
       status: 500,
       code: "MODEL_ERROR",
     });
+  });
+
+  it("retries a transient 5xx and succeeds on the next attempt (W1)", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(500, {}))
+      .mockResolvedValueOnce(jsonResponse(200, { choices: [{ message: { content: "Recuperado" } }] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, backoffMs: 5 });
+    expect(result).toEqual({ status: 200, content: "Recuperado" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up after maxAttempts transient failures (W1)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(503, {}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 2, backoffMs: 5 });
+    expect(result).toEqual({ status: 500, code: "MODEL_ERROR" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("never retries 429 (W1)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(429, {}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages });
+    expect(result).toEqual({ status: 429, code: "RATE_LIMITED" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries on network failure and succeeds (W1)", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce(jsonResponse(200, { choices: [{ message: { content: "Ok" } }] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, backoffMs: 5 });
+    expect(result).toEqual({ status: 200, content: "Ok" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
