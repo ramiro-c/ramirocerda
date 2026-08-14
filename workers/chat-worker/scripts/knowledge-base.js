@@ -109,4 +109,7 @@ Completé el recorrido completo de Google Cloud en AI Agents: 10 certificaciones
   * **Ingeniería en Sistemas de Información** — Promedio: 8.04
   * **Ayudante de Cátedra** — Sistemas Operativos (2021): soporte práctico a dos comisiones de 30 estudiantes.
   * **Becario de investigación** — LINSI (1 año): arquitecturas con Docker, Linux, redes de servidores y Blockchain.
+
+* **Coderhouse | Jul 2026 - Ago 2026**
+  * **AI Engineering** — Curso de ingeniería en IA (6 clases + trabajo final). Entregables del curso: cliente unificado async de LLMs, pipeline de procesamiento validado (LangChain + Pydantic), RAG semántico local sobre apuntes (LangChain 1.x + Chroma) y RAG híbrido escalable con Pinecone (BM25 + embeddings locales + fusión RRF). Ver: https://www.coderhouse.com/ar/cursos/ai-engineering
 `;
