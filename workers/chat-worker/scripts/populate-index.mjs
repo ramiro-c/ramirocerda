@@ -26,6 +26,22 @@ import { KNOWLEDGE_BASE } from "./knowledge-base.js";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const MANIFEST_PATH = path.join(SCRIPT_DIR, "..", "vectorize-manifest.json");
 
+// Optional convenience: auto-load a gitignored `.env` from the repo root when no
+// CLOUDFLARE_API_TOKEN is already exported. Explicit env vars always win.
+if (!process.env.CLOUDFLARE_API_TOKEN) {
+  for (const candidate of [
+    path.resolve(SCRIPT_DIR, "..", "..", "..", ".env"),
+    path.join(process.cwd(), ".env"),
+  ]) {
+    try {
+      process.loadEnvFile(candidate);
+      break;
+    } catch {
+      // missing/unreadable .env is fine — continue with exported env only
+    }
+  }
+}
+
 const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const EMBED_BATCH_SIZE = 16;
 const INDEX_NAME = process.env.VECTORIZE_INDEX ?? "botardo-kb";

@@ -11,7 +11,7 @@ export const KNOWLEDGE_BASE = `
 - **Email**: rami992009@gmail.com (canal preferido para charlar de roles Senior Full-Stack / Applied AI)
 - **LinkedIn**: https://www.linkedin.com/in/cerdaramiro/
 - **GitHub**: https://github.com/ramiro-c
-- **Web personal**: https://ramirocerda.vercel.app
+- **Web personal**: https://ramirocerda.com.ar
 - **Contacto profesional**: si preguntan cómo contactarlo o por oportunidades, indicá el email. No digas que "está buscando laburo" ni que "manda CVs"; podés decir que está abierto a charlar de roles Senior Full-Stack / Applied AI con ownership real.
 
 ## Experiencia Profesional
@@ -41,13 +41,18 @@ Desarrollo full-stack para sistemas de administración comercial, gestión de st
 ## Proyectos Destacados
 
 ### AI Agents Hub
-Monorepo de experimentación con arquitecturas avanzadas de agentes de IA. Implementé asistentes con capacidades de planificación multi-paso (PlanReAct), extracción de datos estructurados con Pydantic y ejecución nativa de código. Desarrollé y desplegué aplicaciones full-stack (Career Coach y Customer Support) en Cloud Run utilizando autenticación ADC y Vertex AI Agent Engine.
-* **Stack:** Python 3.13, Google ADK, LangGraph, FastAPI, React 19, Vertex AI, Cloud Run.
+Monorepo de experimentación con arquitecturas avanzadas de agentes de IA (Google ADK + LangGraph, jun 2026 – actualidad). Exploré asistentes con planificación multi-paso, extracción estructurada y ejecución nativa de código, y desplegué aplicaciones full-stack en producción.
+* **Agentes con Google ADK:** tutor de álgebra (LlmAgent básico + versión YAML-only); solucionador de problemas complejos con PlanReActPlanner (planificación multi-paso); extractor de información de productos con output_schema + Pydantic (JSON estructurado); asistente de investigación con Google Search; asistente de lectura de archivos vía MCP filesystem; asistente matemático con BuiltInCodeExecutor; Travel Agent con MCP PostgreSQL + SQL + function tools.
+* **Flujos con LangGraph:** Email Assistant (clasifica mensajes para responder, ignorar o notificar usando StateGraph, Command routing y herramientas @tool).
+* **Customer Support Chat:** app full-stack con agente ADK en español (frontend React 19 + TypeScript, backend proxy FastAPI, flujo Browser → Vite → FastAPI → ADK api_server → OpenRouter).
+* **Career Coach:** app full-stack de planes de carrera a N meses con BuiltInPlanner y 3 tools (skill gap, estimación de esfuerzo, timeline); desplegado en Vertex AI Agent Engine con frontend React 19 + Markdown y backend FastAPI con sesiones por email (Cloud Run, auth ADC).
+* **Stack:** Python 3.13, Google ADK 2.2.0, LangGraph, FastAPI, React 19, TypeScript, LiteLLM, OpenRouter, Vertex AI, Cloud Run, Ruff, pre-commit.
 * **Link:** https://github.com/ramiro-c/ai-agents-hub
 
-### Mundial 2026
-Aplicación full-stack de alto rendimiento para el seguimiento del torneo. Diseñé el pipeline de cruce de datos en tiempo real desde múltiples APIs y fuentes históricas abiertas, implementando mapas interactivos y una UI responsive optimizada para mobile con carga inmediata.
-* **Stack:** FastAPI, React 19, TypeScript, Tailwind CSS v4, Cloudflare Workers.
+### Mundial 2026 — Soccer Analytics / World Cup Companion
+Aplicación full-stack de análisis de fútbol para el Mundial 2026 (México, USA, Canadá). Incluye tabla de grupos con lógica de mejores terceros, fixture completo con hora local, cuadro eliminatorio de 16avos hasta la Final, mapa interactivo de las 16 sedes, histórico de enfrentamientos en Mundiales desde 1930 con estadísticas por selección y guía de TV por país.
+* **Fuentes de datos:** wheniskickoff API (fixture, grupos, sedes, TV), OpenFootball (histórico CC0), StatsBomb (eventos históricos).
+* **Stack:** FastAPI, React 19, TypeScript, Vite, Tailwind CSS v4, Leaflet, Cloudflare Workers.
 * **Links:** Demo: https://worldcup-2026.rami992009.workers.dev | GitHub: https://github.com/rami992009/mundial-2026
 
 ### linkedin-markdownificator
@@ -58,11 +63,11 @@ Herramienta para exportar perfiles de LinkedIn a Markdown, facilitando la sincro
 ### Portafolio Personal y Asistente IA
 Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente conversacional con RAG (retrieval-augmented generation) que responde consultas interactivas sobre mi experiencia y stack. El bot corre en Cloudflare Workers con recuperación vectorial sobre Cloudflare Vectorize y generación con DeepSeek V4 Flash a través de OpenCode Go. La base de conocimiento la armé gracias al scraper linkedin-markdownificator.
 * **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4 Flash), Vercel.
-* **Link:** https://ramirocerda.vercel.app
+* **Link:** https://ramirocerda.com.ar
 
 ## Sitio Web y Arquitectura del Bot
 
-* **Sitio:** https://ramirocerda.vercel.app, desarrollado con Astro y TypeScript, desplegado en Vercel.
+* **Sitio:** https://ramirocerda.com.ar, desarrollado con Astro y TypeScript, desplegado en Vercel.
 * **Botardo:** agente conversacional serverless que vive en un Cloudflare Worker junto a la web personal.
 * **Pipeline RAG por pregunta:**
   1. Se detecta el idioma del último mensaje del visitante (español o inglés) de forma determinística.
@@ -81,6 +86,13 @@ Desarrollé una app móvil en React Native + Expo para la tesis de dos puericult
 Sistema personal de gestión de conocimiento sobre Obsidian, sincronizado con Git (GitHub + iCloud). Capturo fuentes en crudo (artículos, papers, videos, PDFs) y agentes de IA las procesan automáticamente vía skills propias: categorización, extracción de ideas clave, links semánticos entre notas y resúmenes con puntos de acción. El resultado es una base con la que puedo conversar desde cualquier agente, no solo buscar por keyword.
 * **Stack:** Obsidian, Git, agentes de IA (Claude, OpenCode, modelos locales/cloud).
 
+## Certificaciones
+
+### Google Cloud — AI Agents Path (completo, jun–jul 2026)
+Completé el recorrido completo de Google Cloud en AI Agents: 10 certificaciones oficiales en dos tandas (jun y jul 2026), desde los fundamentos del Agent Development Kit hasta la orquestación multi-agente en Gemini Enterprise y el despliegue de arquitecturas en producción.
+* **Junio 2026:** Engineer AI Agents with Agent Development Kit (ADK) · Optimize Agent Behavior · Add Agent Capabilities With Tools · Manage Agent Memory and State.
+* **Julio 2026:** Build and Deploy Agents in Production · Deploy Your First Agent · Gen AI Agents: Transform Your Organization · Human-Centered AI · Orchestrate Multi-agent Workflows with Gemini Enterprise · Deploy Multi-Agent Architectures.
+
 ## Stack Técnico
 
 * **Frontend & Mobile:** React (19), React Native, TypeScript, JavaScript, Expo, Zustand, React Query, Vue.js, Tailwind CSS (v4), Shadcn/ui, Leaflet, amCharts.
@@ -88,7 +100,7 @@ Sistema personal de gestión de conocimiento sobre Obsidian, sincronizado con Gi
 * **IA & Automatización:** Google ADK, LangGraph, Cloudflare Workers AI (embeddings bge-m3), Cloudflare Vectorize (RAG), OpenCode Go (DeepSeek V4 Flash), n8n, APIs de LLMs (Gemini, Anthropic), OpenRouter, Claude Code, Cursor (context management).
 * **DevOps, Calidad & Testing:** CI/CD (GitHub Actions, Bitbucket Pipelines), Docker, Git (worktrees), Bash, Sentry, New Relic, Pytest, Jest, Vitest, Playwright, SonarQube.
 * **Metodologías & Procesos:** SCRUM, GitFlow, Code Reviews, Jira, Confluence.
-* **Certificaciones:** 10 certificaciones de Google en AI Agents (ADK, Gemini Enterprise, Responsible AI), 2026.
+* **Certificaciones:** Path completo de Google Cloud en AI Agents (10 certificaciones, jun–jul 2026) — ver sección Certificaciones.
 * **Idiomas:** Español (Nativo) | Inglés (Intermedio/Avanzado).
 
 ## Educación

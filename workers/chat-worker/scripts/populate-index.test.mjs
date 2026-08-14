@@ -17,9 +17,9 @@ describe("chunkKB", () => {
     }
   });
 
-  it("splits the real KB into heading-boundary chunks (13)", () => {
+  it("splits the real KB into heading-boundary chunks (14)", () => {
     const chunks = chunkKB(KNOWLEDGE_BASE);
-    expect(chunks.length).toBe(13);
+    expect(chunks.length).toBe(14);
 
     const sections = chunks.map((c) => c.section);
     expect(sections).toContain("Overview");
@@ -28,6 +28,7 @@ describe("chunkKB", () => {
     expect(sections).toContain("AI Agents Hub");
     expect(sections).toContain("LactarIA");
     expect(sections).toContain("Sitio Web y Arquitectura del Bot");
+    expect(sections).toContain("Google Cloud — AI Agents Path (completo, jun–jul 2026)");
   });
 
   it("keeps every KB content line in exactly one chunk (R1 content unchanged)", () => {
