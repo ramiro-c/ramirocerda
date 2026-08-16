@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { detectLanguage, FALLBACK_MESSAGES } from "./language";
+import { detectLanguage } from "./language";
 
 describe("detectLanguage", () => {
   it("detects Spanish (AE2)", () => {
@@ -23,17 +23,5 @@ describe("detectLanguage", () => {
   it("defaults to Spanish on empty or whitespace input (D7)", () => {
     expect(detectLanguage("")).toBe("es");
     expect(detectLanguage("   ")).toBe("es");
-  });
-});
-
-describe("FALLBACK_MESSAGES (R8)", () => {
-  it("provides a graceful no-info message in each language", () => {
-    expect(FALLBACK_MESSAGES.es).toContain("No tengo esa información");
-    expect(FALLBACK_MESSAGES.en).toContain("don't have that information");
-  });
-
-  it("does not invent facts and never refuses", () => {
-    expect(FALLBACK_MESSAGES.es).not.toMatch(/no\s+te\s+respondo|rehuso/i);
-    expect(FALLBACK_MESSAGES.en).not.toMatch(/refus|can'?t\s+answer/i);
   });
 });

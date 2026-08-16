@@ -94,4 +94,12 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
     expect(messages[0].content.startsWith("Sos Botardo")).toBe(true);
     expect(messages[messages.length - 1]).toEqual({ role: "user", content: "¿Quién sos?" });
   });
+
+  it("marks empty retrieval and keeps the no-invent guardrail (R2/R8)", () => {
+    const messages = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [], language: "es", message: "contame un chiste" });
+    const system = messages[0].content;
+    expect(system).toContain("(sin contexto recuperado)");
+    expect(system).toContain("basate EXCLUSIVAMENTE en el CONTEXTO RECUPERADO");
+    expect(system).toContain("Si la respuesta no está en el contexto, decilo con naturalidad");
+  });
 });

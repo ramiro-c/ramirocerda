@@ -1,4 +1,4 @@
-import { detectLanguage, FALLBACK_MESSAGES } from "./language";
+import { detectLanguage } from "./language";
 import { buildRagPrompt, retrieveChunks, type ChatMessage } from "./rag";
 import { generateReply } from "./generate";
 
@@ -128,22 +128,11 @@ async function handleRag(
     history_turns: history?.length ?? 0,
   });
 
-  // Retrieve top-k chunks; empty retrieval -> deterministic no-info fallback
-  // in the visitor's language, without an LLM call (R8 / design D6).
+  // Retrieve top-k chunks; empty retrieval still goes to the model so the
+  // guardrails in the prompt handle off-topic questions (R8 / design D6).
   const t0 = Date.now();
   const chunks = await retrieveChunks(message, env);
   log("chat.rag_retrieved", { chunk_count: chunks.length, latency_ms: Date.now() - t0 });
-
-  if (chunks.length === 0) {
-    log("chat.rag_fallback", { lang });
-    return new Response(JSON.stringify({ reply: FALLBACK_MESSAGES[lang] }), {
-      status: 200,
-      headers: {
-        ...corsHeaders(origin),
-        "Content-Type": "application/json",
-      },
-    });
-  }
 
   const messages = buildRagPrompt({
     identityPrompt: IDENTITY_PROMPT,

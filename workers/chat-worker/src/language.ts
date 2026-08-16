@@ -47,9 +47,3 @@ export function detectLanguage(message: string): Language {
   const en = countMatches(text, EN_MARKERS);
   return es >= en ? "es" : "en";
 }
-
-/** Graceful no-info fallback (R8): never silent, never a refusal, no invented facts. */
-export const FALLBACK_MESSAGES: Record<Language, string> = {
-  es: "No tengo esa información en mi base de conocimiento. Preguntame sobre la experiencia, los proyectos o el stack de Ramiro y te ayudo con gusto.",
-  en: "I don't have that information in my knowledge base. Ask me about Ramiro's experience, projects, or tech stack and I'll be glad to help.",
-};
