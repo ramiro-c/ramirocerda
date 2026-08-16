@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import Botardo from "../components/Botardo.astro";
+import { switchLangPath } from "../i18n/utils";
 
 interface Props {
   title: string;
@@ -11,6 +12,9 @@ interface Props {
 const { title, description, lang } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogLocale = lang === "es" ? "es_AR" : "en_US";
+const ogLocaleAlternate = lang === "es" ? "en_US" : "es_AR";
+const esURL = new URL(switchLangPath(Astro.url.pathname, "es"), Astro.site);
+const enURL = new URL(switchLangPath(Astro.url.pathname, "en"), Astro.site);
 ---
 
 <!doctype html>
@@ -22,10 +26,14 @@ const ogLocale = lang === "es" ? "es_AR" : "en_US";
     <meta name="theme-color" content="#F7F5F1" />
     <link rel="icon" type="image/png" href="/rc.png" />
     <link rel="canonical" href={canonicalURL} />
+    <link rel="alternate" hreflang="es" href={esURL} />
+    <link rel="alternate" hreflang="en" href={enURL} />
+    <link rel="alternate" hreflang="x-default" href={new URL("/es/", Astro.site)} />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ramiro Cerdá" />
     <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogLocaleAlternate} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />

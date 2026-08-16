@@ -10,6 +10,7 @@
     "chat:populate": "node workers/chat-worker/scripts/populate-index.mjs"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
     "astro": "^5.10.0"
   },
   "devDependencies": {
