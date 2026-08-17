@@ -20,8 +20,6 @@ const projects = defineCollection({
     featured: z.boolean().default(false),
     order: z.number(),
     tags: z.array(z.string()).default([]),
-    // Optional cover image served from /public, e.g. "/projects/mundial-2026.webp".
-    image: z.string().optional(),
     repo: z.string().url().optional(),
     demo: z.string().url().optional(),
     es: localized,

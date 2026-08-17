@@ -48,7 +48,11 @@ export const ui = {
       "workflow.legend.hitl": "Human-in-the-loop",
       "workflow.howTerminates": "El pipeline termina cuando card-pr publica el PR, Judgment Day da veredicto limpio, y el canal de Partners recibe la notificación. No hay auto-merge: la decisión final siempre es humana.",
     "work.title": "Proyectos",
+    "work.description":
+      "Proyectos seleccionados: apps, agentes de IA y herramientas construidas con foco en calidad y performance.",
     "notes.title": "Notas",
+    "notes.description":
+      "Notas y apuntes sobre ingeniería, agentes de IA y arquitectura.",
     "notes.empty":
       "Todavía no hay notas. Vuelvo cuando tenga algo que valga la pena publicar.",
     "footer.line": "Diseñado y construido por Ramiro Cerdá · Buenos Aires",
@@ -108,7 +112,11 @@ export const ui = {
       "workflow.legend.hitl": "Human-in-the-loop",
       "workflow.howTerminates": "The pipeline ends when card-pr publishes the PR, Judgment Day returns a clean verdict, and the Partners channel receives the notification. No auto-merge: the final decision is always human.",
     "work.title": "Work",
+    "work.description":
+      "Selected projects: apps, AI agents, and tools built with a focus on quality and performance.",
     "notes.title": "Notes",
+    "notes.description":
+      "Notes and musings on engineering, AI agents, and architecture.",
     "notes.empty":
       "No notes yet. Back when there’s something worth publishing.",
     "footer.line": "Designed and built by Ramiro Cerdá · Buenos Aires",

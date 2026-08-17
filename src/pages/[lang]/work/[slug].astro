@@ -45,10 +45,6 @@ const links = [
 
     <p class="summary">{data.summary}</p>
 
-    {project.data.image && (
-      <img class="cover" src={project.data.image} alt={data.title} loading="lazy" />
-    )}
-
     <section class="section">
       <p class="mono section-label">{t("project.problem")}</p>
       <p class="body">{data.problem}</p>
@@ -135,14 +131,6 @@ const links = [
     padding-left: 0.9rem;
     border-left: 3px solid var(--accent);
     color: var(--muted);
-  }
-  .cover {
-    display: block;
-    width: 100%;
-    height: auto;
-    margin: 0 0 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
   }
   .section {
     padding: 1rem 0 0;

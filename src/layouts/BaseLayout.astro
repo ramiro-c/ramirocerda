@@ -15,6 +15,37 @@ const ogLocale = lang === "es" ? "es_AR" : "en_US";
 const ogLocaleAlternate = lang === "es" ? "en_US" : "es_AR";
 const esURL = new URL(switchLangPath(Astro.url.pathname, "es"), Astro.site);
 const enURL = new URL(switchLangPath(Astro.url.pathname, "en"), Astro.site);
+const homeURL = new URL(lang === "es" ? "/es/" : "/en/", Astro.site);
+const inLanguage = lang === "es" ? "es-AR" : "en-US";
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${homeURL.href}#website`,
+      name: "Ramiro Cerdá",
+      url: homeURL.href,
+      inLanguage,
+      publisher: { "@id": `${homeURL.href}#person` },
+    },
+    {
+      "@type": "Person",
+      "@id": `${homeURL.href}#person`,
+      name: "Ramiro Cerdá",
+      url: homeURL.href,
+      jobTitle: "Senior Full-Stack Developer",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Buenos Aires",
+        addressCountry: "AR",
+      },
+      sameAs: [
+        "https://github.com/ramiro-c",
+        "https://www.linkedin.com/in/cerdaramiro/",
+      ],
+    },
+  ],
+};
 ---
 
 <!doctype html>
@@ -41,6 +72,8 @@ const enURL = new URL(switchLangPath(Astro.url.pathname, "en"), Astro.site);
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
