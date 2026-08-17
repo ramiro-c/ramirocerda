@@ -25,8 +25,8 @@ describe("chunkKB", () => {
     expect(sections).toContain("Overview");
     expect(sections).toContain("Stack Técnico");
     expect(sections).toContain("Educación");
-    expect(sections).toContain("AI Agents Hub");
-    expect(sections).toContain("LactarIA");
+    expect(sections).toContain("Soccer Analytics Agent");
+    expect(sections).toContain("Mundial 2026 — Soccer Analytics / World Cup Companion");
     expect(sections).toContain("Sitio Web y Arquitectura del Bot");
     expect(sections).toContain("Google Cloud — AI Agents Path (completo, jun–jul 2026)");
   });

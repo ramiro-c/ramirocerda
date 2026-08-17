@@ -31,7 +31,7 @@ describe("generateReply (D8/D9, R5/R7)", () => {
     expect(JSON.parse(init.body)).toMatchObject({
       model: "deepseek-v4-flash",
       messages,
-      max_tokens: 512,
+      max_tokens: 1024,
       temperature: 0.3,
     });
   });

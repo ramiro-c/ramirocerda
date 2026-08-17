@@ -41,13 +41,9 @@ Desarrollo full-stack para sistemas de administración comercial, gestión de st
 
 ## Proyectos Destacados
 
-### AI Agents Hub
-Monorepo de experimentación con arquitecturas avanzadas de agentes de IA (Google ADK + LangGraph, jun 2026 – actualidad). Exploré asistentes con planificación multi-paso, extracción estructurada y ejecución nativa de código, y desplegué aplicaciones full-stack en producción.
-* **Agentes con Google ADK:** tutor de álgebra (LlmAgent básico + versión YAML-only); solucionador de problemas complejos con PlanReActPlanner (planificación multi-paso); extractor de información de productos con output_schema + Pydantic (JSON estructurado); asistente de investigación con Google Search; asistente de lectura de archivos vía MCP filesystem; asistente matemático con BuiltInCodeExecutor; Travel Agent con MCP PostgreSQL + SQL + function tools.
-* **Flujos con LangGraph:** Email Assistant (clasifica mensajes para responder, ignorar o notificar usando StateGraph, Command routing y herramientas @tool).
-* **Customer Support Chat:** app full-stack con agente ADK en español (frontend React 19 + TypeScript, backend proxy FastAPI, flujo Browser → Vite → FastAPI → ADK api_server → OpenRouter).
-* **Career Coach:** app full-stack de planes de carrera a N meses con BuiltInPlanner y 3 tools (skill gap, estimación de esfuerzo, timeline); desplegado en Vertex AI Agent Engine con frontend React 19 + Markdown y backend FastAPI con sesiones por email (Cloud Run, auth ADC).
-* **Stack:** Python 3.13, Google ADK 2.2.0, LangGraph, FastAPI, React 19, TypeScript, LiteLLM, OpenRouter, Vertex AI, Cloud Run, Ruff, pre-commit.
+### Soccer Analytics Agent
+Agente de chat de análisis y predicción de fútbol sobre ~49k partidos internacionales (1872–hoy, dataset Kaggle), con un loop de herramientas escrito a mano (sin framework de agentes): Gemini vía Vertex AI razona, decide y llama tools. Expone 9 herramientas, entre ellas SQL de solo lectura, búsqueda vectorial, retrieval híbrido con fusión RRF, Elo por equipo, forma y head-to-head, y un predictor de resultados con XGBoost multiclass (51 features, 336 equipos, fallback Elo). Memoria de 3 niveles (working/episodic/semántica) y Postgres 16 + pgvector como capa única de datos, vectores y memoria. Fases 0–7 completas (predictor incluido); fase 8 de deploy a GCP (Cloud Run + Cloud SQL) en curso.
+* **Stack:** Python 3.12, uv, Postgres 16 + pgvector, sentence-transformers (MiniLM all-MiniLM-L6-v2, 384 dims), XGBoost, FastAPI, React, Gemini vía Vertex AI, Ruff, pre-commit.
 * **Link:** https://github.com/ramiro-c/ai-agents-hub
 
 ### Mundial 2026 — Soccer Analytics / World Cup Companion
@@ -79,9 +75,9 @@ Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente con
 * **Sin información:** si la pregunta no tiene contexto en la base, Botardo lo aclara con elegancia en el idioma del visitante, sin inventar contenido.
 * **Seguridad:** la API key de OpenCode Go vive como secret del Worker, nunca en el repositorio.
 
-### LactarIA
-Desarrollé una app móvil en React Native + Expo para la tesis de dos puericultoras, usada por 50 madres como herramienta de apoyo en lactancia y crianza. Implementé un backend serverless integrado con la API de Gemini. Publicada como prueba cerrada en Play Store con 100% de satisfacción de usuarias, 77.3% reportó menor ansiedad gracias al chatbot en tiempo real y 95.5% destacó la facilidad de uso.
-* **Stack:** React Native, Expo, Serverless, Gemini.
+### Botardo — Implementación
+Agente conversacional con RAG embebido en mi sitio web personal. Implementé el pipeline completo en Cloudflare Workers: el mensaje del visitante se embeddea con bge-m3 (Workers AI), se recuperan los chunks más similares desde Cloudflare Vectorize (umbral de similitud más tope de 4 chunks) y se genera la respuesta con DeepSeek V4 Flash a través de OpenCode Go. El idioma (es/en) se detecta de forma determinística y, si no hay contexto recuperado, igual se llama al modelo: el prompt marca el contexto como vacío e instruye a DeepSeek a responder solo con lo recuperado y a decir con naturalidad que no tiene esa información, sin inventar. Incluye retry con backoff, CORS acotado a los orígenes del sitio y 32 pruebas con Vitest. La base de conocimiento se alimenta desde mi exportador linkedin-markdownificator.
+* **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4 Flash), Vitest.
 
 ### Knowledge Vault
 Sistema personal de gestión de conocimiento sobre Obsidian, sincronizado con Git (GitHub + iCloud). Capturo fuentes en crudo (artículos, papers, videos, PDFs) y agentes de IA las procesan automáticamente vía skills propias: categorización, extracción de ideas clave, links semánticos entre notas y resúmenes con puntos de acción. El resultado es una base con la que puedo conversar desde cualquier agente, no solo buscar por keyword.

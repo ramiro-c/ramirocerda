@@ -1,21 +1,21 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-08-16T13:35:24.254Z",
+  "generatedAt": "2026-08-17T01:34:23.091Z",
   "ids": [
-    "kb-ai-agents-hub-ea4f5dc8",
+    "kb-botardo-implementacion-9da4b03e",
     "kb-desarrollador-mobile-front-end-ssr-react-native--9a3f9045",
     "kb-devgam-secretaria-de-tic-utn-frlp-y-new-logic-ae916f6a",
     "kb-educacion-5b6f6a1d",
     "kb-full-stack-tech-lead-hands-on-abr-2025-actualida-82319aba",
     "kb-google-cloud-ai-agents-path-completo-jun-jul-202-33bfdb1e",
     "kb-knowledge-vault-665f7171",
-    "kb-lactaria-edaccbe8",
     "kb-linkedin-markdownificator-55f4b3f5",
     "kb-mundial-2026-soccer-analytics-world-cup-companio-275e54e1",
     "kb-overview-2009beb6",
     "kb-portafolio-personal-y-asistente-ia-b3f81fb0",
     "kb-sitio-web-y-arquitectura-del-bot-b207234e",
+    "kb-soccer-analytics-agent-a0bdecf5",
     "kb-stack-tecnico-b6a982f1"
   ]
 }
