@@ -4,6 +4,7 @@ kind: personal
 status: active
 featured: false
 order: 9
+repo: https://github.com/ramiro-c/rutinify
 tags: ["React", "PWA", "TypeScript"]
 es:
   title: "Rutinify — Gestión de rutinas de gimnasio"

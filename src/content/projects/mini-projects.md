@@ -4,6 +4,7 @@ kind: personal
 status: wip
 featured: false
 order: 10
+repo: https://github.com/ramiro-c/mini-projects
 tags: ["Backend", "RabbitMQ", "TypeScript"]
 es:
   title: "mini-projects — Lab de patrones backend"
