@@ -1,0 +1,72 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { languages, type Lang } from "../i18n/ui";
+import { getLocalizedPath, useTranslations } from "../i18n/utils";
+
+const requested = Astro.url.pathname.split("/")[1] as Lang;
+const lang: Lang = requested in languages ? requested : "es";
+const t = useTranslations(lang);
+---
+
+<BaseLayout
+  lang={lang}
+  title={t("notfound.title")}
+  description={t("notfound.support")}
+>
+  <SiteHeader slot="header" lang={lang} />
+
+  <section class="hero">
+    <p class="brand-line mono">404</p>
+    <h1 class="display">{t("notfound.title")}</h1>
+    <p class="support">{t("notfound.support")}</p>
+    <div class="ctas">
+      <a class="btn solid" href={getLocalizedPath(lang, "/")}>{t("notfound.cta")}</a>
+    </div>
+  </section>
+
+  <SiteFooter slot="footer" lang={lang} />
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: 1rem 0 2.5rem;
+  }
+  .brand-line {
+    margin: 0 0 0.75rem;
+    color: var(--muted-2);
+    font-size: 0.9rem;
+  }
+  .display {
+    margin: 0 0 1rem;
+    font-size: clamp(2.4rem, 8vw, 4.2rem);
+  }
+  .support {
+    max-width: 36rem;
+    color: var(--muted);
+    margin: 0 0 1.5rem;
+  }
+  .ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .btn {
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    padding: 0.65rem 0.95rem;
+    text-decoration: none;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border-radius: var(--radius);
+  }
+  .btn.solid {
+    background: var(--border);
+    color: var(--bg);
+  }
+</style>

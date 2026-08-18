@@ -71,6 +71,9 @@ export const ui = {
     "status.wip": "En progreso",
     "status.pilot": "Piloto",
     "status.archived": "Archivado",
+    "notfound.title": "404 — Esta página no existe",
+    "notfound.support": "El link puede estar roto o la página fue movida.",
+    "notfound.cta": "Volver al inicio",
   },
   en: {
     "nav.about": "About",
@@ -135,6 +138,9 @@ export const ui = {
     "status.wip": "In progress",
     "status.pilot": "Pilot",
     "status.archived": "Archived",
+    "notfound.title": "404 — This page doesn’t exist",
+    "notfound.support": "The link may be broken or the page was moved.",
+    "notfound.cta": "Back home",
   },
 } as const;
 
