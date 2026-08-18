@@ -17,9 +17,9 @@ describe("chunkKB", () => {
     }
   });
 
-  it("splits the real KB into heading-boundary chunks (14)", () => {
+  it("splits the real KB into heading-boundary chunks (22)", () => {
     const chunks = chunkKB(KNOWLEDGE_BASE);
-    expect(chunks.length).toBe(14);
+    expect(chunks.length).toBe(22);
 
     const sections = chunks.map((c) => c.section);
     expect(sections).toContain("Overview");
@@ -29,6 +29,14 @@ describe("chunkKB", () => {
     expect(sections).toContain("Mundial 2026 — Soccer Analytics / World Cup Companion");
     expect(sections).toContain("Sitio Web y Arquitectura del Bot");
     expect(sections).toContain("Google Cloud — AI Agents Path (completo, jun–jul 2026)");
+    expect(sections).toContain("Workflow de trabajo con agentes (loop de cards)");
+    expect(sections).toContain("Triage");
+    expect(sections).toContain("card-start");
+    expect(sections).toContain("SDD auto");
+    expect(sections).toContain("card-review");
+    expect(sections).toContain("card-pr");
+    expect(sections).toContain("Judgment Day");
+    expect(sections).toContain("Partners / Slack");
   });
 
   it("keeps every KB content line in exactly one chunk (R1 content unchanged)", () => {

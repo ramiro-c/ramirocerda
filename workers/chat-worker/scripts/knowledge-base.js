@@ -83,6 +83,31 @@ Agente conversacional con RAG embebido en mi sitio web personal. Implementé el 
 Sistema personal de gestión de conocimiento sobre Obsidian, sincronizado con Git (GitHub + iCloud). Capturo fuentes en crudo (artículos, papers, videos, PDFs) y agentes de IA las procesan automáticamente vía skills propias: categorización, extracción de ideas clave, links semánticos entre notas y resúmenes con puntos de acción. El resultado es una base con la que puedo conversar desde cualquier agente, no solo buscar por keyword.
 * **Stack:** Obsidian, Git, agentes de IA (Claude, OpenCode, modelos locales/cloud).
 
+## Workflow de trabajo con agentes (loop de cards)
+
+Ramiro itera con agentes de IA en un loop de 7 etapas sobre cards de Jira, alternando fases autónomas con puntos de decisión humana (human-in-the-loop). Cada card del backlog en To Do con label "agent:loop" pasa por las etapas conectadas. No hay auto-merge: la decisión final siempre es humana.
+
+### Triage
+Se toma una card del backlog en To Do con label agent:loop. Todavía lo dispara Ramiro manualmente (no hay cron): cada tick agarra como máximo una card. Clasifica tipo de tarea y asigna prioridad.
+
+### card-start
+Crea un worktree aislado con su propia rama a partir de la card de Jira. Resuelve el repo y la rama base desde los labels de la card. Listo para trabajar sin tocar el checkout principal.
+
+### SDD auto
+Pipeline completo de 5 fases: Explore (contexto), Propose (intención), Spec (requisitos + escenarios), Design (arquitectura técnica), Tasks (desglose en tareas). Todo generado por agentes antes de tocar código. Punto human-in-the-loop: Ramiro revisa antes de continuar.
+
+### card-review
+Revisión pre-PR usando los cuatro lentes 4R (Requirements, Reliability, Readability, Risk). Report-only: encuentra issues antes de abrir el PR. Opcionalmente simplifica código si el usuario lo pide.
+
+### card-pr
+Push de la rama y apertura del PR en GitHub. No mergea: deja el diff listo para la revisión adversarial del paso siguiente.
+
+### Judgment Day
+Revisión adversarial ciega: dos agentes revisan el diff de forma independiente, comparan hallazgos y emiten un veredicto. Si encuentra issues, vuelve a SDD para fix + re-judgment (máximo 2 rondas). Punto human-in-the-loop.
+
+### Partners / Slack
+La card se mueve a Partners/Code Review en Jira y se manda una sola notificación al canal de Slack (backend o frontend). El merge es humano — el loop nunca auto-mergea.
+
 ## Certificaciones
 
 ### Google Cloud — AI Agents Path (completo, jun–jul 2026)
