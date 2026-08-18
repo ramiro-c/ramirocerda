@@ -3,7 +3,7 @@ slug: mini-projects
 kind: personal
 status: wip
 featured: false
-order: 9
+order: 10
 tags: ["Backend", "RabbitMQ", "TypeScript"]
 es:
   title: "mini-projects — Lab de patrones backend"

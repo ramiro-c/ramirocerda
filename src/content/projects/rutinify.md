@@ -3,7 +3,7 @@ slug: rutinify
 kind: personal
 status: active
 featured: false
-order: 8
+order: 9
 tags: ["React", "PWA", "TypeScript"]
 es:
   title: "Rutinify — Gestión de rutinas de gimnasio"
