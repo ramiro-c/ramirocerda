@@ -18,7 +18,7 @@ export const ui = {
     "cta.work": "Proyectos",
     "cta.botardo": "Botardo",
     "home.brand": "Ramiro Cerdá",
-    "home.thesis": "Senior Full-Stack.",
+    "home.thesis": "Semi Senior Full-Stack.",
     "home.support":
       "Performance, observabilidad y calidad. Agentes de IA en producción — arquitectura, código y deploy.",
     "home.workLabel": "01 / PROYECTOS",
@@ -85,7 +85,7 @@ export const ui = {
     "cta.work": "Projects",
     "cta.botardo": "Botardo",
     "home.brand": "Ramiro Cerdá",
-    "home.thesis": "Senior Full-Stack.",
+    "home.thesis": "Semi Senior Full-Stack.",
     "home.support":
       "Performance, observability, and quality. AI agents in production — architecture, code, and deploy.",
     "home.workLabel": "01 / WORK",

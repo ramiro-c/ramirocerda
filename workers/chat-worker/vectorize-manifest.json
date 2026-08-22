@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-08-18T13:52:23.249Z",
+  "generatedAt": "2026-08-22T16:54:11.821Z",
   "ids": [
     "kb-botardo-implementacion-9da4b03e",
     "kb-card-pr-df0a4f67",
@@ -16,7 +16,7 @@
     "kb-knowledge-vault-665f7171",
     "kb-linkedin-markdownificator-55f4b3f5",
     "kb-mundial-2026-soccer-analytics-world-cup-companio-275e54e1",
-    "kb-overview-2009beb6",
+    "kb-overview-ab056973",
     "kb-partners-slack-cb90af80",
     "kb-portafolio-personal-y-asistente-ia-b3f81fb0",
     "kb-sdd-auto-753004c5",
