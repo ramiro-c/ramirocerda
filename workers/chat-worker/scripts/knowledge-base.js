@@ -3,7 +3,7 @@ export const KNOWLEDGE_BASE = `
 
 ## Overview
 - **Nombre**: Ramiro Cerdá
-- **Rol / positioning**: Semi Senior Full-Stack Engineer. En LDP (Libro de Pases) trabaja como Tech Lead hands-on (título actual del empleo; el positioning público prioriza Semi Senior Full-Stack).
+- **Rol**: Semi Senior Full-Stack Engineer. En LDP (Libro de Pases) trabaja como Tech Lead hands-on.
 - **Ubicación**: La Plata, Buenos Aires, Argentina
 - **Años de experiencia**: 6+ años (carrera profesional iniciada en 2020)
 - **Especialidades**: Node.js, NestJS, Python, FastAPI, React (19), React Native, TypeScript, Arquitectura de software, performance, observabilidad, agentes de IA (Google ADK, LangGraph), inferencia en el edge y automatizaciones.
