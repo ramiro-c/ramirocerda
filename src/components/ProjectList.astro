@@ -15,12 +15,13 @@ interface Item {
 interface Props {
   lang: Lang;
   items: Item[];
+  variant?: "list" | "grid";
 }
-const { lang, items } = Astro.props;
+const { lang, items, variant = "list" } = Astro.props;
 const t = useTranslations(lang);
 ---
 
-<ul class="list">
+<ul class:list={["list", { grid: variant === "grid" }]}>
   {
     items.map((item) => (
       <li>
@@ -65,6 +66,33 @@ const t = useTranslations(lang);
   }
   .list li a:hover {
     transform: translateX(4px);
+  }
+  .list.grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .list.grid li a {
+    border-left: none;
+    border: 1.5px solid var(--border);
+    padding: 1.25rem;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .list.grid li a:hover {
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 0 var(--accent);
+  }
+  .list.grid .summary {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  @media (max-width: 768px) {
+    .list.grid {
+      grid-template-columns: 1fr;
+    }
   }
   .meta {
     display: flex;
@@ -111,6 +139,7 @@ const t = useTranslations(lang);
     }
     .list li a:hover {
       transform: none;
+      box-shadow: none;
     }
   }
 </style>
