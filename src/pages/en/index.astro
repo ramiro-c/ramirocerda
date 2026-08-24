@@ -63,8 +63,7 @@ const projects = (await getCollection("projects"))
     <p class="status-chip mono">
       <span class="chip-dot" aria-hidden="true"></span>
       {t("home.statusAvailable")}
-      <span class="chip-sep" aria-hidden="true">·</span>
-      {t("home.location")}
+      <span class="chip-loc"><span class="chip-sep" aria-hidden="true">·</span> {t("home.location")}</span>
     </p>
   </section>
 
@@ -148,6 +147,12 @@ const projects = (await getCollection("projects"))
   .btn.solid {
     background: var(--border);
     color: var(--bg);
+  }
+  .chip-loc {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
   }
   .status-chip {
     display: inline-flex;
