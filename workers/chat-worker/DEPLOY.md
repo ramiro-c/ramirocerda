@@ -7,6 +7,10 @@ Real RAG + OpenCode Go generation (SDD change `botardo-rag-opencode-go`).
 - Cloudflare account with Vectorize + Workers AI enabled (free tier OK).
 - `wrangler` available (`pnpm dlx wrangler` works from this directory) and authenticated (`wrangler login`).
 - Active OpenCode Go subscription with an API key. **The key is a Worker secret — it must never be committed to the repo.**
+- **Credentials live in the gitignored root `.env`** (`CLOUDFLARE_ACCOUNT_ID`,
+  `CLOUDFLARE_API_TOKEN`) and `workers/chat-worker/.dev.vars` (OpenCode Go key).
+  `pnpm chat:populate` auto-loads the root `.env`, so no credential input is
+  needed to run it — never share, print, or commit these files.
 
 ## One-time setup (already done on 2026-08-13)
 
@@ -15,8 +19,7 @@ Real RAG + OpenCode Go generation (SDD change `botardo-rag-opencode-go`).
 wrangler vectorize create botardo-kb --dimensions=1024 --metric=cosine
 
 # 2. Populate the index from the KB (chunk -> bge-m3 embed -> upsert + prune).
-#    Requires an API token (Cloudflare dashboard > My Profile > API Tokens).
-#    CLOUDFLARE_API_TOKEN works; the wrangler OAuth token only authorizes some endpoints.
+#    Credentials come from the gitignored root `.env` (auto-loaded) — nothing to export.
 pnpm chat:populate        # from the repo root
 #    Preview without touching the index:
 pnpm exec --filter ramirocerda-chat-worker populate -- --dry-run
