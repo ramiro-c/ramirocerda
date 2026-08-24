@@ -25,6 +25,12 @@ export const ui = {
     "home.workAll": "Ver todos",
     "home.notesLabel": "02 / NOTAS",
     "home.notesEmpty": "Pronto notas.",
+    "home.aboutLabel": "Sobre mí",
+    "home.aboutText":
+      "Ingeniero full-stack en Buenos Aires. Construyo productos web rápidos y observables, y llevo agentes de IA de la idea a producción: arquitectura, código y deploy.",
+    "home.stackLabel": "Stack",
+    "home.statusAvailable": "Disponible para proyectos",
+    "home.location": "Buenos Aires · UTC-3",
     "botardo.welcome":
       "¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su experiencia, proyectos, habilidades o cualquier tema profesional.",
     "botardo.open": "Abrir Botardo",
@@ -92,6 +98,12 @@ export const ui = {
     "home.workAll": "View all",
     "home.notesLabel": "02 / NOTES",
     "home.notesEmpty": "Notes coming soon.",
+    "home.aboutLabel": "About me",
+    "home.aboutText":
+      "Full-stack engineer based in Buenos Aires. I build fast, observable web products and take AI agents from idea to production: architecture, code, and deploy.",
+    "home.stackLabel": "Stack",
+    "home.statusAvailable": "Available for projects",
+    "home.location": "Buenos Aires · UTC-3",
     "botardo.welcome":
       "Hi! I’m Botardo, an AI assistant with info about Ramiro. Ask me about his experience, projects, skills, or anything professional.",
     "botardo.open": "Open Botardo",
