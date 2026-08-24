@@ -3,16 +3,16 @@ export const KNOWLEDGE_BASE = `
 
 ## Overview
 - **Nombre**: Ramiro Cerdá
-- **Rol**: Semi Senior Full-Stack Engineer. En LDP (Libro de Pases) trabaja como Tech Lead hands-on.
+- **Rol**: Full-Stack Engineer Engineer. En LDP (Libro de Pases) trabaja como Tech Lead hands-on.
 - **Ubicación**: La Plata, Buenos Aires, Argentina
 - **Años de experiencia**: 6+ años (carrera profesional iniciada en 2020)
 - **Especialidades**: Node.js, NestJS, Python, FastAPI, React (19), React Native, TypeScript, Arquitectura de software, performance, observabilidad, agentes de IA (Google ADK, LangGraph), inferencia en el edge y automatizaciones.
 - **Idiomas**: Español (Nativo), Inglés (Intermedio/Avanzado)
-- **Email**: rami992009@gmail.com (canal preferido para charlar de roles Semi Senior Full-Stack / Applied AI)
+- **Email**: rami992009@gmail.com (canal preferido para charlar de roles Full-Stack Engineer / Applied AI)
 - **LinkedIn**: https://www.linkedin.com/in/cerdaramiro/
 - **GitHub**: https://github.com/ramiro-c
 - **Web personal**: https://ramirocerda.com.ar
-- **Contacto profesional**: si preguntan cómo contactarlo o por oportunidades, indicá el email. No digas que "está buscando laburo" ni que "manda CVs"; podés decir que está abierto a charlar de roles Semi Senior Full-Stack / Applied AI con ownership real.
+- **Contacto profesional**: si preguntan cómo contactarlo o por oportunidades, indicá el email. No digas que "está buscando laburo" ni que "manda CVs"; podés decir que está abierto a charlar de roles Full-Stack Engineer / Applied AI con ownership real.
 
 ## Experiencia Profesional
 

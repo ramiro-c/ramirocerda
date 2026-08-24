@@ -7,3 +7,4 @@ dist/
 .cachebro/
 .atl/
 .env
+.DS_Store
