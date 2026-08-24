@@ -3,14 +3,9 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import SiteHeader from "../../../components/SiteHeader.astro";
 import SiteFooter from "../../../components/SiteFooter.astro";
-import { languages, type Lang } from "../../../i18n/ui";
 import { getLocalizedPath, useTranslations } from "../../../i18n/utils";
 
-export function getStaticPaths() {
-  return (Object.keys(languages) as Lang[]).map((lang) => ({ params: { lang } }));
-}
-
-const lang = Astro.params.lang as Lang;
+const lang = "en";
 const t = useTranslations(lang);
 const notes = (await getCollection("notes"))
   .filter((note) => note.data.lang === lang && !note.data.draft)

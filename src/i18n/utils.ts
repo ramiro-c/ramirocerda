@@ -1,4 +1,4 @@
-import { defaultLang, ui, type Lang, type UiKey } from "./ui";
+import { defaultLang, languages, ui, type Lang, type UiKey } from "./ui";
 
 export function getLangFromUrl(url: URL): Lang {
   const [, maybe] = url.pathname.split("/");
@@ -14,13 +14,23 @@ export function useTranslations(lang: Lang) {
 
 export function getLocalizedPath(lang: Lang, path: string): string {
   const clean = path.startsWith("/") ? path : `/${path}`;
+  if (lang === defaultLang) return clean;
   if (clean === "/") return `/${lang}/`;
   return `/${lang}${clean}`;
 }
 
 export function switchLangPath(currentPath: string, nextLang: Lang): string {
   const parts = currentPath.split("/").filter(Boolean);
-  if (parts.length === 0) return `/${nextLang}/`;
-  parts[0] = nextLang;
-  return `/${parts.join("/")}` + (currentPath.endsWith("/") ? "/" : "");
+  const currentLang = parts.length > 0 && parts[0] in languages;
+  if (currentLang) parts.shift();
+
+  const rest = parts.join("/");
+
+  if (nextLang === defaultLang) {
+    return rest ? `/${rest}${currentPath.endsWith("/") ? "/" : ""}` : "/";
+  }
+
+  return rest
+    ? `/${nextLang}/${rest}${currentPath.endsWith("/") ? "/" : ""}`
+    : `/${nextLang}/`;
 }

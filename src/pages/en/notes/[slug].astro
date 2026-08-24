@@ -3,27 +3,21 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import SiteHeader from "../../../components/SiteHeader.astro";
 import SiteFooter from "../../../components/SiteFooter.astro";
-import { languages, type Lang } from "../../../i18n/ui";
 import { useTranslations } from "../../../i18n/utils";
 
 export async function getStaticPaths() {
   const notes = await getCollection("notes");
   if (!notes.length) return [];
 
-  const langs = Object.keys(languages) as Lang[];
   return notes
-    .filter((note) => !note.data.draft)
-    .flatMap((note) =>
-      langs
-        .filter((lang) => note.data.lang === lang)
-        .map((lang) => ({
-          params: { lang, slug: note.slug },
-          props: { note },
-        })),
-    );
+    .filter((note) => !note.data.draft && note.data.lang === "en")
+    .map((note) => ({
+      params: { slug: note.slug },
+      props: { note },
+    }));
 }
 
-const lang = Astro.params.lang as Lang;
+const lang = "en";
 const t = useTranslations(lang);
 const { note } = Astro.props as { note: Awaited<ReturnType<typeof getCollection>>[number] };
 const { Content } = await note.render();

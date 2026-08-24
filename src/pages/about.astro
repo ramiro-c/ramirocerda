@@ -1,15 +1,10 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import SiteHeader from "../../components/SiteHeader.astro";
-import SiteFooter from "../../components/SiteFooter.astro";
-import { languages, type Lang } from "../../i18n/ui";
-import { useTranslations } from "../../i18n/utils";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { useTranslations } from "../i18n/utils";
 
-export function getStaticPaths() {
-  return (Object.keys(languages) as Lang[]).map((lang) => ({ params: { lang } }));
-}
-
-const lang = Astro.params.lang as Lang;
+const lang = "es";
 const t = useTranslations(lang);
 const yearsExp = new Date().getFullYear() - 2020;
 
@@ -50,46 +45,6 @@ const copy = {
       },
       {
         label: "Procesos",
-        items: "SCRUM, GitFlow, code reviews, Jira, Confluence",
-      },
-    ],
-  },
-  en: {
-    bio: `Full-Stack Engineer. At LDP (Libro de Pases) I work as a hands-on Tech Lead. Systems Engineering graduate (UTN, 2023), based in Buenos Aires. Over ${yearsExp} years building digital products end to end: ownership of critical modules, architecture audits, performance work, and mentoring.`,
-    personal: [
-      "I'm curious and fairly quiet. I read a lot of science fiction and dystopia — Orwell, Huxley, Asimov, Philip K. Dick — and I'm drawn to cyberpunk aesthetics, Ghost in the Shell style. I've also read a fair bit of Stoicism; Marcus Aurelius' Meditations left a mark.",
-      "I train, go to the gym, and like martial arts. When I can, trekking and travel. Plants and insects interest me too — small details of the world that keep me company.",
-    ],
-    roles: [
-      "LDP — RN Dev → React Dev → Tech Lead Full-Stack · 4 years",
-      "DevGAM — Full-stack freelance: multi-industry management systems (PHP, JS, MySQL)",
-      "UTN FRLP / Secretaría de TIC — Full-stack: administrative workflows (Laravel, Vue)",
-      "New Logic — React freelance: blog + marketplace on GCP",
-    ],
-    education: "UTN — Systems Engineering (2023) · Coderhouse — AI Engineering (2026)",
-    skills: [
-      {
-        label: "Frontend & Mobile",
-        items:
-          "React 19, React Native, TypeScript, Expo, Zustand, React Query, Vue.js, Tailwind CSS v4, Shadcn/ui",
-      },
-      {
-        label: "Backend, Cloud & Data",
-        items:
-          "Node.js, NestJS, Python, FastAPI, MySQL, PostgreSQL, GCP (Vertex AI, Cloud Run), Cloudflare Workers, REST APIs",
-      },
-      {
-        label: "AI & Automation",
-        items:
-          "Google ADK, LangGraph, Workers AI, Gemini, Anthropic, n8n, OpenRouter, Cursor / Claude Code",
-      },
-      {
-        label: "DevOps, Quality & Testing",
-        items:
-          "CI/CD, Docker, Git, Sentry, New Relic, Pytest, Jest, Vitest, Playwright, SonarQube",
-      },
-      {
-        label: "Process",
         items: "SCRUM, GitFlow, code reviews, Jira, Confluence",
       },
     ],

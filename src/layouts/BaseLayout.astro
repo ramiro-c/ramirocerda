@@ -15,7 +15,7 @@ const ogLocale = lang === "es" ? "es_AR" : "en_US";
 const ogLocaleAlternate = lang === "es" ? "en_US" : "es_AR";
 const esURL = new URL(switchLangPath(Astro.url.pathname, "es"), Astro.site);
 const enURL = new URL(switchLangPath(Astro.url.pathname, "en"), Astro.site);
-const homeURL = new URL(lang === "es" ? "/es/" : "/en/", Astro.site);
+const homeURL = new URL(lang === "es" ? "/" : "/en/", Astro.site);
 const inLanguage = lang === "es" ? "es-AR" : "en-US";
 const structuredData = {
   "@context": "https://schema.org",
@@ -60,7 +60,7 @@ const structuredData = {
     <link rel="canonical" href={canonicalURL} />
     <link rel="alternate" hreflang="es" href={esURL} />
     <link rel="alternate" hreflang="en" href={enURL} />
-    <link rel="alternate" hreflang="x-default" href={new URL("/es/", Astro.site)} />
+    <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ramiro Cerdá" />

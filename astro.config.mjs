@@ -9,14 +9,13 @@ export default defineConfig({
         defaultLocale: "es",
         locales: { es: "es", en: "en" },
       },
-      filter: (page) => page !== "https://www.ramirocerda.com.ar/",
     }),
   ],
   i18n: {
     defaultLocale: "es",
     locales: ["es", "en"],
     routing: {
-      prefixDefaultLocale: true,
+      prefixDefaultLocale: false,
     },
   },
 });
