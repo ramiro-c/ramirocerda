@@ -12,7 +12,7 @@ export async function getStaticPaths() {
   return notes
     .filter((note) => !note.data.draft && note.data.lang === "en")
     .map((note) => ({
-      params: { slug: note.id },
+      params: { slug: note.data.slug || note.id.replace(/^(es|en)\//, "") },
       props: { note },
     }));
 }

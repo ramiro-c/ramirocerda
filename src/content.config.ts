@@ -34,6 +34,7 @@ const notes = defineCollection({
     description: z.string(),
     pubDate: z.coerce.date(),
     lang: z.enum(["es", "en"]),
+    slug: z.string().optional(),
     draft: z.boolean().default(false),
   }),
 });

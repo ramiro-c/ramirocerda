@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>OG Image Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background-color: #ECE7DE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Archivo", -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .browser-frame {
+      width: 1040px;
+      height: 480px;
+      background: #F7F5F1;
+      border-radius: 12px;
+      box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .browser-bar {
+      height: 42px;
+      background: #FFFFFF;
+      border-bottom: 1px solid #E4DFD6;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      position: relative;
+    }
+
+    .traffic-lights {
+      display: flex;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .dot.red { background: #FF5F56; }
+    .dot.yellow { background: #FFBD2E; }
+    .dot.green { background: #27C93F; }
+
+    .address-bar {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #F1ECE3;
+      padding: 3px 36px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      color: #716D66;
+      letter-spacing: -0.01em;
+    }
+
+    .window-content {
+      flex: 1;
+      padding: 24px 38px 30px;
+      display: flex;
+      flex-direction: column;
+      background: #F7F5F1;
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid #111111;
+      margin-bottom: 26px;
+    }
+
+    .logo {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 16px;
+      font-weight: 600;
+      color: #111111;
+      letter-spacing: 0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 22px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #222222;
+    }
+
+    .lang-toggle {
+      display: flex;
+      gap: 8px;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 12px;
+    }
+
+    .lang-toggle .active {
+      color: #111111;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .lang-toggle .inactive {
+      color: #777777;
+    }
+
+    .hero-label {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 13px;
+      color: #555555;
+      margin-bottom: 10px;
+    }
+
+    .hero-title {
+      font-family: "Archivo Black", "Archivo", sans-serif;
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      color: #111111;
+      margin-bottom: 16px;
+    }
+
+    .hero-description {
+      font-size: 16px;
+      line-height: 1.45;
+      color: #333333;
+      max-width: 640px;
+      margin-bottom: 26px;
+    }
+
+    .ctas {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      font-family: "Archivo", sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 9px 18px;
+      border-radius: 2px;
+      border: 1.5px solid #111111;
+      cursor: pointer;
+    }
+
+    .btn.solid {
+      background: #111111;
+      color: #FFFFFF;
+    }
+
+    .btn.outline {
+      background: transparent;
+      color: #111111;
+    }
+  </style>
+</head>
+<body>
+  <div class="browser-frame">
+    <div class="browser-bar">
+      <div class="traffic-lights">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+      </div>
+      <div class="address-bar">ramirocerda.com.ar</div>
+    </div>
+    <div class="window-content">
+      <div class="site-header">
+        <div class="logo">ramirocerda</div>
+        <div class="nav-links">
+          <span>Sobre mí</span>
+          <span>Proyectos</span>
+          <span>Workflow</span>
+        </div>
+        <div class="lang-toggle">
+          <span class="active">ES</span>
+          <span class="inactive">EN</span>
+        </div>
+      </div>
+      <div class="hero-label">Ramiro Cerdá</div>
+      <h1 class="hero-title">FULL-STACK ENGINEER.</h1>
+      <p class="hero-description">
+        Performance, observabilidad y calidad. Agentes de IA en producción — arquitectura, código y deploy.
+      </p>
+      <div class="ctas">
+        <div class="btn solid">ESCRIBIME</div>
+        <div class="btn outline">PROYECTOS</div>
+        <div class="btn outline">BOTARDO</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

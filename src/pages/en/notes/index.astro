@@ -25,7 +25,7 @@ const notes = (await getCollection("notes"))
       <ul class="list">
         {notes.map((note) => (
           <li>
-            <a href={getLocalizedPath(lang, `/notes/${note.id}/`)}>
+            <a href={getLocalizedPath(lang, `/notes/${note.data.slug || note.id.replace(/^(es|en)\//, "")}/`)}>
               <span class="title">{note.data.title}</span>
               <span class="summary">{note.data.description}</span>
             </a>
