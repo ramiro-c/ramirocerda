@@ -84,6 +84,23 @@ const t = useTranslations(lang);
 <script>
   const WORKER_URL = "https://ramirocerda-chat.rami992009.workers.dev";
 
+  // Stable per-conversation ID for OpenCode Go (x-opencode-session): reused
+  // across messages in the same tab so the upstream can route and cache.
+  function getBotardoSessionId() {
+    const KEY = "botardo:sessionId";
+    try {
+      let id = sessionStorage.getItem(KEY);
+      if (!id) {
+        id = crypto.randomUUID();
+        sessionStorage.setItem(KEY, id);
+      }
+      return id;
+    } catch {
+      return crypto.randomUUID();
+    }
+  }
+  const botardoSessionId = getBotardoSessionId();
+
   const modal = document.getElementById("botardoDialog");
   const islandButton = document.querySelector("[data-botardo-island]");
   const closeButton = modal?.querySelector(".botardo-close");
@@ -284,7 +301,7 @@ const t = useTranslations(lang);
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, sessionId: botardoSessionId }),
       });
 
       typingIndicator.hidden = true;

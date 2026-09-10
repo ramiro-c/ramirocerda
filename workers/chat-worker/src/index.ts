@@ -8,6 +8,8 @@ interface AskRequest {
     role: "user" | "assistant";
     content: string;
   }>;
+  /** Stable per-conversation ID forwarded to OpenCode Go via x-opencode-session. */
+  sessionId?: string;
 }
 
 interface AskResponse {
@@ -119,6 +121,7 @@ async function handleRag(
   message: string,
   history: AskRequest["history"],
   env: Env,
+  sessionId: string,
   origin: string | null,
 ): Promise<Response> {
   const lang = detectLanguage(message);
@@ -148,6 +151,7 @@ async function handleRag(
     apiKey: env.OPENCODE_GO_API_KEY,
     model: env.GENERATION_MODEL,
     messages,
+    sessionId,
   });
   log("chat.ai_done", {
     latency_ms: Date.now() - tGen,
@@ -239,7 +243,15 @@ export default {
       // OpenCode Go) is the only path since the legacy static-KB + llama
       // branch was removed. RAG_ENABLED is retained as a vestigial flag
       // (cleanup is a documented follow-up); the flag stays "true" in config.
-      return await handleRag(message, body.history, env, origin);
+      // sessionId: prefer the frontend's stable per-conversation ID; fall back
+      // to a fresh UUID so the Go session header is always present.
+      return await handleRag(
+        message,
+        body.history,
+        env,
+        body.sessionId?.trim() || crypto.randomUUID(),
+        origin,
+      );
     } catch (err) {
       // Check for rate limit errors
       const errorMessage = err instanceof Error ? err.message : String(err);

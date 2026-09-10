@@ -2,8 +2,10 @@
  * OpenCode Go generation client (design D8/D9).
  *
  * Calls the OpenAI-compatible endpoint with the DeepSeek V4 Flash model and
- * the API key stored as a Worker secret (never in the repo). Explicit
- * mapping: HTTP 429 -> RATE_LIMITED; 401/403/4xx/5xx/network/timeout ->
+ * the API key stored as a Worker secret (never in the repo). Sends a stable
+ * per-conversation `x-opencode-session` header and a custom User-Agent, both
+ * required by OpenCode Go (missing session -> HTTP 400 -> MODEL_ERROR).
+ * Explicit mapping: HTTP 429 -> RATE_LIMITED; 401/403/4xx/5xx/network/timeout ->
  * MODEL_ERROR. Transient failures (5xx, network/timeout, empty completion)
  * are retried with exponential backoff (follow-up W1) because the upstream
  * intermittently fails in bursts; 429 is never retried.
@@ -28,6 +30,10 @@ export interface GenerateOptions {
   maxAttempts?: number;
   /** Base backoff in ms, doubled after each retry (default 250). */
   backoffMs?: number;
+  /** Stable per-conversation session ID sent in x-opencode-session (required by OpenCode Go). */
+  sessionId?: string;
+  /** Client identification sent as User-Agent (required by OpenCode Go). */
+  userAgent?: string;
 }
 
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
@@ -44,6 +50,8 @@ async function attemptOnce(
   maxTokens: number,
   temperature: number,
   timeoutMs: number,
+  sessionId?: string,
+  userAgent?: string,
 ): Promise<AttemptOutcome> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -53,6 +61,8 @@ async function attemptOnce(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
+        ...(sessionId ? { "x-opencode-session": sessionId } : {}),
+        ...(userAgent ? { "User-Agent": userAgent } : {}),
       },
       body: JSON.stringify({ model, messages, max_tokens: maxTokens, temperature }),
       signal: controller.signal,
@@ -97,10 +107,22 @@ export async function generateReply(options: GenerateOptions): Promise<GenerateR
     timeoutMs = 30_000,
     maxAttempts = 3,
     backoffMs = 250,
+    sessionId,
+    userAgent = "botardo-web/1.0",
   } = options;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const outcome = await attemptOnce(endpoint, apiKey, model, messages, maxTokens, temperature, timeoutMs);
+    const outcome = await attemptOnce(
+      endpoint,
+      apiKey,
+      model,
+      messages,
+      maxTokens,
+      temperature,
+      timeoutMs,
+      sessionId,
+      userAgent,
+    );
     if (outcome.kind === "done") {
       return outcome.result;
     }

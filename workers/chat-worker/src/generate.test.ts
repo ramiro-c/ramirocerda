@@ -22,6 +22,7 @@ describe("generateReply (D8/D9, R5/R7)", () => {
       apiKey: "secret-key",
       model: "deepseek-v4-flash",
       messages,
+      sessionId: "sess-abc123",
     });
 
     expect(result).toEqual({ status: 200, content: "Hola" });
@@ -34,6 +35,34 @@ describe("generateReply (D8/D9, R5/R7)", () => {
       max_tokens: 1024,
       temperature: 0.3,
     });
+  });
+
+  it("sends x-opencode-session and a custom User-Agent (Go requirement)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: "Ok" } }] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await generateReply({
+      endpoint: "e",
+      apiKey: "k",
+      model: "m",
+      messages,
+      sessionId: "sess-xyz",
+    });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["x-opencode-session"]).toBe("sess-xyz");
+    expect(init.headers["User-Agent"]).toBe("botardo-web/1.0");
+  });
+
+  it("omits the session header when no sessionId is provided", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: "Ok" } }] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages });
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["x-opencode-session"]).toBeUndefined();
+    expect(init.headers["User-Agent"]).toBe("botardo-web/1.0");
   });
 
   it("maps HTTP 429 to RATE_LIMITED (D9)", async () => {
