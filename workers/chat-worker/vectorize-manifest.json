@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-09-20T22:37:29.539Z",
+  "generatedAt": "2026-09-20T22:56:53.987Z",
   "sources": {
     "kb": 22,
     "notes": 10
