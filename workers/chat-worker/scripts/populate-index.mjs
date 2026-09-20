@@ -416,25 +416,32 @@ async function main() {
   const upsertResult = await upsertVectors(vectors, { accountId, apiToken });
   const deleteResult = await deleteByIds(staleIds, { accountId, apiToken });
 
-  // Persist the committed chunk-ID manifest used for future prune and --check.
-  await writeFile(
-    MANIFEST_PATH,
-    `${JSON.stringify(
-      {
-        index: INDEX_NAME,
-        embeddingModel: EMBEDDING_MODEL,
-        generatedAt: new Date().toISOString(),
-        sources: bySource,
-        ids: [...currentIds].sort(),
-      },
-      null,
-      2,
-    )}\n`,
-    "utf8",
-  );
+  // Persist the committed chunk-ID manifest used for future prune and --check,
+  // but only when the id set actually changed: `generatedAt` otherwise changes
+  // on every run and produces an empty bot commit per CI run.
+  const sortedIds = [...currentIds].sort();
+  const idsUnchanged =
+    previousIds.length === sortedIds.length && sortedIds.every((id, i) => previousIds[i] === id);
+  if (!idsUnchanged) {
+    await writeFile(
+      MANIFEST_PATH,
+      `${JSON.stringify(
+        {
+          index: INDEX_NAME,
+          embeddingModel: EMBEDDING_MODEL,
+          generatedAt: new Date().toISOString(),
+          sources: bySource,
+          ids: sortedIds,
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+  }
 
   console.log(
-    `Upserted ${upsertResult?.count ?? vectors.length} vectors, pruned ${deleteResult?.count ?? staleIds.length} stale. Manifest written: ${MANIFEST_PATH}`,
+    `Upserted ${upsertResult?.count ?? vectors.length} vectors, pruned ${deleteResult?.count ?? staleIds.length} stale. Manifest ${idsUnchanged ? "unchanged" : `written: ${MANIFEST_PATH}`}.`,
   );
 }
 
