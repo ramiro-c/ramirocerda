@@ -11,6 +11,11 @@
       "index_name": "botardo-kb"
     }
   ],
+  "analytics_engine": [
+    {
+      "binding": "ANALYTICS"
+    }
+  ],
   "vars": {
     "RAG_ENABLED": "true",
     "TOP_K": "5",

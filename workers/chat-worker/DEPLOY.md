@@ -28,6 +28,40 @@ pnpm exec --filter ramirocerda-chat-worker populate -- --dry-run
 Population writes `vectorize-manifest.json` (committed): the chunk-ID baseline used
 to prune stale vectors on the next run. Re-run `pnpm chat:populate` after any KB change.
 
+## Automatic population (CI)
+
+`.github/workflows/chat-populate.yml` runs on every push to `main` that touches
+KB content (`src/content/**`, `workers/chat-worker/scripts/**`,
+`kb-sources.json`, the manifest, or the workflow itself):
+
+1. `--check` asserts the committed manifest matches the current sources (fails fast, no network).
+2. `pnpm chat:populate` equivalent (bare node) embeds + upserts + prunes.
+3. If the manifest changed, a bot commit `chore(chat-worker): sync vectorize manifest [skip ci]` pushes it back.
+
+Requires the repo secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`
+(same token as the root `.env`). New note content only needs to be committed to
+`src/content/notes/` — population is automatic.
+
+## Usage observability
+
+The worker writes one Analytics Engine data point per question (binding
+`ANALYTICS`, see `writeUsage` in `src/index.ts`):
+
+- `blob1` language, `blob2` status (`ok` / `rate_limited` / `model_error`),
+  `blob3` first 80 chars of the question.
+- `double1` chunk count, `double2` top similarity score, `double3` retrieval ms,
+  `double4` generation ms; `index1` conversation session id.
+
+Inspect with (credentials auto-loaded from the root `.env`):
+
+```bash
+pnpm chat:stats                 # questions/day, lang/status split, no-info rate, conversations
+pnpm chat:stats -- --sql "SELECT _timestamp, blob3 FROM ramirocerda_chat_ANALYTICS ORDER BY _timestamp DESC LIMIT 20"
+```
+
+The `CLOUDFLARE_API_TOKEN` needs the Workers Analytics Engine read (SQL) permission
+for these queries. Data is sampled/retained per AE policy (~90 days).
+
 ## Secret (step 2.6 — requires the real OpenCode Go key, run manually)
 
 ```bash

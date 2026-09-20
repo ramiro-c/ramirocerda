@@ -59,6 +59,13 @@ interface Env {
       matches: Array<{ id: string; score: number; metadata?: Record<string, unknown> }>;
     }>;
   };
+  ANALYTICS?: {
+    writeDataPoint: (event: {
+      blobs?: string[];
+      doubles?: number[];
+      indexes?: string[];
+    }) => void;
+  };
   OPENCODE_GO_API_KEY: string;
   RAG_ENABLED: string;
   TOP_K: string;
@@ -70,6 +77,30 @@ interface Env {
 
 function log(event: string, data: Record<string, unknown> = {}): void {
   console.log(JSON.stringify({ ts: new Date().toISOString(), event, ...data }));
+}
+
+// Analytics Engine data point schema (shared with scripts/chat-stats.mjs):
+//   blobs:   [0] detected language ("es"|"en") | [1] "ok"|"rate_limited"|"model_error" | [2] first 80 chars of the question
+//   doubles: [0] chunk_count | [1] top similarity score | [2] retrieval latency ms | [3] generation latency ms
+//   indexes: [0] conversation sessionId (one conversation = one AE index slot)
+function writeUsage(
+  env: Env,
+  point: {
+    sessionId: string;
+    lang: string;
+    status: "ok" | "rate_limited" | "model_error";
+    preview: string;
+    chunkCount: number;
+    topScore: number;
+    retrievalMs: number;
+    generationMs: number;
+  },
+): void {
+  env.ANALYTICS?.writeDataPoint({
+    indexes: [point.sessionId],
+    blobs: [point.lang, point.status, point.preview],
+    doubles: [point.chunkCount, point.topScore, point.retrievalMs, point.generationMs],
+  });
 }
 
 function corsHeaders(origin: string | null): HeadersInit {
@@ -135,7 +166,9 @@ async function handleRag(
   // guardrails in the prompt handle off-topic questions (R8 / design D6).
   const t0 = Date.now();
   const chunks = await retrieveChunks(message, env);
-  log("chat.rag_retrieved", { chunk_count: chunks.length, latency_ms: Date.now() - t0 });
+  const retrievalMs = Date.now() - t0;
+  const topScore = chunks.reduce((max, c) => Math.max(max, c.score), 0);
+  log("chat.rag_retrieved", { chunk_count: chunks.length, latency_ms: retrievalMs });
 
   const messages = buildRagPrompt({
     identityPrompt: IDENTITY_PROMPT,
@@ -153,13 +186,49 @@ async function handleRag(
     messages,
     sessionId,
   });
+  const generationMs = Date.now() - tGen;
   log("chat.ai_done", {
-    latency_ms: Date.now() - tGen,
+    latency_ms: generationMs,
     reply_length: gen.status === 200 ? gen.content.length : 0,
   });
 
-  if (gen.status === 429) return rateLimitedResponse(origin);
-  if (gen.status === 500) return modelErrorResponse(origin);
+  if (gen.status === 429) {
+    writeUsage(env, {
+      sessionId,
+      lang,
+      status: "rate_limited",
+      preview: message.slice(0, 80),
+      chunkCount: chunks.length,
+      topScore,
+      retrievalMs,
+      generationMs,
+    });
+    return rateLimitedResponse(origin);
+  }
+  if (gen.status === 500) {
+    writeUsage(env, {
+      sessionId,
+      lang,
+      status: "model_error",
+      preview: message.slice(0, 80),
+      chunkCount: chunks.length,
+      topScore,
+      retrievalMs,
+      generationMs,
+    });
+    return modelErrorResponse(origin);
+  }
+
+  writeUsage(env, {
+    sessionId,
+    lang,
+    status: "ok",
+    preview: message.slice(0, 80),
+    chunkCount: chunks.length,
+    topScore,
+    retrievalMs,
+    generationMs,
+  });
 
   const response: AskResponse = { reply: gen.content.trim() };
   return new Response(JSON.stringify(response), {

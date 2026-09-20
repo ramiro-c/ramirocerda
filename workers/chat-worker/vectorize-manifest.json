@@ -1,7 +1,11 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-08-24T02:13:34.489Z",
+  "generatedAt": "2026-09-20T22:37:29.539Z",
+  "sources": {
+    "kb": 22,
+    "notes": 10
+  },
   "ids": [
     "kb-botardo-implementacion-9da4b03e",
     "kb-card-pr-df0a4f67",
@@ -24,6 +28,16 @@
     "kb-soccer-analytics-agent-a0bdecf5",
     "kb-stack-tecnico-b6a982f1",
     "kb-triage-9b1e7730",
-    "kb-workflow-de-trabajo-con-agentes-loop-de-cards-98378384"
+    "kb-workflow-de-trabajo-con-agentes-loop-de-cards-98378384",
+    "note-1-el-disenador-de-producto-ux-de-la-fabrica-de-p-e6b90b82",
+    "note-1-product-designers-ux-from-static-mockup-factor-ccbc619f",
+    "note-2-el-desarrollador-de-tipear-boilerplate-a-ser-a-a2ea6726",
+    "note-2-software-engineers-from-writing-boilerplate-to-3465473e",
+    "note-3-qa-de-testear-a-mano-al-final-de-la-cola-a-dir-63b37665",
+    "note-3-qa-from-end-of-queue-manual-testing-to-leading-3ec673db",
+    "note-4-el-product-manager-de-backlog-groomer-a-dueno--a877da9f",
+    "note-4-product-managers-from-backlog-caretakers-to-ow-3cb192c5",
+    "note-equipos-que-gobiernan-agentes-que-ejecutan-dccf1813",
+    "note-teams-that-govern-agents-that-execute-f26d2ebf"
   ]
 }

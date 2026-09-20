@@ -1,0 +1,54 @@
+# Auto-populate the Botardo Vectorize KB whenever KB-relevant content changes on
+# main (notes under src/content, the populate sources config, or the chunker).
+# Condition: the paths filter below is the condition — a push that touches none
+# of these files skips the job entirely.
+name: chat-worker populate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/content/**"
+      - "workers/chat-worker/scripts/**"
+      - "workers/chat-worker/kb-sources.json"
+      - "workers/chat-worker/vectorize-manifest.json"
+      - ".github/workflows/chat-populate.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chat-populate
+  cancel-in-progress: false
+
+jobs:
+  populate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Fail fast (no network) if the committed manifest drifted from the sources.
+      - name: Check manifest consistency
+        run: node workers/chat-worker/scripts/populate-index.mjs --check
+
+      - name: Populate Vectorize index
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node workers/chat-worker/scripts/populate-index.mjs
+
+      - name: Commit manifest sync
+        run: |
+          if [[ -n $(git status --porcelain workers/chat-worker/vectorize-manifest.json) ]]; then
+            git config user.name "botardo-ci"
+            git config user.email "botardo-ci@users.noreply.github.com"
+            git add workers/chat-worker/vectorize-manifest.json
+            git commit -m "chore(chat-worker): sync vectorize manifest [skip ci]"
+            git push
+          else
+            echo "Manifest already in sync — nothing to commit."
+          fi

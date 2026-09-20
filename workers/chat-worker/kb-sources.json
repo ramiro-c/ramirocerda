@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "id": "kb",
+      "type": "curated",
+      "file": "workers/chat-worker/scripts/knowledge-base.js"
+    },
+    {
+      "id": "notes",
+      "type": "markdown",
+      "glob": "src/content/notes/**/*.md"
+    }
+  ]
+}
