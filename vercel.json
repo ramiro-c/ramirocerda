@@ -1,4 +1,16 @@
 {
   "buildCommand": "pnpm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/es",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/es/",
+      "destination": "/",
+      "statusCode": 301
+    }
+  ]
 }
