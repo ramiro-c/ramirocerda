@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "chat:populate": "node workers/chat-worker/scripts/populate-index.mjs",
-    "chat:stats": "node workers/chat-worker/scripts/chat-stats.mjs"
+    "chat:stats": "node workers/chat-worker/scripts/chat-stats.mjs",
+    "site:stats": "node scripts/site-stats.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
