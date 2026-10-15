@@ -55,12 +55,29 @@ The worker writes one Analytics Engine data point per question (binding
 Inspect with (credentials auto-loaded from the root `.env`):
 
 ```bash
-pnpm chat:stats                 # questions/day, lang/status split, no-info rate, conversations
-pnpm chat:stats -- --sql "SELECT _timestamp, blob3 FROM ramirocerda_chat_ANALYTICS ORDER BY _timestamp DESC LIMIT 20"
+pnpm chat:stats                 # questions/day, lang/status split, no-info rate, conversations, invocations
+pnpm chat:stats -- --sql "SELECT toDate(timestamp) AS day, blob3 FROM events.analyticsEngine.ramirocerda_chat_ANALYTICS WHERE timestamp >= NOW() - INTERVAL '30' DAY ORDER BY timestamp DESC LIMIT 20"
 ```
 
-The `CLOUDFLARE_API_TOKEN` needs the Workers Analytics Engine read (SQL) permission
-for these queries. Data is sampled/retained per AE policy (~90 days).
+Queries go to the **unified Analytics SQL API** (`POST /client/v4/analytics/sql`)
+with the dataset addressed as `events.analyticsEngine.<dataset>`, using the
+`Account | Account Analytics | Read` permission. The legacy Workers Analytics
+Engine endpoint (`POST /accounts/<id>/analytics_engine/sql`) currently answers
+HTTP 403 `Authorization error` for this account even with a valid token — a
+platform-side issue, not a token problem, so do not re-create tokens over it.
+
+Three quirks of that API worth knowing before writing your own `--sql`:
+
+- Every statement needs a **lower time bound** (`WHERE timestamp >= ...`); the
+  API rejects unbounded reads with HTTP 422.
+- An **unknown dataset returns 0 rows silently** instead of failing, so "no rows"
+  never proves the dataset is empty. The invocations section (GraphQL, also
+  `Account Analytics Read`) is the independent cross-check.
+- The dialect is **DataFusion, not ClickHouse**: `COUNT(DISTINCT x)` works, but
+  ClickHouse-only forms such as `uniq(x)` or `sum(x = 0)` fail with HTTP 422 —
+  use `sum(CASE WHEN x = 0 THEN 1 ELSE 0 END)`.
+
+Data is sampled/retained per AE policy (~90 days).
 
 ## Secret (step 2.6 — requires the real OpenCode Go key, run manually)
 
