@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import worker from "./index";
+import worker, { IDENTITY_PROMPT } from "./index";
 
 interface Datapoint {
   blobs?: string[];
@@ -138,5 +138,56 @@ describe("chat usage analytics data points", () => {
 
     await worker.fetch(makeRequest("Hola"), env as never);
     expect(datapoints[0]?.indexes?.[0]).toMatch(/^[0-9a-f-]{36}$/);
+  });
+});
+
+describe("note links handed to the model", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("passes the note route as an absolute URL so the widget can link it", async () => {
+    const { env } = makeEnv({
+      matches: [
+        {
+          id: "note-como-esta-armada-f0d6acbc",
+          score: 0.8,
+          metadata: {
+            section: "Qué es",
+            text: "cuerpo de la nota",
+            url: "/notes/factory-engineering",
+            urlAlt: "/en/notes/factory-engineering",
+          },
+        },
+      ],
+      generationContent: "Ok",
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ choices: [{ message: { content: "Ok" } }] }), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await worker.fetch(makeRequest("que onda la factory"), env as never);
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
+    expect(body.messages[0].content).toContain("nota: https://ramirocerda.com.ar/notes/factory-engineering");
+  });
+});
+
+describe("IDENTITY_PROMPT answer rules", () => {
+  it("never says fábrica and keeps the technical terms in English", () => {
+    expect(IDENTITY_PROMPT.toLowerCase()).not.toContain("fábrica");
+    expect(IDENTITY_PROMPT).toContain("factory engineering");
+  });
+
+  it("asks what the visitor wants to know and links the note on broad questions", () => {
+    expect(IDENTITY_PROMPT).toContain("nota:");
+    expect(IDENTITY_PROMPT).toContain("preguntá");
+  });
+
+  it("caps the answer length so it does not dump the knowledge base", () => {
+    expect(IDENTITY_PROMPT).toMatch(/2-3 párrafos/);
   });
 });

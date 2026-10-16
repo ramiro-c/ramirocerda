@@ -103,23 +103,38 @@ const LANG_INSTRUCTIONS: Record<Language, string> = {
  * firm language instruction; then the last HISTORY_TURNS turns of history;
  * then the visitor's message (design R2/R3/R4/R6).
  */
+/**
+ * Renders one retrieved chunk as a labeled block. Note chunks carry their
+ * published route, so Botardo can send the visitor to the full note instead of
+ * lecturing the knowledge base; curated KB chunks render exactly as before.
+ * With a `siteOrigin` the route is rendered as an absolute URL, which is what
+ * the widget auto-links; without one it stays a path.
+ */
+function chunkHeader(chunk: RetrievedChunk, index: number, siteOrigin?: string): string {
+  const parts = [`[Chunk ${index + 1} — sección: ${chunk.metadata?.section ?? "knowledge-base"}`];
+  const url = typeof chunk.metadata?.url === "string" ? chunk.metadata.url : undefined;
+  const urlAlt = typeof chunk.metadata?.urlAlt === "string" ? chunk.metadata.urlAlt : undefined;
+  const absolute = (route: string) => (siteOrigin ? `${siteOrigin}${route}` : route);
+  if (url) parts.push(`nota: ${absolute(url)}`);
+  if (urlAlt) parts.push(`nota (en): ${absolute(urlAlt)}`);
+  return `${parts.join(" — ")}]`;
+}
+
 export function buildRagPrompt(opts: {
   identityPrompt: string;
   chunks: RetrievedChunk[];
   language: Language;
   history?: Array<{ role: "user" | "assistant"; content: string }>;
   message: string;
+  siteOrigin?: string;
 }): ChatMessage[] {
-  const { identityPrompt, chunks, language, history = [], message } = opts;
+  const { identityPrompt, chunks, language, history = [], message, siteOrigin } = opts;
 
   const contextText =
     chunks.length === 0
       ? "(sin contexto recuperado)"
       : chunks
-          .map(
-            (chunk, i) =>
-              `[Chunk ${i + 1} — sección: ${chunk.metadata?.section ?? "knowledge-base"}]\n${chunk.metadata?.text ?? ""}`,
-          )
+          .map((chunk, i) => `${chunkHeader(chunk, i, siteOrigin)}\n${chunk.metadata?.text ?? ""}`)
           .join("\n\n");
 
   const systemContent = [

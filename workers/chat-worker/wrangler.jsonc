@@ -20,9 +20,10 @@
     "RAG_ENABLED": "true",
     "TOP_K": "5",
     "SIMILARITY_THRESHOLD": "0.30",
-    "GENERATION_MODEL": "deepseek-v4-flash",
+    "GENERATION_MODEL": "deepseek-v4.1-flash",
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
-    "EMBEDDING_MODEL": "@cf/baai/bge-m3"
+    "EMBEDDING_MODEL": "@cf/baai/bge-m3",
+    "SITE_ORIGIN": "https://ramirocerda.com.ar"
   },
   "observability": {
     "enabled": true

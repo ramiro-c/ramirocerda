@@ -168,15 +168,40 @@ export function chunkKB(kbText, opts = {}) {
 }
 
 /**
+ * Derive the published route of a note from its file path.
+ *
+ * Notes live under `src/content/notes/<es|en>/<slug>.md` and are published at
+ * `/notes/<slug>` (Spanish) and `/en/notes/<slug>` (English). A note outside a
+ * locale directory is treated as Spanish, which is the default locale.
+ *
+ * @param {string} filePath repo-relative or absolute path of the note file
+ * @param {string} [slugOverride] frontmatter slug, which wins over the filename
+ *   because that is what `src/content.config.ts` + the `[slug]` page publish
+ * @returns {{ slug: string, locale: "es" | "en", url: string, urlAlt: string }}
+ */
+export function noteRoute(filePath, slugOverride) {
+  const parts = String(filePath).split(/[\\/]/).filter(Boolean);
+  const file = parts[parts.length - 1] ?? "";
+  const slug = slugOverride || file.replace(/\.md$/i, "");
+  const parent = parts[parts.length - 2];
+  const locale = parent === "en" ? "en" : "es";
+  const url = locale === "en" ? `/en/notes/${slug}` : `/notes/${slug}`;
+  const urlAlt = locale === "en" ? `/notes/${slug}` : `/en/notes/${slug}`;
+  return { slug, locale, url, urlAlt };
+}
+
+/**
  * Chunk one markdown note: strip front matter, rebuild a title header, fold
  * the intro (title + prose before the first heading) into the first section
  * chunk, and prefix every chunk with the note title so retrieval keeps the
- * title keywords in every vector.
+ * title keywords in every vector. When the caller knows where the file lives,
+ * every chunk also carries the published route so the bot can link the note.
  *
  * @param {string} md
- * @returns {Array<{ id: string, text: string, section: string, idx: number }>}
+ * @param {{ filePath?: string }} [opts]
+ * @returns {Array<{ id: string, text: string, section: string, idx: number, slug?: string, locale?: string, url?: string, urlAlt?: string }>}
  */
-export function chunkNote(md) {
+export function chunkNote(md, opts = {}) {
   const { frontmatter, body } = stripFrontmatter(md);
   const title = frontmatter?.title ?? "";
   const description = frontmatter?.description ?? "";
@@ -184,18 +209,20 @@ export function chunkNote(md) {
   if (title) headerLines.push(`# ${title}`);
   if (description) headerLines.push(description);
   const docText = `${[...headerLines, ""].join("\n")}${body.trimStart()}`;
+  const route = opts.filePath ? noteRoute(opts.filePath, frontmatter?.slug || undefined) : null;
+  const withRoute = (chunk) => (route ? { ...chunk, ...route } : chunk);
   const chunks = chunkKB(docText, { idPrefix: "note", foldPreamble: true });
-  if (!title) return chunks;
+  if (!title) return chunks.map(withRoute);
 
   const titleLine = `# ${title}`;
   return chunks.map((c) => {
-    if (c.text.startsWith(titleLine)) return c;
+    if (c.text.startsWith(titleLine)) return withRoute(c);
     const text = `${titleLine}\n\n${c.text}`;
-    return {
+    return withRoute({
       ...c,
       id: `note-${slugify(c.section)}-${sha1Hex(text).slice(0, 8)}`,
       text,
-    };
+    });
   });
 }
 
@@ -247,7 +274,7 @@ export async function globFiles(rootDir, pattern) {
  * the repo root.
  *
  * @param {string} rootDir
- * @returns {Promise<Array<{ id: string, text: string, section: string, idx: number, source: string }>>}
+ * @returns {Promise<Array<{ id: string, text: string, section: string, idx: number, source: string, url?: string, urlAlt?: string }>>}
  */
 export async function loadKBChunks(rootDir) {
   const sourcesPath = path.join(rootDir, "workers", "chat-worker", "kb-sources.json");
@@ -269,7 +296,9 @@ export async function loadKBChunks(rootDir) {
         const md = await readFile(file, "utf8");
         // Drafts are unpublished: never index content the site hides.
         if (isDraftNote(md)) continue;
-        chunks.push(...chunkNote(md).map((c) => ({ ...c, source: source.id })));
+        // The file path is known here, so every chunk also carries the route the
+        // note is published at (the bot links it instead of lecturing the KB).
+        chunks.push(...chunkNote(md, { filePath: file }).map((c) => ({ ...c, source: source.id })));
       }
       continue;
     }
@@ -422,7 +451,15 @@ async function main() {
   const vectors = chunks.map((c, i) => ({
     id: c.id,
     values: values[i],
-    metadata: { section: c.section, source: c.source, idx: c.idx, text: c.text },
+    metadata: {
+      section: c.section,
+      source: c.source,
+      idx: c.idx,
+      text: c.text,
+      // Notes only: the published route the bot links to instead of dumping the
+      // knowledge base. Curated KB chunks have no route and stay unchanged.
+      ...(c.url ? { url: c.url, urlAlt: c.urlAlt } : {}),
+    },
   }));
 
   const previousIds = await readManifestIds();

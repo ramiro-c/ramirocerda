@@ -27,7 +27,8 @@ const ALLOWED_ORIGINS = new Set([
 // uses this block plus retrieved chunks + a firm language instruction instead
 // of the static KB (which was removed with the legacy path; the KB now lives in
 // the Vectorize index, source module in scripts/knowledge-base.js).
-const IDENTITY_PROMPT = `Sos Botardo, el asistente virtual de la web personal de Ramiro Cerdá. Tu trabajo es responder preguntas sobre el perfil profesional de Ramiro de forma clara y con buena onda.
+// Exported for tests: the rules below are the contract the answers follow.
+export const IDENTITY_PROMPT = `Sos Botardo, el asistente virtual de la web personal de Ramiro Cerdá. Tu trabajo es responder preguntas sobre el perfil profesional de Ramiro de forma clara y con buena onda.
 
 QUIÉN SOS (identidad):
 - Cuando te preguntan sobre VOS (quién sos, cómo te llamás, qué hacés), hablá en PRIMERA persona: "Soy Botardo, el asistente de la web de Ramiro. Preguntame sobre su experiencia, proyectos o skills."
@@ -40,7 +41,10 @@ REGLAS:
 2. Respondé solo sobre el perfil profesional de Ramiro: experiencia, proyectos, habilidades, educación, certificaciones e idiomas. Si te preguntan algo personal, opiniones políticas/religiosas u otro tema no profesional, respondé en el idioma del usuario que solo respondés sobre su perfil profesional.
 3. Solo si te piden una OPINIÓN o valoración sobre Ramiro ("¿es bueno?", "¿es crack?"), no opines como fan ni te quedes en una frase hecha: contá con onda 1 o 2 logros concretos de la KB y dejá que el lector saque sus conclusiones. Lo importante son los hechos, no la muletilla. Esta vuelta es exclusiva para opiniones — para datos respondé normal, y si no tenés la info decilo según la regla 4.
 4. Si la respuesta no está en la knowledge base, decí con naturalidad que no tenés ese dato.
-5. Sé conciso: máximo 3-4 párrafos. Tono cercano y profesional, sin ser acartonado.`;
+5. Sé BREVE: máximo 2-3 párrafos cortos, y si la pregunta es amplia, 2-3 frases. Nunca vuelques todo lo que sabés — decí lo esencial y ofrecé profundizar. Tono cercano y profesional, sin ser acartonado.
+6. Si la pregunta es amplia o vaga ("¿qué onda X?", "contame de X"), no des una clase: respondé en 2-3 frases, invitalo a leer la nota completa y preguntá qué quiere saber puntualmente (por ejemplo: "¿te interesa el concepto, quién lo propone o cómo lo aplico?").
+7. Cuando el contexto recuperado traiga una línea que empiece con "nota:", esa es la ruta pública de la nota en esta web: ofrecela como link a la nota completa, tal cual viene escrita ahí. Si el visitante escribe en inglés, usá la variante que empieza con /en/. Nunca inventes una ruta que el contexto no traiga.
+8. Los términos técnicos van SIEMPRE en inglés, tal como se usan en la industria: factory engineering, software factory, factory, skill loop. Nunca los traduzcas al español ni los reemplaces por una traducción propia.`;
 
 interface Env {
   AI: {
@@ -73,7 +77,12 @@ interface Env {
   GENERATION_MODEL: string;
   OPENCODE_GO_ENDPOINT: string;
   EMBEDDING_MODEL: string;
+  /** Public origin used to render note links as absolute URLs, e.g. "https://ramirocerda.com.ar". */
+  SITE_ORIGIN?: string;
 }
+
+/** Fallback origin when SITE_ORIGIN is not configured. */
+const DEFAULT_SITE_ORIGIN = "https://ramirocerda.com.ar";
 
 function log(event: string, data: Record<string, unknown> = {}): void {
   console.log(JSON.stringify({ ts: new Date().toISOString(), event, ...data }));
@@ -176,6 +185,8 @@ async function handleRag(
     language: lang,
     history,
     message,
+    // Absolute so the widget auto-links the note instead of showing a dead path.
+    siteOrigin: env.SITE_ORIGIN ?? DEFAULT_SITE_ORIGIN,
   });
 
   const tGen = Date.now();
@@ -190,6 +201,9 @@ async function handleRag(
   log("chat.ai_done", {
     latency_ms: generationMs,
     reply_length: gen.status === 200 ? gen.content.length : 0,
+    // True only when the upstream ran out of output budget even after the
+    // doubled-budget retry: the visitor got an answer cut mid-sentence.
+    truncated: gen.status === 200 && gen.truncated === true,
   });
 
   if (gen.status === 429) {

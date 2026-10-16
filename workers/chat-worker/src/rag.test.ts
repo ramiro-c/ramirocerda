@@ -102,4 +102,49 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
     expect(system).toContain("basate EXCLUSIVAMENTE en el CONTEXTO RECUPERADO");
     expect(system).toContain("Si la respuesta no está en el contexto, decilo con naturalidad");
   });
+
+  it("labels note chunks with their published route so Botardo can link it", () => {
+    const chunk = {
+      ...match(0.6),
+      metadata: {
+        section: "Qué es factory engineering",
+        text: "cuerpo de la nota",
+        slug: "factory-engineering",
+        locale: "es",
+        url: "/notes/factory-engineering",
+        urlAlt: "/en/notes/factory-engineering",
+      },
+    };
+    const system = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [chunk], language: "es", message: "¿qué onda factory engineering?" })[0]
+      .content;
+    expect(system).toContain("nota: /notes/factory-engineering");
+    expect(system).toContain("/en/notes/factory-engineering");
+  });
+
+  it("omits the note label for chunks that are not a note", () => {
+    const messages = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "es", message: "¿Quién sos?" });
+    expect(messages[0].content).not.toContain("nota:");
+  });
+
+  it("renders the note route as an absolute URL when the site origin is known", () => {
+    const chunk = {
+      ...match(0.6),
+      metadata: {
+        section: "Qué es",
+        text: "cuerpo",
+        url: "/notes/factory-engineering",
+        urlAlt: "/en/notes/factory-engineering",
+      },
+    };
+    const system = buildRagPrompt({
+      identityPrompt: IDENTITY,
+      chunks: [chunk],
+      language: "es",
+      message: "¿qué onda factory engineering?",
+      siteOrigin: "https://ramirocerda.com.ar",
+    })[0].content;
+    // Absolute, because the widget only auto-links http(s) URLs.
+    expect(system).toContain("nota: https://ramirocerda.com.ar/notes/factory-engineering");
+    expect(system).toContain("https://ramirocerda.com.ar/en/notes/factory-engineering");
+  });
 });

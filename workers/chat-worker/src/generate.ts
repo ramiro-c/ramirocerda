@@ -8,13 +8,15 @@
  * Explicit mapping: HTTP 429 -> RATE_LIMITED; 401/403/4xx/5xx/network/timeout ->
  * MODEL_ERROR. Transient failures (5xx, network/timeout, empty completion)
  * are retried with exponential backoff (follow-up W1) because the upstream
- * intermittently fails in bursts; 429 is never retried.
+ * intermittently fails in bursts; 429 is never retried. A completion cut by the
+ * output budget (`finish_reason: "length"`) is retried once with a doubled
+ * budget, and only then flagged as `truncated` when it still runs out.
  */
 
 import type { ChatMessage } from "./rag";
 
 export type GenerateResult =
-  | { status: 200; content: string }
+  | { status: 200; content: string; truncated?: true }
   | { status: 429; code: "RATE_LIMITED" }
   | { status: 500; code: "MODEL_ERROR" };
 
@@ -78,14 +80,20 @@ async function attemptOnce(
     }
 
     const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: unknown } }>;
+      choices?: Array<{ message?: { content?: unknown }; finish_reason?: unknown }>;
     };
-    const content = data?.choices?.[0]?.message?.content;
+    const choice = data?.choices?.[0];
+    const content = choice?.message?.content;
     if (typeof content !== "string" || content.trim().length === 0) {
       // Empty completion is often transient upstream: retry before giving up.
       return { kind: "retry" };
     }
-    return { kind: "done", result: { status: 200, content } };
+    // `length` means the model ran out of output budget mid-sentence. Surface it
+    // so generateReply can retry once with a bigger budget instead of handing the
+    // visitor an answer cut in half.
+    return choice?.finish_reason === "length"
+      ? { kind: "done", result: { status: 200, content, truncated: true } }
+      : { kind: "done", result: { status: 200, content } };
   } catch {
     // Network failure or timeout (AbortError): retry.
     return { kind: "retry" };
@@ -95,6 +103,11 @@ async function attemptOnce(
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** A truncated answer is retried once with a doubled budget, never unbounded. */
+const MAX_BUDGET_BUMPS = 1;
+/** Ceiling for the doubled budget: ~4x the default 1024. */
+const MAX_OUTPUT_TOKENS = 4096;
 
 export async function generateReply(options: GenerateOptions): Promise<GenerateResult> {
   const {
@@ -111,19 +124,35 @@ export async function generateReply(options: GenerateOptions): Promise<GenerateR
     userAgent = "botardo-web/1.0",
   } = options;
 
+  let budget = maxTokens;
+  let budgetBumps = 0;
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const outcome = await attemptOnce(
       endpoint,
       apiKey,
       model,
       messages,
-      maxTokens,
+      budget,
       temperature,
       timeoutMs,
       sessionId,
       userAgent,
     );
     if (outcome.kind === "done") {
+      if (
+        outcome.result.status === 200 &&
+        outcome.result.truncated &&
+        budgetBumps < MAX_BUDGET_BUMPS &&
+        budget < MAX_OUTPUT_TOKENS
+      ) {
+        // The upstream cut the answer: retry once with a bigger budget. The
+        // retry consumes an attempt slot, so the bump stays bounded even when
+        // the larger budget is not enough either.
+        budgetBumps += 1;
+        budget = Math.min(budget * 2, MAX_OUTPUT_TOKENS);
+        continue;
+      }
       return outcome.result;
     }
     if (attempt < maxAttempts) {

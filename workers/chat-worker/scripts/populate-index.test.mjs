@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { chunkKB, chunkNote, diffIds, globFiles, isDraftNote, loadKBChunks, sha1Hex, stripFrontmatter } from "./populate-index.mjs";
+import { chunkKB, chunkNote, diffIds, globFiles, isDraftNote, loadKBChunks, noteRoute, sha1Hex, stripFrontmatter } from "./populate-index.mjs";
 import { KNOWLEDGE_BASE } from "./knowledge-base.js";
 
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
@@ -146,6 +146,72 @@ describe("chunkNote", () => {
     expect(esIds).not.toEqual(enIds);
     for (const chunk of esChunks) expect(chunk.text).toContain("código lo generan los agentes");
   });
+
+  it("carries the published route so the bot can link the note", () => {
+    const md = `---\ntitle: "Factory engineering"\n---\n\nIntro.\n\n### Qué es\nCuerpo.\n`;
+    const chunks = chunkNote(md, { filePath: "src/content/notes/es/factory-engineering.md" });
+    expect(chunks.length).toBeGreaterThan(0);
+    for (const chunk of chunks) {
+      expect(chunk.slug).toBe("factory-engineering");
+      expect(chunk.locale).toBe("es");
+      expect(chunk.url).toBe("/notes/factory-engineering");
+      expect(chunk.urlAlt).toBe("/en/notes/factory-engineering");
+    }
+  });
+
+  it("prefers the frontmatter slug when the note declares one", () => {
+    const md = `---\ntitle: "Con slug"\nslug: "otro-slug"\n---\n\n### Sección\nCuerpo.\n`;
+    const chunks = chunkNote(md, { filePath: "src/content/notes/es/con-slug.md" });
+    expect(chunks[0].slug).toBe("otro-slug");
+    expect(chunks[0].url).toBe("/notes/otro-slug");
+    expect(chunks[0].urlAlt).toBe("/en/notes/otro-slug");
+  });
+
+  it("keeps the chunks route-free when no file path is known", () => {
+    const chunks = chunkNote(`---\ntitle: "Suelta"\n---\n\n### Sección\nCuerpo.\n`);
+    expect(chunks[0].url).toBeUndefined();
+    expect(chunks[0].slug).toBeUndefined();
+  });
+});
+
+describe("noteRoute", () => {
+  it("maps the Spanish and English locale dirs to their site routes", () => {
+    expect(noteRoute("src/content/notes/es/factory-engineering.md")).toEqual({
+      slug: "factory-engineering",
+      locale: "es",
+      url: "/notes/factory-engineering",
+      urlAlt: "/en/notes/factory-engineering",
+    });
+    expect(noteRoute("src/content/notes/en/factory-engineering.md")).toEqual({
+      slug: "factory-engineering",
+      locale: "en",
+      url: "/en/notes/factory-engineering",
+      urlAlt: "/notes/factory-engineering",
+    });
+  });
+
+  it("defaults to the Spanish route for notes outside a locale dir", () => {
+    expect(noteRoute("src/content/notes/legacy.md")).toMatchObject({
+      slug: "legacy",
+      locale: "es",
+      url: "/notes/legacy",
+      urlAlt: "/en/notes/legacy",
+    });
+  });
+
+  it("honors a slug override, which is what the site route uses", () => {
+    expect(noteRoute("src/content/notes/es/factory-engineering.md", "otro-slug")).toMatchObject({
+      slug: "otro-slug",
+      url: "/notes/otro-slug",
+      urlAlt: "/en/notes/otro-slug",
+    });
+    expect(noteRoute("src/content/notes/en/factory-engineering.md", "otro-slug")).toMatchObject({
+      slug: "otro-slug",
+      locale: "en",
+      url: "/en/notes/otro-slug",
+      urlAlt: "/notes/otro-slug",
+    });
+  });
 });
 
 describe("globFiles", () => {
@@ -214,6 +280,32 @@ describe("loadKBChunks", () => {
       expect(bySource.kb[0].text).toContain("- dato");
       expect(bySource.notes).toHaveLength(1);
       expect(bySource.notes[0].text).toContain("# Nota 1");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("attaches the published note route to markdown chunks", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "botardo-kb-route-"));
+    try {
+      await mkdir(path.join(root, "src", "content", "notes", "es"), { recursive: true });
+      await mkdir(path.join(root, "src", "content", "notes", "en"), { recursive: true });
+      const note = `---\ntitle: "Factory engineering"\n---\n\n### Qué es\nCuerpo ES.\n`;
+      await writeFile(path.join(root, "src", "content", "notes", "es", "factory-engineering.md"), note);
+      await writeFile(path.join(root, "src", "content", "notes", "en", "factory-engineering.md"), note);
+      await mkdir(path.join(root, "workers", "chat-worker"), { recursive: true });
+      await writeFile(
+        path.join(root, "workers", "chat-worker", "kb-sources.json"),
+        JSON.stringify({ sources: [{ id: "notes", type: "markdown", glob: "src/content/notes/**/*.md" }] }),
+      );
+
+      const chunks = await loadKBChunks(root);
+      const esChunk = chunks.find((c) => c.locale === "es");
+      const enChunk = chunks.find((c) => c.locale === "en");
+      expect(esChunk.url).toBe("/notes/factory-engineering");
+      expect(esChunk.urlAlt).toBe("/en/notes/factory-engineering");
+      expect(enChunk.url).toBe("/en/notes/factory-engineering");
+      expect(enChunk.urlAlt).toBe("/notes/factory-engineering");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

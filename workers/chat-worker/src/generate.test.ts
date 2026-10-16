@@ -140,4 +140,45 @@ describe("generateReply (D8/D9, R5/R7)", () => {
     expect(result).toEqual({ status: 200, content: "Ok" });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it("retries with a doubled budget when the upstream cuts the answer (finish_reason length)", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse(200, { choices: [{ message: { content: "respuesta cortada" }, finish_reason: "length" }] }),
+      )
+      .mockResolvedValueOnce(jsonResponse(200, { choices: [{ message: { content: "respuesta completa" } }] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, backoffMs: 5 });
+
+    expect(result).toEqual({ status: 200, content: "respuesta completa" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).max_tokens).toBe(1024);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).max_tokens).toBe(2048);
+  });
+
+  it("flags the reply as truncated when the larger budget still runs out", async () => {
+    const fetchMock = vi.fn().mockImplementation(() =>
+      jsonResponse(200, { choices: [{ message: { content: "respuesta cortada" }, finish_reason: "length" }] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 4, backoffMs: 5 });
+
+    expect(result).toEqual({ status: 200, content: "respuesta cortada", truncated: true });
+    // One bump only: 1024 -> 2048, never unbounded growth.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not bump the budget when the upstream stops normally", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: "Ok" }, finish_reason: "stop" }] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages });
+
+    expect(result).toEqual({ status: 200, content: "Ok" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });
