@@ -109,6 +109,19 @@ wrangler secret put OPENCODE_GO_API_KEY
 wrangler dev --remote --port 8787        # remote mode: real AI + Vectorize bindings
 ```
 
+### Testing the widget against the local worker
+
+The site calls the deployed worker by default. To point the widget at a local
+worker, run the site with the override (CORS already allows `http://localhost:4321`):
+
+```bash
+cd workers/chat-worker && wrangler dev --remote --port 8787   # terminal 1
+PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 pnpm dev      # terminal 2, repo root
+```
+
+Note the widget still reads `url` / `urlAlt` from Vectorize metadata, so note
+links only appear after `pnpm chat:populate` pushes the new metadata.
+
 ### RAG path (RAG_ENABLED=true, after secret set)
 
 | Probe (AE) | Command body (`message`) | Expected |

@@ -82,7 +82,11 @@ const t = useTranslations(lang);
 </section>
 
 <script>
-  const WORKER_URL = "https://ramirocerda-chat.rami992009.workers.dev";
+  // Production worker by default. For local testing run `wrangler dev --remote`
+  // in workers/chat-worker and start the site with
+  // PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 pnpm dev
+  const WORKER_URL =
+    import.meta.env.PUBLIC_BOTARDO_WORKER_URL ?? "https://ramirocerda-chat.rami992009.workers.dev";
 
   // Stable per-conversation ID for OpenCode Go (x-opencode-session): reused
   // across messages in the same tab so the upstream can route and cache.
