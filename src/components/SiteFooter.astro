@@ -12,13 +12,16 @@ const year = new Date().getFullYear();
 
 <footer class="footer site-shell">
   <p>{t("footer.line")} · <span>{year}</span></p>
-  <p class="footer-referral">
+  <p class="footer-links">
     <a href="https://github.com/ramiro-c" rel="noreferrer" target="_blank">GitHub</a>
     <span aria-hidden="true">·</span>
-    {t("footer.builtWith")}
-    <a href="https://opencode.ai/go?ref=TW9S4SF2FB" rel="noreferrer" target="_blank"
-      >OpenCode</a
-    > · {t("footer.referralNote")}
+    <a
+      href="https://www.linkedin.com/in/cerdaramiro/"
+      rel="noreferrer"
+      target="_blank">LinkedIn</a
+    >
+    <span aria-hidden="true">·</span>
+    <a href="mailto:rami992009@gmail.com">{t("footer.email")}</a>
   </p>
 </footer>
 
@@ -31,12 +34,12 @@ const year = new Date().getFullYear();
     font-size: 0.9rem;
   }
 
-  .footer-referral {
+  .footer-links {
     margin-top: 0.35rem;
     font-size: 0.85rem;
   }
 
-  .footer-referral a {
+  .footer-links a {
     text-decoration-thickness: 1px;
     text-underline-offset: 0.15em;
   }
