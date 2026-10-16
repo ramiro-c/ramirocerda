@@ -1,10 +1,10 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-09-20T22:56:53.987Z",
+  "generatedAt": "2026-10-16T15:29:27.178Z",
   "sources": {
     "kb": 22,
-    "notes": 10
+    "notes": 20
   },
   "ids": [
     "kb-botardo-implementacion-9da4b03e",
@@ -37,7 +37,17 @@
     "note-3-qa-from-end-of-queue-manual-testing-to-leading-3ec673db",
     "note-4-el-product-manager-de-backlog-groomer-a-dueno--a877da9f",
     "note-4-product-managers-from-backlog-caretakers-to-ow-3cb192c5",
+    "note-como-esta-armada-f0d6acbc",
+    "note-determinism-for-the-win-7efa77a1",
+    "note-determinism-for-the-win-d72518e1",
     "note-equipos-que-gobiernan-agentes-que-ejecutan-dccf1813",
-    "note-teams-that-govern-agents-that-execute-f26d2ebf"
+    "note-formas-de-implementarlo-18fa7787",
+    "note-how-it-s-built-f4e04431",
+    "note-los-limites-que-el-mismo-marca-9c3b478c",
+    "note-los-recursos-eaf5406b",
+    "note-teams-that-govern-agents-that-execute-f26d2ebf",
+    "note-the-limits-he-draws-himself-0ef2efe6",
+    "note-the-resources-7d59ba25",
+    "note-ways-to-implement-it-add33faa"
   ]
 }
