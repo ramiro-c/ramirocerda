@@ -79,6 +79,20 @@ export function stripFrontmatter(md) {
 }
 
 /**
+ * A note is a draft when its front matter sets `draft: true`. The notes schema
+ * types `draft` as a YAML boolean, so `true`/`True`/`TRUE` are its only valid
+ * spellings. The site hides drafts, so they must never reach the public
+ * Vectorize index either: index only what a visitor can actually read.
+ *
+ * @param {string} md
+ * @returns {boolean}
+ */
+export function isDraftNote(md) {
+  const { frontmatter } = stripFrontmatter(md);
+  return String(frontmatter?.draft ?? "").trim().toLowerCase() === "true";
+}
+
+/**
  * Split markdown KB text into heading-boundary chunks.
  *
  * - Boundaries at H2/H3/H4 headings (the KB nests roles and projects under
@@ -253,6 +267,8 @@ export async function loadKBChunks(rootDir) {
       const files = await globFiles(rootDir, source.glob);
       for (const file of files) {
         const md = await readFile(file, "utf8");
+        // Drafts are unpublished: never index content the site hides.
+        if (isDraftNote(md)) continue;
         chunks.push(...chunkNote(md).map((c) => ({ ...c, source: source.id })));
       }
       continue;

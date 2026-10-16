@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { chunkKB, chunkNote, diffIds, globFiles, loadKBChunks, sha1Hex, stripFrontmatter } from "./populate-index.mjs";
+import { chunkKB, chunkNote, diffIds, globFiles, isDraftNote, loadKBChunks, sha1Hex, stripFrontmatter } from "./populate-index.mjs";
 import { KNOWLEDGE_BASE } from "./knowledge-base.js";
 
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
@@ -214,6 +214,47 @@ describe("loadKBChunks", () => {
       expect(bySource.kb[0].text).toContain("- dato");
       expect(bySource.notes).toHaveLength(1);
       expect(bySource.notes[0].text).toContain("# Nota 1");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("draft notes", () => {
+  it("reads the draft flag from the leading front matter only", () => {
+    expect(isDraftNote(`---\ntitle: "X"\ndraft: true\n---\n\nBody.\n`)).toBe(true);
+    expect(isDraftNote(`---\ntitle: "X"\ndraft: TRUE\n---\n\nBody.\n`)).toBe(true);
+    expect(isDraftNote(`---\ntitle: "X"\ndraft: false\n---\n\nBody.\n`)).toBe(false);
+    expect(isDraftNote(`---\ntitle: "X"\n---\n\nBody.\n`)).toBe(false);
+    // A body that merely mentions the flag is prose, not front matter.
+    expect(isDraftNote(`---\ntitle: "X"\n---\n\nI wrote draft: true in the front matter.\n`)).toBe(false);
+    expect(isDraftNote(`# No front matter\n\ndraft: true\n`)).toBe(false);
+  });
+
+  it("keeps draft notes out of the loaded chunk set", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "botardo-kb-draft-"));
+    try {
+      await mkdir(path.join(root, "src", "content", "notes", "es"), { recursive: true });
+      await writeFile(
+        path.join(root, "src", "content", "notes", "es", "published.md"),
+        `---\ntitle: "Published"\ndraft: false\n---\n\n### Section\nPublic body.\n`,
+      );
+      await writeFile(
+        path.join(root, "src", "content", "notes", "es", "borrador.md"),
+        `---\ntitle: "Unreleased"\ndraft: true\n---\n\n### Section\nDRAFT-MUST-NOT-BE-INDEXED\n`,
+      );
+      await mkdir(path.join(root, "workers", "chat-worker"), { recursive: true });
+      await writeFile(
+        path.join(root, "workers", "chat-worker", "kb-sources.json"),
+        JSON.stringify({
+          sources: [{ id: "notes", type: "markdown", glob: "src/content/notes/**/*.md" }],
+        }),
+      );
+
+      const chunks = await loadKBChunks(root);
+      expect(chunks.some((c) => c.text.includes("# Published"))).toBe(true);
+      expect(chunks.some((c) => c.text.includes("Unreleased"))).toBe(false);
+      expect(chunks.some((c) => c.text.includes("DRAFT-MUST-NOT-BE-INDEXED"))).toBe(false);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

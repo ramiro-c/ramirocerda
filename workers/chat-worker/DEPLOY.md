@@ -42,6 +42,10 @@ Requires the repo secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`
 (same token as the root `.env`). New note content only needs to be committed to
 `src/content/notes/` — population is automatic.
 
+Notes whose front matter sets `draft: true` are skipped: the index only holds
+notes a visitor can open. A note that becomes a draft again has its vectors
+pruned on the next populate run.
+
 ## Usage observability
 
 The worker writes one Analytics Engine data point per question (binding
