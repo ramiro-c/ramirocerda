@@ -1,0 +1,187 @@
+---
+import { useTranslations } from "../i18n/utils";
+
+interface Props {
+  lang: "es" | "en";
+  yearsExp: number;
+  copy: {
+    bio: string;
+    personal: string[];
+    roles: string[];
+    education: string;
+    skills: { label: string; items: string }[];
+  };
+}
+const { lang, yearsExp, copy } = Astro.props;
+const t = useTranslations(lang);
+const labels = {
+  personalLabel: t("about.personalLabel"),
+  rolesLabel: t("about.rolesLabel"),
+  educationLabel: t("about.educationLabel"),
+  skillsLabel: t("about.skillsLabel"),
+  experience: t("about.experience"),
+};
+---
+
+<div class="dossier">
+  <div class="d-main">
+    <p class="years mono">
+      <span class="years-num">{yearsExp}+</span>
+      {labels.experience}
+    </p>
+    <p class="bio">{copy.bio}</p>
+
+    <p class="mono section-label">{labels.personalLabel}</p>
+    {copy.personal.map((paragraph) => <p class="personal-p">{paragraph}</p>)}
+
+    <p class="mono section-label">{labels.rolesLabel}</p>
+    <ul class="d-rows">
+      {
+        copy.roles.map((role, i) => (
+          <li>
+            <span class="row-head">
+              <span class="num mono">{String(i + 1).padStart(2, "0")}</span>
+              <span class="role">{role}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <aside class="d-rail">
+    <p class="mono section-label">{labels.skillsLabel}</p>
+    <ul class="skill-idx">
+      {
+        copy.skills.map((group, i) => (
+          <li>
+            <span class="idx-head">
+              <span class="num mono">{String(i + 1).padStart(2, "0")}</span>
+              <span class="skill-label">{group.label}</span>
+            </span>
+            <span class="skill-items">{group.items}</span>
+          </li>
+        ))
+      }
+      <li>
+        <span class="idx-head">
+          <span class="num mono">{String(copy.skills.length + 1).padStart(2, "0")}</span>
+          <span class="skill-label">{labels.educationLabel}</span>
+        </span>
+        <span class="skill-items">{copy.education}</span>
+      </li>
+    </ul>
+  </aside>
+</div>
+
+<style>
+  .dossier {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .years {
+    margin: 0 0 1.1rem;
+    color: var(--muted-2);
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+  }
+  .years-num {
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 0.35rem;
+  }
+  .bio {
+    max-width: 44rem;
+    margin: 0 0 1.75rem;
+    color: var(--muted);
+    font-size: 1.02rem;
+  }
+  .section-label {
+    margin: 0 0 0.75rem;
+    font-size: 0.8rem;
+    color: var(--muted-2);
+  }
+  .personal-p {
+    max-width: 44rem;
+    margin: 0 0 0.85rem;
+    color: var(--muted);
+    font-size: 1.02rem;
+    line-height: 1.55;
+  }
+  .d-rows {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .d-rows li {
+    border-top: 2px solid var(--border);
+    padding: 0.85rem 0;
+    display: flex;
+    align-items: baseline;
+  }
+  .d-rows li:last-child {
+    border-bottom: 2px solid var(--border);
+  }
+  .row-head {
+    display: flex;
+    gap: 0.9rem;
+    align-items: baseline;
+  }
+  .num {
+    color: var(--accent);
+    font-size: 0.75rem;
+  }
+  .role {
+    font-weight: 700;
+    transition: color 0.15s ease;
+  }
+  .d-rows li:hover .role {
+    color: var(--accent);
+  }
+  .skill-idx {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.9rem;
+  }
+  .skill-idx li {
+    display: grid;
+    gap: 0.3rem;
+    border-top: 2px solid var(--border);
+    padding-top: 0.75rem;
+  }
+  .skill-idx li:last-child {
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 1rem;
+  }
+  .idx-head {
+    display: flex;
+    gap: 0.55rem;
+    align-items: baseline;
+  }
+  .skill-label {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .skill-items {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+  @media (min-width: 860px) {
+    .dossier {
+      grid-template-columns: 1.7fr 1fr;
+      gap: 2.5rem;
+    }
+    .d-rail {
+      border-left: 1px solid var(--border);
+      padding-left: 2rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .role {
+      transition: none;
+    }
+  }
+</style>

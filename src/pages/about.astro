@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
+import AboutDossier from "../components/AboutDossier.astro";
 import { useTranslations } from "../i18n/utils";
 
 const lang = "es";
@@ -10,7 +11,7 @@ const yearsExp = new Date().getFullYear() - 2020;
 
 const copy = {
   es: {
-    bio: `Full-Stack Engineer. En LDP (Libro de Pases) trabajo como Tech Lead hands-on. Ingeniero en Sistemas de Información (UTN, 2023), Buenos Aires. Más de ${yearsExp} años construyendo productos digitales de punta a punta: ownership de módulos críticos, auditorías de arquitectura, performance y mentoría.`,
+    bio: `Full-Stack Engineer — high ownership, high agency: hago lo que haya que hacer, sea devops, frontend, backend o mobile. Tech Lead hands-on en LDP (Libro de Pases): auditorías de arquitectura, performance y mentoría. Ingeniero en Sistemas de Información (UTN, 2023).`,
     personal: [
       "Soy curioso y bastante tranquilo. Leo mucha ciencia ficción y distopía — Orwell, Huxley, Asimov, Philip K. Dick — y me engancha la estética cyberpunk, tipo Ghost in the Shell. También leí bastante estoicismo; Meditaciones de Marco Aurelio me marcó.",
       "Entreno, voy al gym y me gustan las artes marciales. Cuando puedo, trekking y viajar. Me interesan las plantas y los insectos: detalles chicos del mundo que me entretienen.",
@@ -59,61 +60,7 @@ const about = copy[lang];
 
   <section class="about">
     <h1 class="display">{t("about.title")}</h1>
-    <p class="years mono">
-      <span class="years-num">{yearsExp}+</span>
-      {t("about.experience")}
-    </p>
-    <p class="bio">{about.bio}</p>
-
-    <section class="section personal">
-      <p class="mono section-label">{t("about.personalLabel")}</p>
-      {about.personal.map((paragraph) => <p class="personal-p">{paragraph}</p>)}
-    </section>
-
-    <div class="grid">
-      <section class="section">
-        <p class="mono section-label">{t("about.rolesLabel")}</p>
-        <ul class="bullets">
-          {about.roles.map((role) => <li>{role}</li>)}
-        </ul>
-      </section>
-
-      <section class="section">
-        <p class="mono section-label">{t("about.educationLabel")}</p>
-        <p class="line">{about.education}</p>
-      </section>
-
-      <section class="section">
-        <p class="mono section-label">{t("about.linksLabel")}</p>
-        <ul class="links">
-          <li>
-            <a
-              href="https://www.linkedin.com/in/cerdaramiro/"
-              rel="noreferrer"
-              target="_blank">LinkedIn</a
-            >
-          </li>
-          <li>
-            <a href="https://github.com/ramiro-c" rel="noreferrer" target="_blank">GitHub</a>
-          </li>
-          <li><a href="mailto:rami992009@gmail.com">rami992009@gmail.com</a></li>
-        </ul>
-      </section>
-    </div>
-
-    <section class="skills">
-      <p class="mono section-label">{t("about.skillsLabel")}</p>
-      <ul class="skill-list">
-        {
-          about.skills.map((group) => (
-            <li>
-              <span class="skill-label">{group.label}</span>
-              <span class="skill-items">{group.items}</span>
-            </li>
-          ))
-        }
-      </ul>
-    </section>
+    <AboutDossier lang={lang} yearsExp={yearsExp} copy={about} />
   </section>
 
   <SiteFooter slot="footer" lang={lang} />
@@ -127,95 +74,5 @@ const about = copy[lang];
     margin: 0 0 0.75rem;
     font-size: clamp(2.2rem, 7vw, 3.6rem);
     line-height: 0.95;
-  }
-  .years {
-    margin: 0 0 1.25rem;
-    color: var(--muted-2);
-    font-size: 0.9rem;
-    letter-spacing: 0.04em;
-  }
-  .years-num {
-    color: var(--accent);
-    font-weight: 700;
-    margin-right: 0.35rem;
-  }
-  .bio {
-    max-width: 44rem;
-    margin: 0 0 2rem;
-    color: var(--muted);
-    font-size: 1.02rem;
-  }
-  .personal {
-    margin-bottom: 1.5rem;
-  }
-  .personal-p {
-    max-width: 44rem;
-    margin: 0 0 0.85rem;
-    color: var(--muted);
-    font-size: 1.02rem;
-    line-height: 1.55;
-  }
-  .personal-p:last-child {
-    margin-bottom: 0;
-  }
-  .grid {
-    display: grid;
-    gap: 1.5rem;
-  }
-  .section,
-  .skills {
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-  }
-  .skills {
-    margin-top: 1.5rem;
-  }
-  .section-label {
-    margin: 0 0 0.75rem;
-    font-size: 0.8rem;
-    color: var(--muted-2);
-  }
-  .bullets,
-  .links {
-    margin: 0;
-    padding-left: 1.1rem;
-    display: grid;
-    gap: 0.45rem;
-  }
-  .line {
-    margin: 0;
-    color: var(--text);
-  }
-  .links a {
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.15em;
-  }
-  .skill-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.85rem;
-  }
-  .skill-list li {
-    display: grid;
-    gap: 0.2rem;
-    padding-left: 0.85rem;
-    border-left: 3px solid var(--accent);
-  }
-  .skill-label {
-    font-weight: 700;
-    font-size: 0.95rem;
-  }
-  .skill-items {
-    color: var(--muted);
-    font-size: 0.95rem;
-    line-height: 1.45;
-  }
-  @media (min-width: 760px) {
-    .grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 2rem;
-    }
   }
 </style>
