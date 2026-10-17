@@ -1,0 +1,265 @@
+---
+// Post-hero body of the home page: projects catalog + notes rail (variant B hub),
+// with the about/stack intro below. Shared by / (es) and /en/.
+import { getCollection } from "astro:content";
+import type { Lang } from "../i18n/ui";
+import { getLocalizedPath, useTranslations } from "../i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const STACK_ITEMS = [
+  "TypeScript",
+  "React",
+  "Astro",
+  "Node.js",
+  "Python",
+  "FastAPI",
+  "PostgreSQL",
+  "Cloudflare",
+];
+
+const projects = (await getCollection("projects"))
+  .filter((p) => p.data.featured)
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((p) => ({
+    slug: p.data.slug,
+    title: p.data[lang].title,
+    summary: p.data[lang].summary,
+    kind: p.data.kind,
+    status: p.data.status,
+    year: p.data.year,
+  }));
+
+const notes = (await getCollection("notes"))
+  .filter((n) => n.data.lang === lang && !n.data.draft)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .map((n) => ({
+    slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
+    title: n.data.title,
+    description: n.data.description,
+    dateStr: n.data.pubDate.toLocaleDateString(lang === "es" ? "es-AR" : "en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+  }));
+---
+
+<div class="hub">
+  <div class="hub-main">
+    <p class="mono label">{t("home.workLabel")}</p>
+    <ul class="pj-rail">
+      {
+        projects.map((p) => (
+          <li>
+            <a href={getLocalizedPath(lang, `/work/${p.slug}/`)}>
+              <span class="date mono pj-meta">
+                {p.status && <span class="status">{t(`status.${p.status}`)}</span>}<span class="dot" aria-hidden="true">
+                  {" · "}
+                </span>
+                {t(`kind.${p.kind}`)}
+                {p.year && ` · ${p.year}`}
+              </span>
+              <span class="pj-title">{p.title}</span>
+              <span class="summary">{p.summary}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="rail-more">
+      <a class="more-link" href={getLocalizedPath(lang, "/work/")}>{t("home.workAll")} →</a>
+    </p>
+  </div>
+  <aside class="hub-rail">
+    <p class="mono label">{t("home.notesLabel")}</p>
+    {notes.length === 0 ? (
+      <p class="empty">{t("home.notesEmpty")}</p>
+    ) : (
+      <ul class="note-rail">
+        {notes.map((note) => (
+          <li>
+            <a href={getLocalizedPath(lang, `/notes/${note.slug}/`)}>
+              <span class="date mono">{note.dateStr}</span>
+              <span class="note-title">{note.title}</span>
+              <span class="summary">{note.description}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+    <p class="rail-more">
+      <a class="more-link" href={getLocalizedPath(lang, "/notes/")}>{t("nav.notes")} →</a>
+    </p>
+  </aside>
+</div>
+
+<div class="intro">
+  <div>
+    <p class="mono label">{t("home.aboutLabel")}</p>
+    <p class="about-text">{t("home.aboutText")}</p>
+    <a class="more-link" href={getLocalizedPath(lang, "/about/")}>{t("nav.about")} →</a>
+  </div>
+  <div>
+    <p class="mono label">{t("home.stackLabel")}</p>
+    <ul class="stack-list">
+      {STACK_ITEMS.map((tech) => <li class="tag mono">{tech}</li>)}
+    </ul>
+  </div>
+</div>
+
+<style>
+  .hub {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    align-items: start;
+    padding: 1.5rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .hub-rail {
+    border-left: 1px solid var(--border);
+    padding-left: 1.5rem;
+    position: sticky;
+    top: 1rem;
+  }
+  .label {
+    font-size: 0.8rem;
+    color: var(--muted-2);
+    margin-bottom: 0.75rem;
+  }
+  .empty {
+    color: var(--muted);
+  }
+  .pj-rail {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem 2rem;
+  }
+  .pj-rail li {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.1rem;
+  }
+  .pj-rail li a {
+    display: grid;
+    gap: 0.25rem;
+    text-decoration: none;
+  }
+  .pj-rail li a:hover .pj-title {
+    color: var(--accent);
+  }
+  .pj-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+  .pj-rail .summary {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+  .pj-meta {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .pj-meta .status {
+    color: var(--accent);
+  }
+  .note-rail {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1.1rem;
+  }
+  .note-rail li a {
+    display: grid;
+    gap: 0.15rem;
+    text-decoration: none;
+  }
+  .note-rail li a:hover .note-title {
+    color: var(--accent);
+  }
+  .date {
+    font-size: 0.68rem;
+    color: var(--muted-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .note-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+  .summary {
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+  .rail-more {
+    margin: 1.25rem 0 0;
+  }
+  .intro {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .about-text {
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+  }
+  .stack-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0;
+    margin: 0;
+  }
+  .stack-list .tag {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+  }
+  .more-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.1rem;
+  }
+  .more-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  @media (max-width: 768px) {
+    .hub {
+      grid-template-columns: 1fr;
+    }
+    .hub-rail {
+      border-left: none;
+      border-top: 3px solid var(--border);
+      padding-left: 0;
+      padding-top: 1.5rem;
+      position: static;
+    }
+    .pj-rail {
+      grid-template-columns: 1fr;
+    }
+    .intro {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
