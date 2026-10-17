@@ -4,6 +4,7 @@ description: "Botardo, the chatbot on my site, has a RAG over my experience and 
 pubDate: 2026-10-04
 lang: "en"
 draft: false
+relatedProjects: ["botardo"]
 ---
 
 Botardo, the chatbot on my site, has a RAG with my experience and projects.

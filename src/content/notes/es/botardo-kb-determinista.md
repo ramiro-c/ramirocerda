@@ -4,6 +4,7 @@ description: "Botardo tiene un RAG con mi experiencia y proyectos. Antes lo rein
 pubDate: 2026-10-04
 lang: "es"
 draft: false
+relatedProjects: ["botardo"]
 ---
 
 Botardo, el chatbot de mi web, tiene un RAG con mi experiencia y proyectos.

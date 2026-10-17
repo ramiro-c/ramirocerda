@@ -3,20 +3,40 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import SiteHeader from "../../../components/SiteHeader.astro";
 import SiteFooter from "../../../components/SiteFooter.astro";
-import { useTranslations } from "../../../i18n/utils";
+import { getLocalizedPath, useTranslations } from "../../../i18n/utils";
 
 export async function getStaticPaths() {
-  const projects = await getCollection("projects");
-  return projects.map((project) => ({
-    params: { slug: project.data.slug },
-    props: { project },
-  }));
+  const [projects, allNotes] = await Promise.all([getCollection("projects"), getCollection("notes")]);
+  return projects.map((project) => {
+    const relatedNotes = allNotes
+      .filter(
+        (n) =>
+          n.data.lang === "en" &&
+          !n.data.draft &&
+          (n.data.relatedProjects || []).includes(project.data.slug),
+      )
+      .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+      .map((n) => ({
+        slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
+        title: n.data.title,
+        dateStr: n.data.pubDate.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }),
+      }));
+    return {
+      params: { slug: project.data.slug },
+      props: { project, relatedNotes },
+    };
+  });
 }
 
 const lang = "en";
 const t = useTranslations(lang);
-const { project } = Astro.props as { project: Awaited<ReturnType<typeof getCollection>>[number] };
+const { project, relatedNotes } = Astro.props as {
+  project: Awaited<ReturnType<typeof getCollection>>[number];
+  relatedNotes: Array<{ slug: string; title: string; dateStr: string }>;
+};
 const data = project.data[lang];
+const backPath = "/work/";
+
 const links = [
   project.data.repo ? { href: project.data.repo, label: "Repo" } : null,
   project.data.demo ? { href: project.data.demo, label: "Demo" } : null,
@@ -27,7 +47,7 @@ const links = [
   <SiteHeader slot="header" lang={lang} />
 
   <article class="case-study">
-    <p class="mono label">PROJECT / {project.data.slug}</p>
+    <p class="mono label"><a class="crumb" href={getLocalizedPath(lang, backPath)}>{t("work.back")}</a> / {project.data.slug}</p>
     <h1 class="display heading">{data.title}</h1>
 
     <p class="mono meta">
@@ -86,6 +106,23 @@ const links = [
         <p class="body muted">—</p>
       )}
     </section>
+
+    {relatedNotes.length > 0 && (
+      <section class="section related">
+        <p class="mono section-label">{t("project.relatedNotes")}</p>
+        <ul class="related-list">
+          {relatedNotes.map((n) => (
+            <li>
+              <a href={getLocalizedPath(lang, `/notes/${n.slug}/`)}>
+                <span class="rel-date mono">{n.dateStr}</span>
+                <span class="rel-title">{n.title}</span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
   </article>
 
   <SiteFooter slot="footer" lang={lang} />
@@ -173,5 +210,42 @@ const links = [
   .links a {
     text-decoration-thickness: 1px;
     text-underline-offset: 0.15em;
+  }
+  .crumb {
+    color: var(--muted-2);
+    text-decoration: none;
+  }
+  .crumb:hover {
+    color: var(--accent);
+  }
+  .related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+  .related-list li a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    text-decoration: none;
+  }
+  .related-list li a:hover .rel-title {
+    color: var(--accent);
+  }
+  .rel-date {
+    flex: none;
+    font-size: 0.68rem;
+    color: var(--muted-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .rel-title {
+    font-weight: 700;
+  }
+  .arrow {
+    margin-left: auto;
+    color: var(--muted-2);
   }
 </style>

@@ -3,23 +3,44 @@ import { getCollection, render } from "astro:content";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import SiteHeader from "../../../components/SiteHeader.astro";
 import SiteFooter from "../../../components/SiteFooter.astro";
-import { useTranslations } from "../../../i18n/utils";
+import { getLocalizedPath, useTranslations } from "../../../i18n/utils";
 
 export async function getStaticPaths() {
   const notes = await getCollection("notes");
   if (!notes.length) return [];
 
-  return notes
-    .filter((note) => !note.data.draft && note.data.lang === "en")
-    .map((note) => ({
-      params: { slug: note.data.slug || note.id.replace(/^(es|en)\//, "") },
-      props: { note },
-    }));
+  return Promise.all(
+    notes
+      .filter((note) => !note.data.draft && note.data.lang === "en")
+      .map(async (note) => {
+        const otherNotes = notes
+          .filter((n) => n.data.lang === "en" && !n.data.draft && n.id !== note.id)
+          .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+          .slice(0, 3)
+          .map((n) => ({
+            slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
+            title: n.data.title,
+            dateStr: n.data.pubDate.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }),
+          }));
+        const relatedProjectSlugs = note.data.relatedProjects || [];
+        const projects = (await getCollection("projects"))
+          .filter((p) => relatedProjectSlugs.includes(p.data.slug))
+          .map((p) => ({ slug: p.data.slug, title: p.data.en.title, status: p.data.status }));
+        return {
+          params: { slug: note.data.slug || note.id.replace(/^(es|en)\//, "") },
+          props: { note, otherNotes, projects },
+        };
+      }),
+  );
 }
 
 const lang = "en";
 const t = useTranslations(lang);
-const { note } = Astro.props as { note: Awaited<ReturnType<typeof getCollection>>[number] };
+const { note, otherNotes, projects } = Astro.props as {
+  note: Awaited<ReturnType<typeof getCollection>>[number];
+  otherNotes: Array<{ slug: string; title: string; dateStr: string }>;
+  projects: Array<{ slug: string; title: string; status?: string }>;
+};
 const { Content } = await render(note);
 ---
 
@@ -27,12 +48,45 @@ const { Content } = await render(note);
   <SiteHeader slot="header" lang={lang} />
 
   <article class="note">
-    <p class="mono label">NOTE / {note.data.lang.toUpperCase()}</p>
+    <p class="mono label"><a class="crumb" href={getLocalizedPath(lang, "/notes/")}>{t("notes.back")}</a> / {note.data.lang.toUpperCase()}</p>
     <h1 class="display heading">{note.data.title}</h1>
     <p class="summary">{note.data.description}</p>
     <div class="content">
       <Content />
     </div>
+
+    {projects.length > 0 && (
+      <section class="related">
+        <p class="mono label">{t("notes.relatedProjects")}</p>
+        <ul class="related-list">
+          {projects.map((p) => (
+            <li>
+              <a href={getLocalizedPath(lang, `/work/${p.slug}/`)}>
+                <span class="rel-title">{p.title}</span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {otherNotes.length > 0 && (
+      <section class="related">
+        <p class="mono label">{t("notes.other")}</p>
+        <ul class="related-list">
+          {otherNotes.map((n) => (
+            <li>
+              <a href={getLocalizedPath(lang, `/notes/${n.slug}/`)}>
+                <span class="rel-date mono">{n.dateStr}</span>
+                <span class="rel-title">{n.title}</span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
   </article>
 
   <SiteFooter slot="footer" lang={lang} />
@@ -60,5 +114,47 @@ const { Content } = await render(note);
   .content {
     border-top: 1px solid var(--border);
     padding-top: 1rem;
+  }
+  .crumb {
+    color: var(--muted-2);
+    text-decoration: none;
+  }
+  .crumb:hover {
+    color: var(--accent);
+  }
+  .related {
+    margin-top: 2.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+  }
+  .related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+  .related-list li a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    text-decoration: none;
+  }
+  .related-list li a:hover .rel-title {
+    color: var(--accent);
+  }
+  .rel-date {
+    flex: none;
+    font-size: 0.68rem;
+    color: var(--muted-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .rel-title {
+    font-weight: 700;
+  }
+  .arrow {
+    margin-left: auto;
+    color: var(--muted-2);
   }
 </style>

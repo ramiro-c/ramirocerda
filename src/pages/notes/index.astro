@@ -9,7 +9,13 @@ const lang = "es";
 const t = useTranslations(lang);
 const notes = (await getCollection("notes"))
   .filter((note) => note.data.lang === lang && !note.data.draft)
-  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .map((note) => ({
+    slug: note.data.slug || note.id.replace(/^(es|en)\//, ""),
+    title: note.data.title,
+    description: note.data.description,
+    dateStr: note.data.pubDate.toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }),
+  }));
 ---
 
 <BaseLayout lang={lang} title={t("notes.title")} description={t("notes.description")}>
@@ -25,9 +31,10 @@ const notes = (await getCollection("notes"))
       <ul class="list">
         {notes.map((note) => (
           <li>
-            <a href={getLocalizedPath(lang, `/notes/${note.data.slug || note.id.replace(/^(es|en)\//, "")}/`)}>
-              <span class="title">{note.data.title}</span>
-              <span class="summary">{note.data.description}</span>
+            <a href={getLocalizedPath(lang, `/notes/${note.slug}/`)}>
+              <span class="date mono">{note.dateStr}</span>
+              <span class="title">{note.title}</span>
+              <span class="summary">{note.description}</span>
             </a>
           </li>
         ))}
@@ -72,6 +79,12 @@ const notes = (await getCollection("notes"))
   }
   .list li a:hover {
     transform: translateX(4px);
+  }
+  .date {
+    font-size: 0.68rem;
+    color: var(--muted-2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
   .title {
     font-weight: 700;

@@ -61,6 +61,11 @@ export const ui = {
       "Notas y apuntes sobre ingeniería, agentes de IA y arquitectura.",
     "notes.empty":
       "Todavía no hay notas. Vuelvo cuando tenga algo que valga la pena publicar.",
+    "notes.other": "Otras notas",
+    "notes.back": "← Todas las notas",
+    "notes.relatedProjects": "Proyectos relacionados",
+    "project.relatedNotes": "Notas relacionadas",
+    "work.back": "← Todos los proyectos",
     "footer.line": "Diseñado y construido por Ramiro Cerdá · Buenos Aires",
     "footer.email": "Correo",
     "project.problem": "Problema",
@@ -133,6 +138,11 @@ export const ui = {
       "Notes and musings on engineering, AI agents, and architecture.",
     "notes.empty":
       "No notes yet. Back when there’s something worth publishing.",
+    "notes.other": "Other notes",
+    "notes.back": "← All notes",
+    "notes.relatedProjects": "Related projects",
+    "project.relatedNotes": "Related notes",
+    "work.back": "← All projects",
     "footer.line": "Designed and built by Ramiro Cerdá · Buenos Aires",
     "footer.email": "Email",
     "project.problem": "Problem",
