@@ -31,10 +31,9 @@ jobs:
         with:
           node-version: 22
 
-      # Fail fast (no network) if the committed manifest drifted from the sources.
-      - name: Check manifest consistency
-        run: node workers/chat-worker/scripts/populate-index.mjs --check
-
+      # Populate (network): rechunks the sources, upserts the Vectorize index,
+      # and rewrites the manifest. Content drift is resolved here, not failed on:
+      # the manifest sync step below commits any difference back to main.
       - name: Populate Vectorize index
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
