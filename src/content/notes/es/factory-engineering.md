@@ -50,6 +50,7 @@ Me gustó que la charla no venda autonomía total. Lloyd dice que su factory pú
 - Software factories (Latent Space) — https://www.latent.space/p/software-factories
 - Warp Factories, el anuncio — https://www.warp.dev/blog/open-infrastructure-for-building-a-software-factory
 - La factory pública, en vivo — https://build.warp.dev/
+- Repositorio de demo de la charla — https://github.com/warpdotdev-demos/cloud-factory-demo
 - El handbook de Lloyd sobre product-first engineering — https://thezbook.com/code-first-vs-product-first
 
 Yo todavía no mido el costo por PR en ningún lado. Si lo tenés andando, [contame cómo lo medís](https://www.linkedin.com/in/cerdaramiro/).

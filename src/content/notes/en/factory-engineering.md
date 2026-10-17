@@ -50,6 +50,7 @@ I liked that the talk doesn't sell total autonomy. Lloyd says his public factory
 - Software factories (Latent Space) — https://www.latent.space/p/software-factories
 - Warp Factories, the announcement — https://www.warp.dev/blog/open-infrastructure-for-building-a-software-factory
 - The public factory, live — https://build.warp.dev/
+- Demo repository from the talk — https://github.com/warpdotdev-demos/cloud-factory-demo
 - Lloyd's handbook on product-first engineering — https://thezbook.com/code-first-vs-product-first
 
 I'm not measuring cost per PR anywhere yet. If you have it running, [tell me how you measure it](https://www.linkedin.com/in/cerdaramiro/).
