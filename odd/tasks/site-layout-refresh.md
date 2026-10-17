@@ -22,7 +22,7 @@ Assumptions (marked as assumptions):
 - T1: Capture ?variant= home prototype on throwaway branch `prototype/home-variants`. — S1 — route: parent — commit: 73237b1 (branch)
 - T2: Fold variant B into real home (ES + EN), delete prototype machinery from main line, verify build + both langs. — S1, S4 — route: parent — commit: fc99b47
 - T3: Interconnection: related-links section between notes, projects and related notes (detail pages + data mapping). — S3 — route: parent — commit: b18c8ed (relatedProjects frontmatter schema + ui keys + related sections on note/project detail + dates back in notes index)
-- T4: `/notes` redesign (datos: dates, rhythm, less linear) prototype → user feedback → integrate (ES+EN). — S2, S3 — status: pending
+- T4: `/notes` redesign (datos: dates, rhythm, less linear) prototype → user feedback → integrate (ES+EN). — S2, S3 — route: parent — user picked B; prototype captured at prototype/notes-variants 6c4dafd; commit: bcf5d04
 - T5: `/work` redesign prototype → user feedback → integrate (ES+EN). — S2 — status: pending
 - T6: `/about` redesign prototype → user feedback → integrate (ES+EN). — S2 — status: pending
 - T7: `/workflow` redesign prototype → user feedback → integrate (ES+EN). — S2 — status: pending
@@ -38,3 +38,4 @@ Assumptions (marked as assumptions):
 - L6 (delivery note): branch única autorizada por el usuario ("sisi mandalo"). Forecast de la feature supera las ~400 líneas.
 - L7 (2026-10-17): T3 verificado con build: note detail de botardo-kb-determinista linkea proyecto botardo + otras notas; project detail de botardo linkea la nota; fechas visibles en /notes (formato es-AR "15 de oct de 2026"); EN paritario. Vigilar: el frontmatter nuevo `relatedProjects` feeds también al KB → correr `pnpm chat:populate` en próximo deploy.
 - L8 (2026-10-17): corrección del usuario verbatim: "la de producto fue el 16, no el 15". Causa real: bug de timezone — pubDate PARSEA como UTC medianoche, toLocaleDateString usa TZ server (America/Buenos_Aires UTC-3) → se atrasa un día. Fix: `timeZone: "UTC"` en las opciones en los 7 archivos que formatean fechas (HomeHub, notes/index, notes/[slug], work/[slug] + espejos EN). Verificado: "16 de oct de 2026" en binario.
+- L9 (2026-10-17): T4 kicked ON: prototipo ?variant= sobre /notes (ES+EN), mismo patrón que home. Variantes: A actual, B índice de archivo (filas numeradas, títulos display, fecha derecha), C tarjetas (grid 2 col). Gated por import.meta.env.DEV; build prod intacto (39 págs). Esperando feedback del usuario por variante.
