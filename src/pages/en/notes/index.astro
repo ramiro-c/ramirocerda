@@ -14,7 +14,7 @@ const notes = (await getCollection("notes"))
     slug: note.data.slug || note.id.replace(/^(es|en)\//, ""),
     title: note.data.title,
     description: note.data.description,
-    dateStr: note.data.pubDate.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }),
+    dateStr: note.data.pubDate.toLocaleDateString("en-US", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" }),
   }));
 ---
 

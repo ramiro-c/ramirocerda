@@ -19,7 +19,7 @@ export async function getStaticPaths() {
       .map((n) => ({
         slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
         title: n.data.title,
-        dateStr: n.data.pubDate.toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }),
+        dateStr: n.data.pubDate.toLocaleDateString("en-US", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" }),
       }));
     return {
       params: { slug: project.data.slug },
