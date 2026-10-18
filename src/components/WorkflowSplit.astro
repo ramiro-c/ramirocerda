@@ -1,0 +1,192 @@
+---
+// Workflow step browser: compact numbered rows on the left; sticky detail
+// panel on the right filled by a small inline script on click.
+interface Props {
+  nodes: {
+    id: string;
+    number: string;
+    label: string;
+    role: string;
+    panelTitle: string;
+    panelBody: string;
+    isHitl?: boolean;
+  }[];
+  hitlLabel: string;
+  panelHint: string;
+}
+const { nodes, hitlLabel, panelHint } = Astro.props;
+const returns: Record<number, string> = {
+  3: "↩ fix-cycle → 03",
+  5: "↩ escalation → 03",
+};
+---
+
+<div class="split" data-wf-c>
+  <div class="s-rows">
+    <ul class="c-rows">
+      {
+        nodes.map((node, i) => (
+          <li>
+            <button
+              type="button"
+              class="c-row"
+              data-wf-row={node.id}
+              data-wf-title={node.panelTitle}
+              data-wf-body={node.panelBody}
+              data-wf-hitl={node.isHitl ? "1" : ""}
+            >
+              <span class="num mono">{node.number}</span>
+              <span class="label">{node.label}</span>
+              {node.isHitl && <span class="pill mono">{hitlLabel}</span>}
+              <span class="arrow">→</span>
+            </button>
+            {returns[i] && <p class="c-return mono">{returns[i]}</p>}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <aside class="s-panel" data-wf-panel>
+    <p class="panel-placeholder mono" data-wf-placeholder>
+      <span aria-hidden="true">→</span>
+      {panelHint}
+    </p>
+    <div class="panel-content" data-wf-content hidden>
+      <p class="p-title" data-wf-out-title></p>
+      <p class="p-body" data-wf-out-body></p>
+      <span class="pill mono" data-wf-out-hitl hidden>{hitlLabel}</span>
+    </div>
+  </aside>
+</div>
+
+<script is:inline>
+  (() => {
+    const root = document.querySelector("[data-wf-c]");
+    if (!root) return;
+    const rows = root.querySelectorAll("[data-wf-row]");
+    const panel = root.querySelector("[data-wf-panel]");
+    const placeholder = root.querySelector("[data-wf-placeholder]");
+    const content = root.querySelector("[data-wf-content]");
+    const outTitle = root.querySelector("[data-wf-out-title]");
+    const outBody = root.querySelector("[data-wf-out-body]");
+    const outHitl = root.querySelector("[data-wf-out-hitl]");
+
+    const select = (btn) => {
+      rows.forEach((r) => r.classList.toggle("active", r === btn));
+      if (!panel || !content || !outTitle || !outBody || !outHitl) return;
+      outTitle.textContent = btn.getAttribute("data-wf-title") || "";
+      outBody.textContent = btn.getAttribute("data-wf-body") || "";
+      outHitl.hidden = !btn.getAttribute("data-wf-hitl");
+      if (placeholder) placeholder.hidden = true;
+      content.hidden = false;
+    };
+
+    rows.forEach((r) => r.addEventListener("click", () => select(r)));
+    // Default: first row preselected.
+    if (rows.length) select(rows[0]);
+  })();
+</script>
+
+<style>
+  .split {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 1.5rem;
+    margin: 1rem 0 0;
+    align-items: start;
+  }
+  .s-rows {
+    min-width: 0;
+  }
+  .c-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .c-rows li {
+    border-top: 2px solid var(--border);
+    padding: 0.65rem 0;
+  }
+  .c-return {
+    margin: 0.3rem 0 0;
+    font-size: 0.65rem;
+    color: var(--muted-2);
+  }
+  .c-row {
+    width: 100%;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .num {
+    font-size: 0.8rem;
+    color: var(--muted-2);
+  }
+  .label {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .c-row:hover .label,
+  .c-row.active .label {
+    color: var(--accent);
+  }
+  .arrow {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .c-row:hover .arrow,
+  .c-row.active .arrow {
+    opacity: 1;
+    color: var(--accent);
+  }
+  .pill {
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    color: var(--accent);
+    border: 1.25px solid var(--accent);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  }
+  .s-panel {
+    position: sticky;
+    top: 1rem;
+    border: 2px solid var(--border);
+    box-shadow: 4px 4px 0 var(--border);
+    padding: 1.25rem;
+    min-height: 12rem;
+  }
+  .panel-placeholder {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted-2);
+  }
+  .p-title {
+    margin: 0 0 0.75rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .p-body {
+    margin: 0 0 0.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  @media (max-width: 768px) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+    .s-panel {
+      position: static;
+    }
+  }
+</style>
