@@ -3,7 +3,7 @@ slug: mini-projects
 kind: personal
 status: wip
 featured: false
-order: 12
+order: 13
 repo: https://github.com/ramiro-c/mini-projects
 tags: ["Backend", "RabbitMQ", "TypeScript"]
 es:

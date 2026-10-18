@@ -3,7 +3,7 @@ slug: gastify
 kind: personal
 status: active
 featured: true
-order: 7
+order: 8
 tags: ["SvelteKit", "Cloudflare", "AI"]
 es:
   title: "Gastify — Finanzas con bot de Telegram"

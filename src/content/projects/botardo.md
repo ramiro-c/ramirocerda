@@ -3,7 +3,7 @@ slug: botardo
 kind: personal
 status: live
 featured: true
-order: 3
+order: 4
 tags: ["Cloudflare", "RAG", "TypeScript", "Workers AI"]
 repo: https://github.com/ramiro-c/ramirocerda
 es:
