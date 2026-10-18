@@ -3,7 +3,7 @@ slug: ai-agents-hub
 kind: personal
 status: active
 featured: true
-order: 7
+order: 6
 tags: ["ADK", "LangGraph", "FastAPI"]
 repo: https://github.com/ramiro-c/ai-agents-hub
 es:

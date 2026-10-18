@@ -3,7 +3,7 @@ slug: rutinify
 kind: personal
 status: active
 featured: false
-order: 12
+order: 11
 repo: https://github.com/ramiro-c/rutinify
 tags: ["React", "PWA", "TypeScript"]
 es:

@@ -15,6 +15,7 @@ es:
     - "Identidad por usuario: cada llamada usa el JWT del usuario, con verificación en cada turno y sesiones aisladas."
     - "Desplegado en Vertex AI Agent Engine; smoke tests con usuarios reales y aislamiento de sesiones verificado."
     - "Evals determinísticos sin LLM juez: grounding numérico, tools esperadas e idioma, contra el entorno real."
+    - "MCP propio (stdio): expone el agente desplegado como una sola tool ask(message) para agentes de código — password en el Keychain, JWT cacheado."
   stack: ["Python 3.13", "Google ADK", "Vertex AI Agent Engine", "Gemini", "uv", "pytest"]
 en:
   title: "Agent General — Multi-agent product assistant"
@@ -26,5 +27,6 @@ en:
     - "Per-user identity: every call uses the user's JWT, verified on every turn, with isolated sessions."
     - "Deployed to Vertex AI Agent Engine; smoke tests with real users and verified session isolation."
     - "Deterministic evals with no LLM judge: numeric grounding, expected tools, and reply language, against the real environment."
+    - "Own MCP server (stdio): exposes the deployed agent as a single ask(message) tool for coding agents — password in the Keychain, JWT cached."
   stack: ["Python 3.13", "Google ADK", "Vertex AI Agent Engine", "Gemini", "uv", "pytest"]
 ---
