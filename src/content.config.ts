@@ -14,7 +14,7 @@ const projects = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/projects" }),
   schema: z.object({
     slug: z.string(),
-    kind: z.enum(["personal", "freelance", "oss-fork"]),
+    kind: z.enum(["personal", "freelance", "oss-fork"]).optional(),
     status: z.enum(["live", "active", "wip", "pilot", "archived"]).optional(),
     year: z.string().optional(),
     featured: z.boolean().default(false),

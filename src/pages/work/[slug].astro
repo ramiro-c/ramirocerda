@@ -51,8 +51,8 @@ const links = [
     <h1 class="display heading">{data.title}</h1>
 
     <p class="mono meta">
-      <span class="kind">{t(`kind.${project.data.kind}`)}</span>
-      {project.data.status && <span class="dot" aria-hidden="true">·</span>}
+      {project.data.kind && <span class="kind">{t(`kind.${project.data.kind}`)}</span>}
+      {project.data.status && project.data.kind && <span class="dot" aria-hidden="true">·</span>}
       {project.data.status && <span class="status">{t(`status.${project.data.status}`)}</span>}
       {project.data.year && <span class="dot" aria-hidden="true">·</span>}
       {project.data.year && <span class="year">{project.data.year}</span>}

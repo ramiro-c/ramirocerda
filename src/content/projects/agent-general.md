@@ -1,10 +1,9 @@
 ---
 slug: agent-general
-kind: freelance
 status: active
 year: "2026"
-featured: false
-order: 11
+featured: true
+order: 1
 tags: ["Python", "Google ADK", "Vertex AI", "LLM Evals"]
 es:
   title: "Agent General — Asistente de producto multi-agente"

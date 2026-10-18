@@ -1,10 +1,9 @@
 ---
 slug: agent-scout
-kind: freelance
 status: active
 year: "2026"
-featured: false
-order: 12
+featured: true
+order: 2
 tags: ["Python", "Google ADK", "Vertex AI", "LiteLLM", "LLM Evals"]
 es:
   title: "Agent Scout — Asistente de scouting"
