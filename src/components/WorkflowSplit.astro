@@ -211,13 +211,13 @@ const returns: Record<number, string> = {
     .arrow {
       display: none;
     }
-    /* Accordion: each row expands its own detail inline. */
+    /* Accordion: only the row holding .active (toggled by the script) expands. */
     .row-detail {
+      display: none;
+    }
+    li:has(.active) .row-detail {
       display: block;
       margin: 0.6rem 0 0.25rem;
-    }
-    .row-detail:empty {
-      display: none;
     }
   }
 </style>
