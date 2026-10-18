@@ -41,6 +41,11 @@ const returns: Record<number, string> = {
               <span class="arrow">→</span>
             </button>
             {returns[i] && <p class="c-return mono">{returns[i]}</p>}
+            <div class="row-detail">
+              <p class="d-title">{node.panelTitle}</p>
+              <p class="d-body">{node.panelBody}</p>
+              {node.isHitl && <span class="pill mono">{hitlLabel}</span>}
+            </div>
           </li>
         ))
       }
@@ -181,12 +186,34 @@ const returns: Record<number, string> = {
     font-size: 0.9rem;
     line-height: 1.55;
   }
+  .row-detail {
+    display: none;
+  }
+  .d-title {
+    margin: 0 0 0.4rem;
+    font-weight: 700;
+    font-size: 1.02rem;
+  }
+  .d-body {
+    margin: 0 0 0.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
   @media (max-width: 768px) {
     .split {
       grid-template-columns: 1fr;
     }
     .s-panel {
-      position: static;
+      display: none;
+    }
+    /* Accordion: each row expands its own detail inline. */
+    .row-detail {
+      display: block;
+      margin: 0.6rem 0 0.25rem;
+    }
+    .row-detail:empty {
+      display: none;
     }
   }
 </style>
