@@ -1,7 +1,6 @@
 ---
 slug: rutinify
 kind: personal
-status: active
 featured: false
 order: 11
 repo: https://github.com/ramiro-c/rutinify

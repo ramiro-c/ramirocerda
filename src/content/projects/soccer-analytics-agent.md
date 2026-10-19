@@ -1,7 +1,6 @@
 ---
 slug: soccer-analytics-agent
 kind: personal
-status: active
 featured: true
 order: 5
 tags: ["Gemini", "pgvector", "XGBoost"]

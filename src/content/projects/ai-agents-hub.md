@@ -1,7 +1,6 @@
 ---
 slug: ai-agents-hub
 kind: personal
-status: active
 featured: true
 order: 6
 tags: ["ADK", "LangGraph", "FastAPI"]

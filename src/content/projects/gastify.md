@@ -1,7 +1,6 @@
 ---
 slug: gastify
 kind: personal
-status: active
 featured: true
 order: 7
 tags: ["SvelteKit", "Cloudflare", "AI"]

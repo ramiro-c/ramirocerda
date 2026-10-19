@@ -1,6 +1,5 @@
 ---
 slug: agent-scout
-status: active
 year: "2026"
 featured: true
 order: 2

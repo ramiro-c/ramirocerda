@@ -38,7 +38,7 @@ const projects = (await getCollection("projects"))
                   {item.status && <span class="status">{t(`status.${item.status}`)}</span>}
                   {item.status && item.kind && <span class="dot">·</span>}
                   {item.kind && <span class="kind">{t(`kind.${item.kind}`)}</span>}
-                  {item.year && <span class="dot">·</span>}
+                  {(item.status || item.kind) && item.year && <span class="dot">·</span>}
                   {item.year && <span class="year">{item.year}</span>}
                 </span>
               </span>
@@ -99,6 +99,9 @@ const projects = (await getCollection("projects"))
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    /* Reserve the right edge for the absolutely positioned .go arrow, so it
+       never lands on top of the status · kind · year meta line. */
+    padding-right: 1.6rem;
   }
   .num {
     color: var(--accent);

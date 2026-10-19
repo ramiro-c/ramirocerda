@@ -1,7 +1,6 @@
 ---
 slug: linkedin-markdownificator
 kind: oss-fork
-status: active
 featured: false
 order: 9
 tags: ["Python", "Selenium", "OSS"]

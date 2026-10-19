@@ -54,7 +54,7 @@ const links = [
       {project.data.kind && <span class="kind">{t(`kind.${project.data.kind}`)}</span>}
       {project.data.status && project.data.kind && <span class="dot" aria-hidden="true">·</span>}
       {project.data.status && <span class="status">{t(`status.${project.data.status}`)}</span>}
-      {project.data.year && <span class="dot" aria-hidden="true">·</span>}
+      {(project.data.status || project.data.kind) && project.data.year && <span class="dot" aria-hidden="true">·</span>}
       {project.data.year && <span class="year">{project.data.year}</span>}
     </p>
 

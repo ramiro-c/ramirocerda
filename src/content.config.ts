@@ -15,7 +15,9 @@ const projects = defineCollection({
   schema: z.object({
     slug: z.string(),
     kind: z.enum(["personal", "freelance", "oss-fork"]).optional(),
-    status: z.enum(["live", "active", "wip", "pilot", "archived"]).optional(),
+    // The only status label is `live`: the project is reachable at a public URL
+    // (deployed and working). Projects without a public URL carry no status.
+    status: z.literal("live").optional(),
     year: z.string().optional(),
     featured: z.boolean().default(false),
     order: z.number(),

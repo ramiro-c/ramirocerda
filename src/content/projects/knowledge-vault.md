@@ -1,7 +1,6 @@
 ---
 slug: knowledge-vault
 kind: personal
-status: active
 featured: false
 order: 8
 tags: ["Obsidian", "AI", "PKM"]

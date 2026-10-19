@@ -1,7 +1,6 @@
 ---
 slug: lactaria
 kind: freelance
-status: pilot
 featured: false
 order: 10
 tags: ["React Native", "Expo", "Gemini"]

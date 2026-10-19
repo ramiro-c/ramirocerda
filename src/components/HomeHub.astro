@@ -58,11 +58,10 @@ const notes = (await getCollection("notes"))
           <li>
             <a href={getLocalizedPath(lang, `/work/${p.slug}/`)}>
               <span class="date mono pj-meta">
-                {p.status && <span class="status">{t(`status.${p.status}`)}</span>}<span class="dot" aria-hidden="true">
-                  {" · "}
-                </span>
-                {t(`kind.${p.kind}`)}
-                {p.year && ` · ${p.year}`}
+                {p.status && <span class="status">{t(`status.${p.status}`)}</span>}
+                {p.status && <span class="dot" aria-hidden="true">{" · "}</span>}
+                {p.kind && t(`kind.${p.kind}`)}
+                {p.year && `${p.status || p.kind ? " · " : ""}${p.year}`}
               </span>
               <span class="pj-title">{p.title}</span>
               <span class="summary">{p.summary}</span>
