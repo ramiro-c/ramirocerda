@@ -13,38 +13,41 @@ Existe una salida conocida: un "juez" con LLM que califica la respuesta. Es flex
 
 ## La alternativa: casos dorados y graders deterministas
 
-La idea es separar las dos cosas que el juez mezcla. Primero, el caso: una entrada, el contexto que el agente tiene disponible, las herramientas que puede usar y qué se espera realmente.
+La idea es separar las dos cosas que el juez mezcla. Primero, el caso: una entrada, las herramientas que puede usar, lo que quedó grabado de la conversación (los turnos, con el resultado de cada tool call) y qué se espera realmente.
 
-```yaml
-id: invoice-total
-input: "¿Cuánto gasté en hosting en marzo?"
-context:
-  - "Hosting marzo 2026: USD 42.50 (factura 0031)"
-tools_available: [kb_search, calculator]
-expect:
-  tools_called:
-    - name: kb_search
-      args: { query: "hosting marzo 2026" }
-    - name: calculator
-      args: { expression: "42.50" }
-  numeric_claims:
-    - value: 42.50
-      must_appear_in_context: true
-  forbidden_content: ["no puedo ver tus facturas"]
-  language: es
+```json
+{
+  "id": "refund-status",
+  "prompt": "¿Cuál es el estado de mi reembolso?",
+  "expected_tools": ["kb_search"],
+  "expected_tool_args": { "kb_search": { "query": "estado reembolso" } },
+  "expected_numbers": ["1234"],
+  "expected_facts": ["reembolso 1234 fue aprobado"],
+  "forbidden_phrases": ["como IA no puedo"],
+  "expected_language": "es"
+}
 ```
+
+Los `turns` grabados van en el mismo caso, con el resultado de cada tool call; con eso el suite se puede correr en modo replay, sin llamar al agente ni a la red.
 
 Segundo, el grader: cada regla es un programa que recibe la conversación y el caso, y devuelve pass/fail con un motivo. No hay modelo en el medio.
 
-Los graders que valen la pena cuando el agente tiene herramientas:
+Los graders que valen la pena cuando el agente tiene herramientas (los seis que corren en el harness):
 
-- **Herramientas**: usó las que debía usar y no las que no debía. Y los argumentos importan: llamar `calculator` con `42.50` en vez de `"42.50"` es un bug real, no un detalle de estilo.
-- **Grounding numérico**: todo número que el agente afirma tiene que aparecer en el contexto. Si dice 42.50 y el contexto dice 42.50, pasa. Si dice 4250, falla. Esto mata las alucinaciones numéricas, que son las más caras porque nadie las nota hasta el Billing.
-- **Grounding factual**: cada afirmación atribuible a una fuente tiene que traer su cita. No es "la respuesta es correcta", es "la respuesta cita lo que dice".
-- **Contenido prohibido**: frases que el agente nunca debe decir ("como IA no puedo...", "no tengo acceso a tus datos", prometer lo que no puede hacer).
-- **Idioma**: la respuesta tiene que estar en el idioma que usó el usuario, detectado con stopwords, sin pedirle nada a un modelo.
+- **`tool_usage`**: usó las que debía usar (`expected_tools`) y no las que no debía (`forbidden_tools`). Borrar una cuenta o mandar un email cuando toca consultar el conocimiento son bugs reales, no detalles de estilo.
+- **`tool_args`**: los argumentos importan. Un caso fija un subconjunto esperado de argumentos por herramienta; si ninguna call los matchea, falla.
+- **`numeric_grounding`**: todo número que el agente afirma tiene que verse en el resultado de alguna tool call, y cada número que el caso exige tiene que aparecer en la respuesta. Si el KB dice 1234 y el agente contesta 9999, falla con el número ofensor en el detalle. Esto mata las alucinaciones numéricas, que son las más caras porque nadie las nota hasta Billing.
+- **`fact_grounding`**: cada afirmación esperada tiene que aparecer en la respuesta Y estar respaldada por una tool call. No es "la respuesta es correcta", es "la respuesta cita lo que dice la fuente".
+- **`no_forbidden_content`**: frases que el agente nunca debe decir ("como IA no puedo..."). El matching ignora mayúsculas, acentos y puntuación.
+- **`language`**: la respuesta tiene que estar en el idioma que usó el usuario, detectado por stopwords, sin pedirle nada a un modelo.
 
-Y el runner corre todos los casos, calcula el pass-rate y sale con exit code distinto de cero cuando baja del umbral. Eso es lo que lo hace usable en CI: no es un script que alguien corre a mano, es una puerta.
+Y el runner corre todos los casos contra los seis graders, calcula el pass-rate y sale con `exit code 1` cuando baja del umbral:
+
+```bash
+PYTHONPATH=src python3 -m agent_evals.cli casos.json --threshold 1.0
+```
+
+Una tabla por caso con el motivo exacto de cada falta, un `--report` en JSON para el artefacto del CI. Eso es lo que lo hace usable en CI: no es un script que alguien corre a mano, es una puerta.
 
 ## Dónde esto NO alcanza
 

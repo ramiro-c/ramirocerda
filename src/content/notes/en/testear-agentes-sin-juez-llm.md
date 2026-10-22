@@ -15,36 +15,39 @@ There is a known escape hatch: an LLM "judge" that scores the answer. It is flex
 
 The idea is to separate the two things the judge mixes together. First, the case: an input, the context the agent has access to, the tools it may use, and what is actually expected.
 
-```yaml
-id: invoice-total
-input: "How much did I spend on hosting in March?"
-context:
-  - "Hosting March 2026: USD 42.50 (invoice 0031)"
-tools_available: [kb_search, calculator]
-expect:
-  tools_called:
-    - name: kb_search
-      args: { query: "hosting March 2026" }
-    - name: calculator
-      args: { expression: "42.50" }
-  numeric_claims:
-    - value: 42.50
-      must_appear_in_context: true
-  forbidden_content: ["I cannot see your invoices"]
-  language: en
+```json
+{
+  "id": "refund-status",
+  "prompt": "What is the status of my refund?",
+  "expected_tools": ["kb_search"],
+  "expected_tool_args": { "kb_search": { "query": "refund status" } },
+  "expected_numbers": ["1234"],
+  "expected_facts": ["refund 1234 was approved"],
+  "forbidden_phrases": ["as an AI I cannot"],
+  "expected_language": "en"
+}
 ```
+
+The recorded turns (the transcript, with every tool call and its result) live in the same case. That lets the suite run in replay mode: it grades the recorded transcript without calling the agent, the model, or the network.
 
 Second, the grader: every rule is a program that receives the conversation and the case, and returns pass/fail with a reason. No model in the middle.
 
-The graders worth having when the agent has tools:
+The six graders in the harness:
 
-- **Tools**: it used the tools it should have used, and not the ones it should not have. Arguments matter too: calling `calculator` with `42.50` instead of `"42.50"` is a real bug, not a style detail.
-- **Numeric grounding**: every number the agent states has to appear in the context. It says 42.50 and the context says 42.50, it passes. It says 4250, it fails. This kills numeric hallucinations, the expensive kind, because nobody notices them until Billing.
-- **Factual grounding**: every claim attributable to a source has to carry its citation. It is not "the answer is correct", it is "the answer cites what it says".
-- **Forbidden content**: phrases the agent must never say ("as an AI I can't...", "I don't have access to your data", promising what it cannot deliver).
-- **Language**: the answer has to be in the language the user wrote in, detected with stopwords, without asking a model anything.
+- **`tool_usage`**: it called every tool in `expected_tools` and none of the ones in `forbidden_tools`. Deleting an account or firing an escalation email when it should have searched the knowledge base is a real bug, not a style choice.
+- **`tool_args`**: each tool can declare the subset of arguments it must have been called with; if no call matches, it fails.
+- **`numeric_grounding`**: every number the agent states has to appear in some tool call's result, and every number the case demands has to appear in the response. When it fails it names the offending number: the KB says 1234, the agent answered 9999.
+- **`fact_grounding`**: the expected claim has to appear in the response AND be backed by a tool call result. It is not "the answer is correct", it is "the answer cites what it says".
+- **`no_forbidden_content`**: phrases the agent must never say ("as an AI I cannot...", promising what it cannot deliver). Matching ignores case, accents, and punctuation.
+- **`language`**: the answer has to be in the language the user wrote in, detected with stopwords, without asking a model anything.
 
-Then the runner executes every case, computes the pass rate, and exits with a non-zero code when it drops below the threshold. That is what makes it usable in CI: it is not a script someone runs by hand, it is a gate.
+Then the CLI runs every case, prints a table with the exact reason each one failed, computes the pass rate, and exits non-zero when it drops below the threshold:
+
+```bash
+PYTHONPATH=src python3 -m agent_evals.cli cases.json --threshold 1.0
+```
+
+`--report` writes the same verdicts as a JSON artifact for CI to keep. That is what makes it usable in CI: it is not a script someone runs by hand, it is a gate.
 
 ## Where this does NOT reach
 
