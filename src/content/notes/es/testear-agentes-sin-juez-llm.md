@@ -7,13 +7,13 @@ draft: false
 relatedProjects: ["spec-refinery", "rag-citation-agent"]
 ---
 
-Probar un agente es raro. Un test normal verifica una función: entrada, salida, listo. Un agente decide en runtime qué herramienta usar, con qué argumentos, y qué contestar. Si lo probás por el texto que devuelve, cada cambio de modelo te rompe el suite y cada error real se esconde adentro de un snapshot que nadie lee.
+Testing an agent is weird. A normal test verifies a function: input, output, done. An agent decides at runtime which tool to call, with which arguments, and what to say back. If you test it by the text it returns, every model change breaks the suite and every real bug hides inside a snapshot nobody reads.
 
-Existe una salida conocida: un "juez" con LLM que califica la respuesta. Es flexible, pero tiene tres problemas que me hicieron buscar otra cosa: no es determinista (la misma entrada se califica distinto según el día), no es barato (pagás una llamada por caso, por iteración) y no es diagnosticable (cuando falla no te dice QUÉ se rompió: si fue una herramienta mal llamada, un número inventado, o un idioma incorrecto).
+There's a known escape hatch: an LLM "judge" that scores the answer. It's flexible, but I hit three problems with it. It's not deterministic (same input, different verdict depending on the day). It's not cheap (a call per case, per iteration). And it's not diagnosable: when it fails it doesn't tell you WHAT broke — a tool called wrong, a number invented, or the wrong language.
 
-## La alternativa: casos dorados y graders deterministas
+## The alternative: golden cases and deterministic graders
 
-La idea es separar las dos cosas que el juez mezcla. Primero, el caso: una entrada, las herramientas que puede usar, lo que quedó grabado de la conversación (los turnos, con el resultado de cada tool call) y qué se espera realmente.
+The idea is to separate the two things the judge mixes. First, the case: an input, the tools it may use, and what's actually expected.
 
 ```json
 {
@@ -28,40 +28,38 @@ La idea es separar las dos cosas que el juez mezcla. Primero, el caso: una entra
 }
 ```
 
-Los `turns` grabados van en el mismo caso, con el resultado de cada tool call; con eso el suite se puede correr en modo replay, sin llamar al agente ni a la red.
+The recorded turns (prompt, response, and each tool call with its result) live in the same case. That lets the suite run in replay mode: it grades the recorded transcript without calling the agent, the model, or the network.
 
-Segundo, el grader: cada regla es un programa que recibe la conversación y el caso, y devuelve pass/fail con un motivo. No hay modelo en el medio.
+Second, the grader: every rule is a program that receives the conversation and the case, and returns pass/fail with a reason. No model in the middle.
 
-Los graders que valen la pena cuando el agente tiene herramientas (los seis que corren en el harness):
+The six graders in the harness:
 
-- **`tool_usage`**: usó las que debía usar (`expected_tools`) y no las que no debía (`forbidden_tools`). Borrar una cuenta o mandar un email cuando toca consultar el conocimiento son bugs reales, no detalles de estilo.
-- **`tool_args`**: los argumentos importan. Un caso fija un subconjunto esperado de argumentos por herramienta; si ninguna call los matchea, falla.
-- **`numeric_grounding`**: todo número que el agente afirma tiene que verse en el resultado de alguna tool call, y cada número que el caso exige tiene que aparecer en la respuesta. Si el KB dice 1234 y el agente contesta 9999, falla con el número ofensor en el detalle. Esto mata las alucinaciones numéricas, que son las más caras porque nadie las nota hasta Billing.
-- **`fact_grounding`**: cada afirmación esperada tiene que aparecer en la respuesta Y estar respaldada por una tool call. No es "la respuesta es correcta", es "la respuesta cita lo que dice la fuente".
-- **`no_forbidden_content`**: frases que el agente nunca debe decir ("como IA no puedo..."). El matching ignora mayúsculas, acentos y puntuación.
-- **`language`**: la respuesta tiene que estar en el idioma que usó el usuario, detectado por stopwords, sin pedirle nada a un modelo.
+- **`tool_usage`**: it called every tool in `expected_tools` and none of the ones in `forbidden_tools`. Deleting an account or firing an escalation email when it should have searched the knowledge base is a real bug, not a style choice.
+- **`tool_args`**: each tool can declare the subset of arguments it must have been called with; if no call matches, it fails.
+- **`numeric_grounding`**: every number the agent states has to appear in some tool call's result, and every number the case demands has to appear in the response. When it fails it names the offending number: the KB says 1234, the agent answered 9999.
+- **`fact_grounding`**: the expected claim has to appear in the response AND be backed by a tool call result. It's not "the answer is correct", it's "the answer cites what it says".
+- **`no_forbidden_content`**: phrases the agent must never say ("como IA no puedo...", promising what it cannot deliver). Matching ignores case, accents, and punctuation.
+- **`language`**: the answer has to be in the language the user wrote in, detected with stopwords, without asking a model anything.
 
-Y el runner corre todos los casos contra los seis graders, calcula el pass-rate y sale con `exit code 1` cuando baja del umbral:
+Then the CLI runs every case, prints a table with the exact reason each one failed, computes the pass rate, and exits non-zero when it drops below the threshold:
 
 ```bash
-PYTHONPATH=src python3 -m agent_evals.cli casos.json --threshold 1.0
+PYTHONPATH=src python3 -m agent_evals.cli cases.json --threshold 1.0
 ```
 
-Una tabla por caso con el motivo exacto de cada falta, un `--report` en JSON para el artefacto del CI. Eso es lo que lo hace usable en CI: no es un script que alguien corre a mano, es una puerta.
+`--report` writes the same verdicts as a JSON artifact for CI to keep. That's what makes it usable in CI: the exit code cuts the build.
 
-## Dónde esto NO alcanza
+## Where this does NOT reach
 
-No quiero vender humo: los evals deterministas verifican hechos, llamadas y límites. No verifican si la respuesta es *buena*.
+Deterministic evals verify facts, calls, and limits. They don't verify whether the answer is *good*.
 
-- ¿Ayudó de verdad al usuario? ¿Es clara? ¿Es el tono correcto? → eso es subjetivo, y un juez LLM (o una persona) sigue siendo lo único razonable.
-- ¿El agente tomó el camino más eficiente? Eso es un problema de costo y latencia, no de correctitud.
+- Did it actually help the user? Is it clear? Is the tone right? → subjective, and an LLM judge (or a person) is still the only reasonable tool.
+- Did the agent take the most efficient path? That's a cost and latency problem, not a correctness one.
 
-Mi regla: el juez LLM entra sólo sobre lo que los graders no pueden cubrir, y corre sobre un subconjunto chico, no sobre todo el suite. Si el juez es el único que evalúa, no tenés tests: tenés opiniones con latencia.
+The LLM judge only enters where graders cannot reach, and it runs over a small subset, not the whole suite. If the judge is the only thing evaluating, what you have is not a test: it's an opinion with latency.
 
-## El asset
+## The asset
 
-Lo dejé en [ramiro-c/agent-evals](https://github.com/ramiro-c/agent-evals): el paquete, los graders, el runner, los tests y un ejemplo sintético de agente de soporte con un caso por cada modo de falla. Es framework-agnostic y sólo stdlib, así que entra en cualquier pipeline sin tocar el entorno.
+I left it in [ramiro-c/agent-evals](https://github.com/ramiro-c/agent-evals): the package, the graders, the runner, the tests, and a synthetic support-agent example with one case per failure mode. It's framework-agnostic and stdlib-only, so it drops into any pipeline without touching the environment.
 
-Y aviso algo: el harness que uso en producción vive en un repo privado. Lo que está afuera es el método y un ejemplo de juguete, no el código de producción. Si te sirve la idea, copiá el formato de caso.
-
-Cerrando: los agentes no se testearon con mocks, se testearon con contratos. El snapshot te dice que algo cambió; el caso dorado te dice qué se rompió.
+One caveat: the harness I run in production lives in a private repo. What's public is the method and a toy example, not the production code. If the idea is useful to you, copy the case format.
