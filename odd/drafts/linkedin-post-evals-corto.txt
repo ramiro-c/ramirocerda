@@ -1,0 +1,11 @@
+🧪 Estaba cansado de testear agentes con otro LLM de juez.
+
+Dos respuestas idénticas, dos veredictos distintos dependiendo del día del juez. Eso no es pedirle una opinion a algo, es tirar una moneda con pasos extra.
+
+Me armé agent-evals: golden cases en JSON con el transcript grabado + 6 graders programáticos (tools llamadas, args, números que salen de los resultados reales, afirmaciones con respaldo, contenido prohibido, idioma) + umbral de pass-rate que termina en un exit code para CI. Si algo se rompe en main, se pone rojo el build, no una intuición.
+
+La demo es un agente de soporte sintético con defectos hechos a propósito: cada caso falla por su razón y solo por esa.
+
+Repo https://github.com/ramiro-c/agent-evals
+
+Cualquier feedback es bienvenido, está abierto en PR.
