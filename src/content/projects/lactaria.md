@@ -2,7 +2,8 @@
 slug: lactaria
 kind: freelance
 featured: false
-order: 10
+track: "product"
+order: 12
 tags: ["React Native", "Expo", "Gemini"]
 es:
   title: "LactarIA — App de apoyo en lactancia materna"

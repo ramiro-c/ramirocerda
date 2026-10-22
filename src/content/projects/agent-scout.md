@@ -2,6 +2,7 @@
 slug: agent-scout
 year: "2026"
 featured: true
+track: "ai-systems"
 order: 2
 tags: ["Python", "Google ADK", "Vertex AI", "LiteLLM", "LLM Evals"]
 es:

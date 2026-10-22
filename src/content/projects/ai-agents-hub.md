@@ -1,8 +1,9 @@
 ---
 slug: ai-agents-hub
 kind: personal
-featured: true
-order: 6
+featured: false
+track: "ai-systems"
+order: 8
 tags: ["ADK", "LangGraph", "FastAPI"]
 repo: https://github.com/ramiro-c/ai-agents-hub
 es:

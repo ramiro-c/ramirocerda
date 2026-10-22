@@ -2,7 +2,8 @@
 slug: soccer-analytics-agent
 kind: personal
 featured: true
-order: 5
+track: "ai-systems"
+order: 4
 tags: ["Gemini", "pgvector", "XGBoost"]
 repo: https://github.com/ramiro-c/ai-agents-hub
 es:

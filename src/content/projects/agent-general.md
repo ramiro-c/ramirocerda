@@ -2,6 +2,7 @@
 slug: agent-general
 year: "2026"
 featured: true
+track: "ai-systems"
 order: 1
 tags: ["Python", "Google ADK", "Vertex AI", "LLM Evals"]
 es:

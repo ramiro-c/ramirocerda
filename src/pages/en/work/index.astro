@@ -17,7 +17,18 @@ const projects = (await getCollection("projects"))
     status: project.data.status,
     year: project.data.year,
     tags: project.data.tags,
+    track: project.data.track,
   }));
+
+const trackIds = ["ai-systems", "product"] as const;
+const groups = trackIds
+  .map((id) => ({
+    id,
+    title: t(id === "ai-systems" ? "work.trackAiTitle" : "work.trackProductTitle"),
+    note: t(id === "ai-systems" ? "work.trackAiNote" : "work.trackProductNote"),
+    items: projects.filter((project) => project.track === id),
+  }))
+  .filter((group) => group.items.length > 0);
 ---
 
 <BaseLayout lang={lang} title={t("work.title")} description={t("work.description")}>
@@ -27,36 +38,44 @@ const projects = (await getCollection("projects"))
     <p class="mono label">01 / {t("work.title").toUpperCase()}</p>
     <h1 class="display heading">{t("work.title")}</h1>
 
-    <ul class="cat">
-      {
-        projects.map((item, i) => (
-          <li>
-            <a href={getLocalizedPath(lang, `/work/${item.slug}/`)}>
-              <span class="row-head">
-                <span class="num mono">{String(i + 1).padStart(2, "0")}</span>
-                <span class="meta mono">
-                  {item.status && <span class="status">{t(`status.${item.status}`)}</span>}
-                  {item.status && item.kind && <span class="dot">·</span>}
-                  {item.kind && <span class="kind">{t(`kind.${item.kind}`)}</span>}
-                  {(item.status || item.kind) && item.year && <span class="dot">·</span>}
-                  {item.year && <span class="year">{item.year}</span>}
-                </span>
-              </span>
-              <span class="title">{item.title}</span>
-              <span class="summary">{item.summary}</span>
-              {item.tags && item.tags.length > 0 && (
-                <span class="tags">
-                  {item.tags.map((tag) => (
-                    <span class="tag mono">{tag}</span>
-                  ))}
-                </span>
-              )}
-              <span class="go mono" aria-hidden="true">→</span>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    {
+      groups.map((group) => (
+        <section class="track">
+          <div class="track-head">
+            <h2 class="track-title mono">{group.title}</h2>
+            <p class="track-note">{group.note}</p>
+          </div>
+          <ul class="cat">
+            {group.items.map((item, i) => (
+              <li>
+                <a href={getLocalizedPath(lang, `/work/${item.slug}/`)}>
+                  <span class="row-head">
+                    <span class="num mono">{String(i + 1).padStart(2, "0")}</span>
+                    <span class="meta mono">
+                      {item.status && <span class="status">{t(`status.${item.status}`)}</span>}
+                      {item.status && item.kind && <span class="dot">·</span>}
+                      {item.kind && <span class="kind">{t(`kind.${item.kind}`)}</span>}
+                      {(item.status || item.kind) && item.year && <span class="dot">·</span>}
+                      {item.year && <span class="year">{item.year}</span>}
+                    </span>
+                  </span>
+                  <span class="title">{item.title}</span>
+                  <span class="summary">{item.summary}</span>
+                  {item.tags && item.tags.length > 0 && (
+                    <span class="tags">
+                      {item.tags.map((tag) => (
+                        <span class="tag mono">{tag}</span>
+                      ))}
+                    </span>
+                  )}
+                  <span class="go mono" aria-hidden="true">→</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
   </section>
 
   <SiteFooter slot="footer" lang={lang} />
@@ -80,6 +99,28 @@ const projects = (await getCollection("projects"))
     list-style: none;
     padding: 0;
     margin: 0;
+  }
+  .track {
+    margin-top: 2.25rem;
+  }
+  .track-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.9rem;
+  }
+  .track-title {
+    margin: 0;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .track-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+    max-width: 52ch;
   }
   .cat li {
     position: relative;

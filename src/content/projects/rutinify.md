@@ -2,7 +2,8 @@
 slug: rutinify
 kind: personal
 featured: false
-order: 11
+track: "product"
+order: 13
 repo: https://github.com/ramiro-c/rutinify
 tags: ["React", "PWA", "TypeScript"]
 es:

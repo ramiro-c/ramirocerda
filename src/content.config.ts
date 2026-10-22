@@ -15,6 +15,9 @@ const projects = defineCollection({
   schema: z.object({
     slug: z.string(),
     kind: z.enum(["personal", "freelance", "oss-fork"]).optional(),
+    // Work track: `ai-systems` leads the list (agents, RAG, eval harnesses),
+    // `product` holds the web products and apps.
+    track: z.enum(["ai-systems", "product"]).default("product"),
     // The only status label is `live`: the project is reachable at a public URL
     // (deployed and working). Projects without a public URL carry no status.
     status: z.literal("live").optional(),

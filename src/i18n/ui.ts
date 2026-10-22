@@ -18,16 +18,16 @@ export const ui = {
     "cta.work": "Proyectos",
     "cta.botardo": "Botardo",
     "home.brand": "Ramiro Cerdá",
-    "home.thesis": "Full-Stack Engineer.",
+    "home.thesis": "AI Systems Engineer.",
     "home.support":
-      "Performance, observabilidad y calidad. Agentes de IA en producción — arquitectura, código y deploy.",
+      "Performance y observabilidad aplicadas a la IA: agentes verificables, con grounding por usuario y evals deterministas sin juez LLM.",
     "home.workLabel": "01 / PROYECTOS",
     "home.workAll": "Ver todos",
     "home.notesLabel": "02 / NOTAS",
     "home.notesEmpty": "Pronto notas.",
     "home.aboutLabel": "Sobre mí",
     "home.aboutText":
-      "Ingeniero full-stack en Buenos Aires. Construyo productos web rápidos y observables, y llevo agentes de IA de la idea a producción: arquitectura, código y deploy.",
+      "Ingeniero de sistemas de IA en Buenos Aires. Construyo productos web rápidos y observables, y llevo agentes de IA de la idea a producción: arquitectura, código y deploy.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Disponible para proyectos",
     "home.location": "Buenos Aires · UTC-3",
@@ -56,7 +56,13 @@ export const ui = {
       "workflow.howTerminates": "El pipeline termina cuando card-pr publica el PR, Judgment Day da veredicto limpio, y el canal de Partners recibe la notificación. No hay auto-merge: la decisión final siempre es humana.",
     "work.title": "Proyectos",
     "work.description":
-      "Proyectos seleccionados: apps, agentes de IA y herramientas construidas con foco en calidad y performance.",
+      "Sistemas de IA en producción y productos web, con foco en verificabilidad, calidad y performance.",
+    "work.trackAiTitle": "Sistemas de IA",
+    "work.trackAiNote":
+      "Agentes, RAG y evaluación: sistemas que citan sus datos, respetan los permisos del usuario y se pueden verificar sin juez LLM.",
+    "work.trackProductTitle": "Producto y web",
+    "work.trackProductNote":
+      "Apps y plataformas propias, construidas de punta a punta.",
     "notes.title": "Notas",
     "notes.description":
       "Notas y apuntes sobre ingeniería, agentes de IA y arquitectura.",
@@ -93,16 +99,16 @@ export const ui = {
     "cta.work": "Projects",
     "cta.botardo": "Botardo",
     "home.brand": "Ramiro Cerdá",
-    "home.thesis": "Full-Stack Engineer.",
+    "home.thesis": "AI Systems Engineer.",
     "home.support":
-      "Performance, observability, and quality. AI agents in production — architecture, code, and deploy.",
+      "Performance and observability applied to AI: verifiable agents, per-user grounding, and deterministic evals without an LLM judge.",
     "home.workLabel": "01 / WORK",
     "home.workAll": "View all",
     "home.notesLabel": "02 / NOTES",
     "home.notesEmpty": "Notes coming soon.",
     "home.aboutLabel": "About me",
     "home.aboutText":
-      "Full-stack engineer based in Buenos Aires. I build fast, observable web products and take AI agents from idea to production: architecture, code, and deploy.",
+      "AI systems engineer based in Buenos Aires. I build fast, observable web products and take AI agents from idea to production: architecture, code, and deploy.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Available for projects",
     "home.location": "Buenos Aires · UTC-3",
@@ -131,7 +137,13 @@ export const ui = {
       "workflow.howTerminates": "The pipeline ends when card-pr publishes the PR, Judgment Day returns a clean verdict, and the Partners channel receives the notification. No auto-merge: the final decision is always human.",
     "work.title": "Work",
     "work.description":
-      "Selected projects: apps, AI agents, and tools built with a focus on quality and performance.",
+      "AI systems in production and web products, focused on verifiability, quality, and performance.",
+    "work.trackAiTitle": "AI systems",
+    "work.trackAiNote":
+      "Agents, RAG, and evaluation: systems that cite their data, respect the user's permissions, and can be verified without an LLM judge.",
+    "work.trackProductTitle": "Product & web",
+    "work.trackProductNote":
+      "Apps and platforms of my own, built end to end.",
     "notes.title": "Notes",
     "notes.description":
       "Notes and musings on engineering, AI agents, and architecture.",
