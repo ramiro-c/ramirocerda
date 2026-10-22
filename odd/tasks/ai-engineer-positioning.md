@@ -58,15 +58,15 @@ Acceptance: the owner can copy-paste each draft; nothing is posted to LinkedIn b
 
 | ID | Specs | Route | Work unit | Status |
 |----|-------|-------|-----------|--------|
-| T1 | S2 | delegated writer | New public repo `ramiro-c/agent-evals`: harness, graders, runner, tests, CI, README | pending |
-| T2 | S1, S3 | inline | Site positioning: hero, support line, about bio (es+en) | pending |
-| T3 | S3 | inline | Site curation: reorder `/work`, tier AI systems vs the rest, add `spec-refinery`, `orquestador-langgraph`, `rag-citation-agent` entries | pending |
-| T4 | S1, S2 | inline | Site note (es+en): "Testear agentes sin juez LLM", linked to the harness | pending |
-| T5 | S3 | inline | GitHub cleanup: descriptions, topics, pins, push `rag-citation-agent` code, archive shells and stale course repos (reversible) | pending |
-| T6 | S1, S3, S4 | inline | Profile repo `ramiro-c/ramiro-c`: README, pinned repos, shell roadmap, cleanup script + report | pending |
-| T7 | S4 | inline | LinkedIn drafts (long post, short post, headline set) in the owner's voice | pending |
+| T1 | S2 | inline (route change, see L6) | New public repo `ramiro-c/agent-evals`: harness, graders, runner, tests, CI, README | done — commits `588411b` (main), `e76804e`+`449d2fb` (feat/harness); 36/36 tests green; PR-A open |
+| T2 | S1, S3 | inline | Site positioning: hero, support line, about bio (es+en) | done — commit `d171df1` |
+| T3 | S3 | inline | Site curation: reorder `/work`, tier AI systems vs the rest, add `spec-refinery`, `orquestador-langgraph`, `rag-citation-agent` entries | done — commit `d171df1` |
+| T4 | S1, S2 | inline | Site note (es+en): "Testear agentes sin juez LLM", linked to the harness | done — commit `48dd13f`, example reconciled with the real harness CLI in `e3f254c` |
+| T5 | S3 | inline | GitHub cleanup: descriptions, topics, push `rag-citation-agent` code, archive shells and stale course repos (reversible) | done — 33 archives + 6 descriptions + 14 topics + push to `rag-citation-agent` main; log + undos in `odd/drafts/github-cleanup-log.txt` |
+| T6 | S1, S3, S4 | inline | Profile repo `ramiro-c/ramiro-c`: README, shell roadmap, cleanup script + runbook | done — PR-D open (`ramiro-c/pull/1`); pins are manual (see L7) |
+| T7 | S4 | inline | LinkedIn drafts (long post, short post, headline set) in the owner's voice | done — 3 drafts + headline copy in `odd/drafts/`, commit `02330dd`; nothing posted |
 
-Route note: T1 is delegated because it is an isolated new repository (disjoint edit surface) and a fresh context protects the parent's context during a multi-file build. Every other unit stays inline because it needs the owner's editorial judgment and the site's conventions.
+Route note: T1 was planned as delegated but the worker backend was unavailable for the whole session (two launches failed with `Model unavailable: opencode-go/minimax-m3.1-flash-free`), so it moved inline (see Log L6). Every other unit stays inline because it needs the owner's editorial judgment and the site's conventions.
 
 ## Log
 
@@ -77,4 +77,8 @@ Route note: T1 is delegated because it is an isolated new repository (disjoint e
 - L5 (2026-10-22): "hay muchos que todavia son cascarones, no los empece, son proyectos que quiero armar para mi portolio" — the shell repositories are a roadmap, not garbage. Decision: archive them (reversible) and keep the roadmap tracked in the profile repo, instead of deleting or leaving them as README-only padding.
 - D1 (2026-10-22): decision — the GitHub profile README and the `/work` tiering are the two highest-leverage surfaces; the site's copy change alone is not enough while the profile shows 10 README-only "AI agent" repositories.
 - D2 (2026-10-22): decision — archive, never delete. Every archive is listed with its undo command in the cleanup report.
+- L6 (2026-10-22): route change on T1 — the worker backend was unavailable all session (`Model unavailable: opencode-go/minimax-m3.1-flash-free`, two launches died), so the harness was built inline following the ODD path: scaffold on `main` (`588411b`), tests first (RED observed: `ModuleNotFoundError: agent_evals.case`), then implementation GREEN 36/36, then example + docs (`e76804e`, `449d2fb`). Deliverables: repo https://github.com/ramiro-c/agent-evals (public), PR-A https://github.com/ramiro-c/agent-evals/pull/1 (feat/harness → main, not merged).
+- L7 (2026-10-22): scriptability findings worth remembering for the next cleanup. (a) Pinned repositories are not in the GitHub GraphQL `Mutation` schema (no `pinRepository`; only `pinIssue`/`pinEnvironment` exist; REST probe `user/featured_items` → 404), so the pin set is a manual UI step: pin `agent-evals`, `spec-refinery`, `rag-citation-agent`; unpin `mini-projects`, `linkedin-markdownificator`, `worldcup-2026`. (b) Updating the profile bio via REST PATCH `/user` requires the `user` OAuth scope (`gh auth refresh -h github.com -s user`, interactive); old bio kept as undo: "Ingeniero en Sistemas | Fullstack Developer | Software Engineer". (c) SECURITY finding (not touched, archive-never-delete policy): public repo `newlogic` has a committed `.env` with SMTP credentials (SMTP_USER/SMTP_PASS keys) since 2020; archived now, but the file stays public in history — recommend rotating/disabling that SMTP account and considering history removal as an owner decision. (d) `gh repo edit <bare-name>` needs the `[HOST/]OWNER/REPO` format (first run failed for all 6 descriptions + 14 topics; retry with `ramiro-c/` prefix succeeded).
+- L8 (2026-10-22): note example reconciliation — the site note (es+en) now shows the real case format (JSON with `expected_tool_args`/`expected_facts`/`expected_numbers`), the six real grader names and the real CLI (`PYTHONPATH=src python3 -m agent_evals.cli cases.json --threshold 1.0`), replacing the invented YAML from the first draft. Commit `e3f254c`. Builds 51 pages.
 - Open question for the owner (not blocking): employment/contract positioning versus being found as a product founder. The drafts hedge both; the owner picks.
+- Open items left for the owner (review day): merge or tune PR-A (agent-evals#1) and PR-D (ramiro-c#1); edit pins in the profile UI; decide on the bio (`gh auth refresh -h github.com -s user` first); decide on the `newlogic` SMTP credential rotation; LinkedIn drafts in `odd/drafts/` are paste-ready but nothing was posted.
