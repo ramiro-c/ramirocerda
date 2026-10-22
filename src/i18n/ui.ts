@@ -20,7 +20,7 @@ export const ui = {
     "home.brand": "Ramiro Cerdá",
     "home.thesis": "AI Systems Engineer.",
     "home.support":
-      "Performance y observabilidad aplicadas a la IA: agentes verificables, con grounding por usuario y evals deterministas sin juez LLM.",
+      "Performance y observabilidad aplicadas a la IA: agentes verificables, con grounding por usuario y evals deterministas que cortan el build; el juez LLM queda para lo subjetivo, en un subconjunto chico.",
     "home.workLabel": "01 / PROYECTOS",
     "home.workAll": "Ver todos",
     "home.notesLabel": "02 / NOTAS",
@@ -59,7 +59,7 @@ export const ui = {
       "Sistemas de IA en producción y productos web, con foco en verificabilidad, calidad y performance.",
     "work.trackAiTitle": "Sistemas de IA",
     "work.trackAiNote":
-      "Agentes, RAG y evaluación: sistemas que citan sus datos, respetan los permisos del usuario y se pueden verificar sin juez LLM.",
+      "Agentes, RAG y evaluación: sistemas que citan sus datos, respetan los permisos del usuario y se verifican con graders deterministas; el juez LLM entra solo donde no llegan.",
     "work.trackProductTitle": "Producto y web",
     "work.trackProductNote":
       "Apps y plataformas propias, construidas de punta a punta.",
@@ -101,7 +101,7 @@ export const ui = {
     "home.brand": "Ramiro Cerdá",
     "home.thesis": "AI Systems Engineer.",
     "home.support":
-      "Performance and observability applied to AI: verifiable agents, per-user grounding, and deterministic evals without an LLM judge.",
+      "Performance and observability applied to AI: verifiable agents, per-user grounding, and deterministic evals that gate CI; LLM judges stay on a small reviewed subset.",
     "home.workLabel": "01 / WORK",
     "home.workAll": "View all",
     "home.notesLabel": "02 / NOTES",
@@ -140,7 +140,7 @@ export const ui = {
       "AI systems in production and web products, focused on verifiability, quality, and performance.",
     "work.trackAiTitle": "AI systems",
     "work.trackAiNote":
-      "Agents, RAG, and evaluation: systems that cite their data, respect the user's permissions, and can be verified without an LLM judge.",
+      "Agents, RAG, and evaluation: systems that cite their data, respect the user's permissions, and are verified with deterministic graders; LLM judges enter only where graders can't reach.",
     "work.trackProductTitle": "Product & web",
     "work.trackProductNote":
       "Apps and platforms of my own, built end to end.",

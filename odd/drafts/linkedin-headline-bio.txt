@@ -8,7 +8,7 @@ AI Systems Engineer | verifiable agents: grounding with per-user permissions, de
 
 ABOUT (es)
 
-Construyo agentes LLM con contratos que se pueden verificar: qué herramientas puede usar, qué números puede mencionar, qué afirmaciones tiene que poder respaldar, en qué idioma contesta. Todo dentro de un harness determinista (golden cases + graders) que pone el build en rojo cuando baja el pass rate — sin LLM como juez.
+Construyo agentes LLM con contratos que se pueden verificar: qué herramientas puede usar, qué números puede mencionar, qué afirmaciones tiene que poder respaldar, en qué idioma contesta. Todo dentro de un harness determinista (golden cases + graders) que pone el build en rojo cuando baja el pass rate — el juez LLM entra solo donde los graders no llegan, sobre un subconjunto chico.
 
 Sobre eso vive el resto: RAG que solo cita fuentes autorizadas por usuario, y specs que se interrogan hasta ser implementables.
 
