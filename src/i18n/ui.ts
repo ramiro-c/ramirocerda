@@ -20,7 +20,7 @@ export const ui = {
     "home.brand": "Ramiro Cerdá",
     "home.thesis": "AI Systems Engineer.",
     "home.support":
-      "Performance y observabilidad aplicadas a la IA: agentes verificables, con grounding por usuario y evals deterministas que cortan el build; el juez LLM queda para lo subjetivo, en un subconjunto chico.",
+      "Agentes, RAG con permisos por usuario, evals deterministas y observabilidad, en producción.",
     "home.workLabel": "01 / PROYECTOS",
     "home.workAll": "Ver todos",
     "home.notesLabel": "02 / NOTAS",
@@ -101,7 +101,7 @@ export const ui = {
     "home.brand": "Ramiro Cerdá",
     "home.thesis": "AI Systems Engineer.",
     "home.support":
-      "Performance and observability applied to AI: verifiable agents, per-user grounding, and deterministic evals that gate CI; LLM judges stay on a small reviewed subset.",
+      "Agents, RAG with per-user permissions, deterministic evals, and observability — in production.",
     "home.workLabel": "01 / WORK",
     "home.workAll": "View all",
     "home.notesLabel": "02 / NOTES",
