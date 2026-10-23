@@ -103,7 +103,32 @@ const structuredData = {
           (window.vaq = window.vaq || []).push(arguments);
         };
     </script>
-    <script defer src="/_vercel/insights/script.js"></script>
+    <script type="module">
+      // Render ```mermaid code blocks as inline SVG diagrams (progressive enhancement).
+      // Falls back to the plain code block if the CDN or rendering fails.
+      const mermaidBlocks = document.querySelectorAll("pre code.language-mermaid");
+      if (mermaidBlocks.length) {
+        try {
+          const { default: mermaid } = await import(
+            "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+          );
+          mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+          for (const block of mermaidBlocks) {
+            const pre = block.parentElement;
+            if (!pre) continue;
+            const src = block.textContent || "";
+            const id = "mmd-" + Math.random().toString(36).slice(2);
+            const { svg } = await mermaid.render(id, src);
+            const wrap = document.createElement("div");
+            wrap.className = "mermaid-diagram";
+            wrap.innerHTML = svg;
+            pre.replaceWith(wrap);
+          }
+        } catch (err) {
+          console.warn("mermaid render skipped:", err);
+        }
+      }
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
