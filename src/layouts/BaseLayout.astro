@@ -118,15 +118,21 @@ const structuredData = {
             const src = (code ? code.textContent : block.textContent) || "";
             const id = "mmd-" + Math.random().toString(36).slice(2);
             const { svg } = await mermaid.render(id, src.trim());
+            // Strip intrinsic width/height so CSS can scale the SVG freely
+            const svgEl = new DOMParser().parseFromString(svg, "image/svg+xml").documentElement;
+            svgEl.removeAttribute("width");
+            svgEl.removeAttribute("height");
+            svgEl.setAttribute("style", "width:100%;height:auto;display:block;");
+            const svgHtml = svgEl.outerHTML;
             const wrap = document.createElement("div");
             wrap.className = "mermaid-diagram";
-            wrap.innerHTML = svg;
+            wrap.innerHTML = svgHtml;
             wrap.setAttribute("role", "button");
             wrap.setAttribute("tabindex", "0");
             wrap.setAttribute("aria-label", "Expand diagram");
-            wrap.addEventListener("click", () => openMermaidOverlay(svg));
+            wrap.addEventListener("click", () => openMermaidOverlay(svgHtml));
             wrap.addEventListener("keydown", (e) => {
-              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMermaidOverlay(svg); }
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMermaidOverlay(svgHtml); }
             });
             block.replaceWith(wrap);
           }
