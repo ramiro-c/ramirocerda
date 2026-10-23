@@ -141,10 +141,16 @@ const structuredData = {
             wrap.setAttribute("role", "button");
             wrap.setAttribute("tabindex", "0");
             wrap.setAttribute("aria-label", "Expand diagram");
-            const isMobile = window.matchMedia("(max-width: 640px)").matches;
-            wrap.addEventListener("click", () => openMermaidOverlay(isMobile ? htmlM : htmlD));
+            wrap.addEventListener("click", () => {
+              const mobile = window.matchMedia("(max-width: 768px)").matches;
+              openMermaidOverlay(mobile ? htmlM : htmlD);
+            });
             wrap.addEventListener("keydown", (e) => {
-              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMermaidOverlay(isMobile ? htmlM : htmlD); }
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                const mobile = window.matchMedia("(max-width: 768px)").matches;
+                openMermaidOverlay(mobile ? htmlM : htmlD);
+              }
             });
             block.replaceWith(wrap);
           }
