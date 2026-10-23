@@ -1,10 +1,10 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-10-23T16:24:27.772Z",
+  "generatedAt": "2026-10-23T19:32:39.582Z",
   "sources": {
     "kb": 22,
-    "notes": 28
+    "notes": 30
   },
   "ids": [
     "kb-botardo-implementacion-9da4b03e",
@@ -42,6 +42,7 @@
     "note-determinism-for-the-win-d72518e1",
     "note-donde-esto-no-alcanza-fa88f4d5",
     "note-el-asset-d932e9dd",
+    "note-el-flujo-de-un-caso-517ef2f8",
     "note-equipos-que-gobiernan-agentes-que-ejecutan-dccf1813",
     "note-esto-a-quien-se-lo-vendes-78481eca",
     "note-formas-de-implementarlo-18fa7787",
@@ -52,6 +53,7 @@
     "note-teams-that-govern-agents-that-execute-f26d2ebf",
     "note-the-alternative-golden-cases-and-deterministic-g-96c8a9d8",
     "note-the-asset-43459111",
+    "note-the-flow-of-a-case-65db72ae",
     "note-the-limits-he-draws-himself-0ef2efe6",
     "note-the-resources-a336cf53",
     "note-ways-to-implement-it-add33faa",
