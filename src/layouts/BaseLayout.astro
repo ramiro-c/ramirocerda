@@ -103,7 +103,52 @@ const structuredData = {
           (window.vaq = window.vaq || []).push(arguments);
         };
     </script>
-    <script defer src="/_vercel/insights/script.js"></script>
+    <script type="module">
+      // Render ```mermaid code blocks as inline SVG diagrams (progressive enhancement).
+      // Falls back to the plain code block if the CDN or rendering fails.
+      const mermaidBlocks = document.querySelectorAll('pre[data-language="mermaid"]');
+      if (mermaidBlocks.length) {
+        try {
+          const { default: mermaid } = await import(
+            "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+          );
+          mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+          for (const block of mermaidBlocks) {
+            const code = block.querySelector("code");
+            const src = (code ? code.textContent : block.textContent) || "";
+            const id = "mmd-" + Math.random().toString(36).slice(2);
+            const { svg } = await mermaid.render(id, src.trim());
+            const wrap = document.createElement("div");
+            wrap.className = "mermaid-diagram";
+            wrap.innerHTML = svg;
+            wrap.setAttribute("role", "button");
+            wrap.setAttribute("tabindex", "0");
+            wrap.setAttribute("aria-label", "Expand diagram");
+            wrap.addEventListener("click", () => openMermaidOverlay(svg));
+            wrap.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMermaidOverlay(svg); }
+            });
+            block.replaceWith(wrap);
+          }
+        } catch (err) {
+          console.warn("mermaid render skipped:", err);
+        }
+      }
+
+      function openMermaidOverlay(svgHtml) {
+        const overlay = document.createElement("div");
+        overlay.className = "mermaid-overlay";
+        overlay.innerHTML =
+          '<button type="button" class="mermaid-overlay-close" aria-label="Close">&times;</button>' +
+          '<div class="mermaid-overlay-body">' + svgHtml + "</div>";
+        document.body.appendChild(overlay);
+        document.body.style.overflow = "hidden";
+        const close = () => { overlay.remove(); document.body.style.overflow = ""; };
+        overlay.querySelector(".mermaid-overlay-close").addEventListener("click", close);
+        overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+        document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } });
+      }
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>

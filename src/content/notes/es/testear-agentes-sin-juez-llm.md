@@ -49,6 +49,44 @@ PYTHONPATH=src python3 -m agent_evals.cli casos.json --threshold 1.0
 
 `--report` escribe los mismos veredictos como artefacto JSON para el CI. Eso es lo que lo hace usable en CI: el exit code corta el build.
 
+
+## El flujo de un caso
+
+```mermaid
+flowchart LR
+    A[Caso dorado JSON] --> B{Modo}
+    B -->|Replay| C[Turns grabados]
+    B -->|Agent| D[Corré el agente]
+    D --> E[Transcript producido]
+    C --> F[Transcript a gradear]
+    E --> F
+    F --> G[6 Graders]
+    G --> H[SuiteReport]
+    H --> I{pass_rate >= threshold?}
+    I -->|Sí| J[exit 0 · CI verde]
+    I -->|No| K[exit 1 · CI rojo + motivo]
+
+    style J fill:#d4edda
+    style K fill:#f8d7da
+```
+
+Cada caso pasa por los seis graders en paralelo; cada grader devuelve un `CheckResult` con el motivo. El runner los agrega en un `SuiteReport` y sale con exit code 0 o 1 según el umbral.
+
+```mermaid
+flowchart TB
+    T[Transcript] --> G1[tool_usage]
+    T --> G2[tool_args]
+    T --> G3[numeric_grounding]
+    T --> G4[fact_grounding]
+    T --> G5[no_forbidden_content]
+    T --> G6[language]
+    G1 & G2 & G3 & G4 & G5 & G6 --> R[CheckResult por grader]
+    R --> V{Todos passed?}
+    V -->|Sí| P[CaseResult.passed = true]
+    V -->|No| F[CaseResult.passed = false + detail]
+    P & F --> S[SuiteReport → exit_code]
+```
+
 ## Dónde esto NO alcanza
 
 Los evals deterministas verifican hechos, llamadas y límites. No verifican si la respuesta es *buena*.

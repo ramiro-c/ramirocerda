@@ -49,6 +49,46 @@ PYTHONPATH=src python3 -m agent_evals.cli cases.json --threshold 1.0
 
 `--report` writes the same verdicts as a JSON artifact for CI to keep. That's what makes it usable in CI: the exit code cuts the build.
 
+
+## The flow of a case
+
+```mermaid
+flowchart LR
+    A[Golden Case JSON] --> B{Mode}
+    B -->|Replay| C[Recorded turns]
+    B -->|Agent| D[Run the agent]
+    D --> E[Produced transcript]
+    C --> F[Transcript to grade]
+    E --> F
+    F --> G[6 Graders]
+    G --> H[SuiteReport]
+    H --> I{pass_rate >= threshold?}
+    I -->|Yes| J[exit 0 · CI green]
+    I -->|No| K[exit 1 · CI red + exact reason]
+
+    style J fill:#d4edda
+    style K fill:#f8d7da
+```
+
+Each case runs through all six graders in parallel; every grader returns a
+`CheckResult` with a reason. The runner aggregates them into a `SuiteReport`
+and exits non-zero when the pass rate drops below the threshold.
+
+```mermaid
+flowchart TB
+    T[Transcript] --> G1[tool_usage]
+    T --> G2[tool_args]
+    T --> G3[numeric_grounding]
+    T --> G4[fact_grounding]
+    T --> G5[no_forbidden_content]
+    T --> G6[language]
+    G1 & G2 & G3 & G4 & G5 & G6 --> R[CheckResult per grader]
+    R --> V{All passed?}
+    V -->|Yes| P[CaseResult.passed = true]
+    V -->|No| F[CaseResult.passed = false + detail]
+    P & F --> S[SuiteReport → exit_code]
+```
+
 ## Where this does NOT reach
 
 Deterministic evals verify facts, calls, and limits. They don't verify whether the answer is *good*.
