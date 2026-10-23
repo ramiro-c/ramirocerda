@@ -115,24 +115,36 @@ const structuredData = {
           mermaid.initialize({ startOnLoad: false, theme: "neutral" });
           for (const block of mermaidBlocks) {
             const code = block.querySelector("code");
-            const src = (code ? code.textContent : block.textContent) || "";
-            const id = "mmd-" + Math.random().toString(36).slice(2);
-            const { svg } = await mermaid.render(id, src.trim());
-            // Strip intrinsic width/height so CSS can scale the SVG freely
-            const svgEl = new DOMParser().parseFromString(svg, "image/svg+xml").documentElement;
-            svgEl.removeAttribute("width");
-            svgEl.removeAttribute("height");
-            svgEl.setAttribute("style", "width:100%;height:auto;display:block;");
-            const svgHtml = svgEl.outerHTML;
+            const src = ((code ? code.textContent : block.textContent) || "").trim();
+            // Desktop keeps the original orientation (LR flow is compact on wide screens)
+            const desktopSrc = src;
+            // Mobile forces vertical flow (TD) so it fits the phone width
+            const mobileSrc = src.replace(/flowchart\s+LR/i, "flowchart TD");
+            const idD = "mmd-d-" + Math.random().toString(36).slice(2);
+            const idM = "mmd-m-" + Math.random().toString(36).slice(2);
+            const { svg: svgD } = await mermaid.render(idD, desktopSrc);
+            const { svg: svgM } = await mermaid.render(idM, mobileSrc);
+            function strip(svg) {
+              const el = new DOMParser().parseFromString(svg, "image/svg+xml").documentElement;
+              el.removeAttribute("width");
+              el.removeAttribute("height");
+              el.setAttribute("style", "width:100%;height:auto;display:block;");
+              return el.outerHTML;
+            }
+            const htmlD = strip(svgD);
+            const htmlM = strip(svgM);
             const wrap = document.createElement("div");
             wrap.className = "mermaid-diagram";
-            wrap.innerHTML = svgHtml;
+            wrap.innerHTML =
+              '<div class="diagram-desktop">' + htmlD + "</div>" +
+              '<div class="diagram-mobile">' + htmlM + "</div>";
             wrap.setAttribute("role", "button");
             wrap.setAttribute("tabindex", "0");
             wrap.setAttribute("aria-label", "Expand diagram");
-            wrap.addEventListener("click", () => openMermaidOverlay(svgHtml));
+            const isMobile = window.matchMedia("(max-width: 640px)").matches;
+            wrap.addEventListener("click", () => openMermaidOverlay(isMobile ? htmlM : htmlD));
             wrap.addEventListener("keydown", (e) => {
-              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMermaidOverlay(svgHtml); }
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMermaidOverlay(isMobile ? htmlM : htmlD); }
             });
             block.replaceWith(wrap);
           }

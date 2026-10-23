@@ -103,6 +103,14 @@ input:focus-visible {
   margin: 0 auto;
 }
 
+/* Show the desktop (LR) diagram on wide screens, mobile (TD) on phones */
+.diagram-desktop { display: block; }
+.diagram-mobile { display: none; }
+@media (max-width: 640px) {
+  .diagram-desktop { display: none; }
+  .diagram-mobile { display: block; }
+}
+
 /* Mermaid fullscreen overlay (tap a diagram to expand; pinch-zoom on mobile) */
 .mermaid-overlay {
   position: fixed;
