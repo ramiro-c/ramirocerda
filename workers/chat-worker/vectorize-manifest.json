@@ -1,10 +1,10 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-10-17T21:44:33.669Z",
+  "generatedAt": "2026-10-23T16:24:27.772Z",
   "sources": {
     "kb": 22,
-    "notes": 22
+    "notes": 28
   },
   "ids": [
     "kb-botardo-implementacion-9da4b03e",
@@ -40,16 +40,22 @@
     "note-como-esta-armada-f0d6acbc",
     "note-determinism-for-the-win-7efa77a1",
     "note-determinism-for-the-win-d72518e1",
+    "note-donde-esto-no-alcanza-fa88f4d5",
+    "note-el-asset-d932e9dd",
     "note-equipos-que-gobiernan-agentes-que-ejecutan-dccf1813",
     "note-esto-a-quien-se-lo-vendes-78481eca",
     "note-formas-de-implementarlo-18fa7787",
     "note-how-it-s-built-f4e04431",
+    "note-la-alternativa-casos-dorados-y-graders-determini-7e30fe77",
     "note-los-limites-que-el-mismo-marca-9c3b478c",
     "note-los-recursos-49f2c1a3",
     "note-teams-that-govern-agents-that-execute-f26d2ebf",
+    "note-the-alternative-golden-cases-and-deterministic-g-96c8a9d8",
+    "note-the-asset-43459111",
     "note-the-limits-he-draws-himself-0ef2efe6",
     "note-the-resources-a336cf53",
     "note-ways-to-implement-it-add33faa",
+    "note-where-this-does-not-reach-69955ead",
     "note-who-do-you-sell-this-to-12a7bc6a"
   ]
 }
