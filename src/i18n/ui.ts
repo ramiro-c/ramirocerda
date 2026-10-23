@@ -18,7 +18,7 @@ export const ui = {
     "cta.work": "Proyectos",
     "cta.botardo": "Botardo",
     "home.brand": "Ramiro Cerdá",
-    "home.thesis": "AI Systems Engineer.",
+    "home.thesis": "AI Engineer.",
     "home.support":
       "Agentes, RAG con permisos por usuario, evals deterministas y observabilidad, en producción.",
     "home.workLabel": "01 / PROYECTOS",
@@ -27,7 +27,7 @@ export const ui = {
     "home.notesEmpty": "Pronto notas.",
     "home.aboutLabel": "Sobre mí",
     "home.aboutText":
-      "Ingeniero de sistemas de IA en Buenos Aires. Construyo productos web rápidos y observables, y llevo agentes de IA de la idea a producción: arquitectura, código y deploy.",
+      "AI Engineer en Buenos Aires. Construyo productos web rápidos y observables, y llevo agentes de IA de la idea a producción: arquitectura, código y deploy.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Disponible para proyectos",
     "home.location": "Buenos Aires · UTC-3",
@@ -99,7 +99,7 @@ export const ui = {
     "cta.work": "Projects",
     "cta.botardo": "Botardo",
     "home.brand": "Ramiro Cerdá",
-    "home.thesis": "AI Systems Engineer.",
+    "home.thesis": "AI Engineer.",
     "home.support":
       "Agents, RAG with per-user permissions, deterministic evals, and observability — in production.",
     "home.workLabel": "01 / WORK",
@@ -108,7 +108,7 @@ export const ui = {
     "home.notesEmpty": "Notes coming soon.",
     "home.aboutLabel": "About me",
     "home.aboutText":
-      "AI systems engineer based in Buenos Aires. I build fast, observable web products and take AI agents from idea to production: architecture, code, and deploy.",
+      "AI engineer based in Buenos Aires. I build fast, observable web products and take AI agents from idea to production: architecture, code, and deploy.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Available for projects",
     "home.location": "Buenos Aires · UTC-3",

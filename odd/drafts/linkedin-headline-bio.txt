@@ -1,10 +1,10 @@
 HEADLINE (elegir una)
 
 es:
-AI Systems Engineer | agentes verificables: grounding con permisos por usuario, evals deterministas en CI y RAG que cita fuentes
+AI Engineer | agentes verificables: grounding con permisos por usuario, evals deterministas en CI y RAG que cita fuentes
 
 en:
-AI Systems Engineer | verifiable agents: grounding with per-user permissions, deterministic evals in CI, RAG that cites its sources
+AI Engineer | verifiable agents: grounding with per-user permissions, deterministic evals in CI, RAG that cites its sources
 
 ABOUT (es)
 

@@ -1,6 +1,6 @@
 # AI Engineer positioning — feature document
 
-**Objective**: make the public surface (site + GitHub) read as "AI systems engineer who ships verifiable agents" instead of "full-stack dev with AI side projects", and ship one real public asset (a deterministic eval harness) that backs the claim.
+**Objective**: make the public surface (site + GitHub) read as "AI engineer who ships verifiable agents" instead of "full-stack dev with AI side projects", and ship one real public asset (a deterministic eval harness) that backs the claim.
 
 **Branch**: `feat/ai-engineer-positioning` (site repo `ramiro-c/ramirocerda`); separate branches in `ramiro-c/agent-evals` (new) and `ramiro-c/ramiro-c` (profile).
 
