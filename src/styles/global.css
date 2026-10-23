@@ -98,3 +98,47 @@ input:focus-visible {
   max-width: 100%;
   height: auto;
 }
+
+/* Mermaid fullscreen overlay (tap a diagram to expand; pinch-zoom on mobile) */
+.mermaid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: auto;
+  touch-action: pan-x pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+.mermaid-overlay-body {
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow: auto;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+}
+.mermaid-overlay-body svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.mermaid-overlay-close {
+  position: fixed;
+  top: 0.75rem;
+  right: 1rem;
+  font-size: 2rem;
+  line-height: 1;
+  color: #fff;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 10000;
+}
+.mermaid-diagram {
+  cursor: zoom-in;
+}

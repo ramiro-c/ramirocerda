@@ -121,11 +121,32 @@ const structuredData = {
             const wrap = document.createElement("div");
             wrap.className = "mermaid-diagram";
             wrap.innerHTML = svg;
+            wrap.setAttribute("role", "button");
+            wrap.setAttribute("tabindex", "0");
+            wrap.setAttribute("aria-label", "Expand diagram");
+            wrap.addEventListener("click", () => openMermaidOverlay(svg));
+            wrap.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMermaidOverlay(svg); }
+            });
             block.replaceWith(wrap);
           }
         } catch (err) {
           console.warn("mermaid render skipped:", err);
         }
+      }
+
+      function openMermaidOverlay(svgHtml) {
+        const overlay = document.createElement("div");
+        overlay.className = "mermaid-overlay";
+        overlay.innerHTML =
+          '<button type="button" class="mermaid-overlay-close" aria-label="Close">&times;</button>' +
+          '<div class="mermaid-overlay-body">' + svgHtml + "</div>";
+        document.body.appendChild(overlay);
+        document.body.style.overflow = "hidden";
+        const close = () => { overlay.remove(); document.body.style.overflow = ""; };
+        overlay.querySelector(".mermaid-overlay-close").addEventListener("click", close);
+        overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+        document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } });
       }
     </script>
   </head>

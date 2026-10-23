@@ -53,7 +53,7 @@ PYTHONPATH=src python3 -m agent_evals.cli casos.json --threshold 1.0
 ## El flujo de un caso
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[Caso dorado JSON] --> B{Modo}
     B -->|Replay| C[Turns grabados]
     B -->|Agent| D[Corré el agente]
