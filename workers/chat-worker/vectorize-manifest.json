@@ -1,13 +1,13 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-10-23T19:32:39.582Z",
+  "generatedAt": "2026-10-24T04:50:44.084Z",
   "sources": {
     "kb": 22,
     "notes": 30
   },
   "ids": [
-    "kb-botardo-implementacion-9da4b03e",
+    "kb-botardo-implementacion-4f48cfdb",
     "kb-card-pr-df0a4f67",
     "kb-card-review-d686f9e6",
     "kb-card-start-83ccf382",
@@ -22,11 +22,11 @@
     "kb-mundial-2026-soccer-analytics-world-cup-companio-275e54e1",
     "kb-overview-761b88c3",
     "kb-partners-slack-cb90af80",
-    "kb-portafolio-personal-y-asistente-ia-b3f81fb0",
+    "kb-portafolio-personal-y-asistente-ia-1eb85af7",
     "kb-sdd-auto-753004c5",
-    "kb-sitio-web-y-arquitectura-del-bot-b207234e",
+    "kb-sitio-web-y-arquitectura-del-bot-46eb4e4c",
     "kb-soccer-analytics-agent-a0bdecf5",
-    "kb-stack-tecnico-b6a982f1",
+    "kb-stack-tecnico-39dd7493",
     "kb-triage-9b1e7730",
     "kb-workflow-de-trabajo-con-agentes-loop-de-cards-98378384",
     "note-1-el-disenador-de-producto-ux-de-la-fabrica-de-p-e6b90b82",
