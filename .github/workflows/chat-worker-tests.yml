@@ -1,0 +1,27 @@
+# Run the Botardo chat-worker test suite on PRs that touch the worker.
+# The site build itself is already gated by the Vercel preview check.
+name: chat-worker tests
+
+on:
+  pull_request:
+    paths:
+      - "workers/chat-worker/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/chat-worker-tests.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --filter ramirocerda-chat-worker
+
+      - run: pnpm --filter ramirocerda-chat-worker test
