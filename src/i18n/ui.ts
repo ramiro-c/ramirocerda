@@ -18,16 +18,16 @@ export const ui = {
     "cta.work": "Proyectos",
     "cta.botardo": "Botardo",
     "home.brand": "Ramiro Cerdá",
-    "home.thesis": "AI Engineer.",
+    "home.thesis": "AI & Full-Stack Engineer.",
     "home.support":
-      "Agentes, RAG con permisos por usuario, evals deterministas y observabilidad, en producción.",
+      "Construyo agentes de IA y productos full-stack, de punta a punta.",
     "home.workLabel": "01 / PROYECTOS",
     "home.workAll": "Ver todos",
     "home.notesLabel": "02 / NOTAS",
     "home.notesEmpty": "Pronto notas.",
     "home.aboutLabel": "Sobre mí",
     "home.aboutText":
-      "AI Engineer en Buenos Aires. Construyo productos web rápidos y observables, y llevo agentes de IA de la idea a producción: arquitectura, código y deploy.",
+      "AI & Full-Stack Engineer en Buenos Aires. Tech Lead hands-on en LDP, donde lideré refactors de búsqueda y mejoras de latencia de más del 75%, y llevo agentes de IA a producción.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Disponible para proyectos",
     "home.location": "Buenos Aires · UTC-3",
@@ -56,10 +56,10 @@ export const ui = {
       "workflow.howTerminates": "El pipeline termina cuando card-pr publica el PR, Judgment Day da veredicto limpio, y el canal de Partners recibe la notificación. No hay auto-merge: la decisión final siempre es humana.",
     "work.title": "Proyectos",
     "work.description":
-      "Sistemas de IA en producción y productos web, con foco en verificabilidad, calidad y performance.",
+      "Agentes de IA y productos full-stack que construí, en producción y en mis repos.",
     "work.trackAiTitle": "Sistemas de IA",
     "work.trackAiNote":
-      "Agentes, RAG y evaluación: sistemas que citan sus datos, respetan los permisos del usuario y se verifican con graders deterministas; el juez LLM entra solo donde no llegan.",
+      "Agentes, RAG y evaluación, en producción y en mis repos.",
     "work.trackProductTitle": "Producto y web",
     "work.trackProductNote":
       "Apps y plataformas propias, construidas de punta a punta.",
@@ -99,16 +99,16 @@ export const ui = {
     "cta.work": "Projects",
     "cta.botardo": "Botardo",
     "home.brand": "Ramiro Cerdá",
-    "home.thesis": "AI Engineer.",
+    "home.thesis": "AI & Full-Stack Engineer.",
     "home.support":
-      "Agents, RAG with per-user permissions, deterministic evals, and observability — in production.",
+      "I build AI agents and full-stack products, end to end.",
     "home.workLabel": "01 / WORK",
     "home.workAll": "View all",
     "home.notesLabel": "02 / NOTES",
     "home.notesEmpty": "Notes coming soon.",
     "home.aboutLabel": "About me",
     "home.aboutText":
-      "AI engineer based in Buenos Aires. I build fast, observable web products and take AI agents from idea to production: architecture, code, and deploy.",
+      "AI & Full-Stack Engineer based in Buenos Aires. Hands-on Tech Lead at LDP, where I led search refactors and latency improvements of more than 75%, and I take AI agents to production.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Available for projects",
     "home.location": "Buenos Aires · UTC-3",
@@ -137,10 +137,10 @@ export const ui = {
       "workflow.howTerminates": "The pipeline ends when card-pr publishes the PR, Judgment Day returns a clean verdict, and the Partners channel receives the notification. No auto-merge: the final decision is always human.",
     "work.title": "Work",
     "work.description":
-      "AI systems in production and web products, focused on verifiability, quality, and performance.",
+      "AI agents and full-stack products I built, in production and in my repos.",
     "work.trackAiTitle": "AI systems",
     "work.trackAiNote":
-      "Agents, RAG, and evaluation: systems that cite their data, respect the user's permissions, and are verified with deterministic graders; LLM judges enter only where graders can't reach.",
+      "Agents, RAG, and evaluation, in production and in my repos.",
     "work.trackProductTitle": "Product & web",
     "work.trackProductNote":
       "Apps and platforms of my own, built end to end.",

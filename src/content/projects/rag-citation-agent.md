@@ -2,7 +2,7 @@
 slug: rag-citation-agent
 kind: personal
 featured: true
-order: 5
+order: 6
 track: "ai-systems"
 tags: ["Python", "RAG", "Citations", "pytest"]
 repo: https://github.com/ramiro-c/rag-citation-agent

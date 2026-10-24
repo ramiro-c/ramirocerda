@@ -3,7 +3,7 @@ slug: knowledge-vault
 kind: personal
 featured: false
 track: "ai-systems"
-order: 9
+order: 10
 tags: ["Obsidian", "AI", "PKM"]
 es:
   title: "Knowledge Vault — PKM con IA"

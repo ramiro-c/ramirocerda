@@ -1,7 +1,7 @@
 /**
  * OpenCode Go generation client (design D8/D9).
  *
- * Calls the OpenAI-compatible endpoint with the DeepSeek V4 Flash model and
+ * Calls the OpenAI-compatible endpoint with the DeepSeek V4.1 Flash model and
  * the API key stored as a Worker secret (never in the repo). Sends a stable
  * per-conversation `x-opencode-session` header and a custom User-Agent, both
  * required by OpenCode Go (missing session -> HTTP 400 -> MODEL_ERROR).
