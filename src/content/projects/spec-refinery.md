@@ -2,7 +2,7 @@
 slug: spec-refinery
 kind: personal
 featured: true
-order: 7
+order: 8
 track: "ai-systems"
 tags: ["Python", "LangGraph", "RAG", "FastAPI", "Streamlit"]
 repo: https://github.com/ramiro-c/spec-refinery

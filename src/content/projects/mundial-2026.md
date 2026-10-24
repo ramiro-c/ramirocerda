@@ -4,7 +4,7 @@ kind: personal
 status: live
 featured: true
 track: "product"
-order: 10
+order: 11
 tags: ["FastAPI", "React", "Cloudflare"]
 repo: https://github.com/rami992009/mundial-2026
 demo: https://worldcup-2026.rami992009.workers.dev

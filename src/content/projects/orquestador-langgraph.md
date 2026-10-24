@@ -2,7 +2,7 @@
 slug: orquestador-langgraph
 kind: personal
 featured: true
-order: 6
+order: 7
 track: "ai-systems"
 tags: ["Python", "LangGraph", "Multi-Agent", "Tavily"]
 repo: https://github.com/ramiro-c/orquestador-langgraph
