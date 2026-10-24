@@ -58,8 +58,8 @@ Herramienta para exportar perfiles de LinkedIn a Markdown, facilitando la sincro
 * **Link:** https://github.com/ramiro-c/linkedin-markdownificator
 
 ### Portafolio Personal y Asistente IA
-Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente conversacional con RAG (retrieval-augmented generation) que responde consultas interactivas sobre mi experiencia y stack. El bot corre en Cloudflare Workers con recuperación vectorial sobre Cloudflare Vectorize y generación con DeepSeek V4 Flash a través de OpenCode Go. La base de conocimiento la armé gracias al scraper linkedin-markdownificator.
-* **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4 Flash), Vercel.
+Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente conversacional con RAG (retrieval-augmented generation) que responde consultas interactivas sobre mi experiencia y stack. El bot corre en Cloudflare Workers con recuperación vectorial sobre Cloudflare Vectorize y generación con DeepSeek V4.1 Flash a través de OpenCode Go. La base de conocimiento la armé gracias al scraper linkedin-markdownificator.
+* **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4.1 Flash), Vercel.
 * **Link:** https://ramirocerda.com.ar
 
 ## Sitio Web y Arquitectura del Bot
@@ -70,14 +70,14 @@ Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente con
   1. Se detecta el idioma del último mensaje del visitante (español o inglés) de forma determinística.
   2. El mensaje se convierte en embedding con el modelo bge-m3 de Workers AI.
   3. Se recuperan los chunks más relevantes de la base de conocimiento desde Cloudflare Vectorize (top-k con umbral de similitud).
-  4. Se genera la respuesta con DeepSeek V4 Flash vía la API de OpenCode Go, usando solo el contexto recuperado y el historial de los últimos 10 turnos.
+  4. Se genera la respuesta con DeepSeek V4.1 Flash vía la API de OpenCode Go, usando solo el contexto recuperado y el historial de los últimos 10 turnos.
 * **Idioma:** responde en el mismo idioma del visitante: español rioplatense (voseo) o inglés.
 * **Sin información:** si la pregunta no tiene contexto en la base, Botardo lo aclara con elegancia en el idioma del visitante, sin inventar contenido.
 * **Seguridad:** la API key de OpenCode Go vive como secret del Worker, nunca en el repositorio.
 
 ### Botardo — Implementación
-Agente conversacional con RAG embebido en mi sitio web personal. Implementé el pipeline completo en Cloudflare Workers: el mensaje del visitante se embeddea con bge-m3 (Workers AI), se recuperan los chunks más similares desde Cloudflare Vectorize (umbral de similitud más tope de 4 chunks) y se genera la respuesta con DeepSeek V4 Flash a través de OpenCode Go. El idioma (es/en) se detecta de forma determinística y, si no hay contexto recuperado, igual se llama al modelo: el prompt marca el contexto como vacío e instruye a DeepSeek a responder solo con lo recuperado y a decir con naturalidad que no tiene esa información, sin inventar. Incluye retry con backoff, CORS acotado a los orígenes del sitio y 32 pruebas con Vitest. La base de conocimiento se alimenta desde mi exportador linkedin-markdownificator.
-* **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4 Flash), Vitest.
+Agente conversacional con RAG embebido en mi sitio web personal. Implementé el pipeline completo en Cloudflare Workers: el mensaje del visitante se embeddea con bge-m3 (Workers AI), se recuperan los chunks más similares desde Cloudflare Vectorize (umbral de similitud más tope de 4 chunks) y se genera la respuesta con DeepSeek V4.1 Flash a través de OpenCode Go. El idioma (es/en) se detecta de forma determinística y, si no hay contexto recuperado, igual se llama al modelo: el prompt marca el contexto como vacío e instruye a DeepSeek a responder solo con lo recuperado y a decir con naturalidad que no tiene esa información, sin inventar. Incluye retry con backoff, CORS acotado a los orígenes del sitio y 32 pruebas con Vitest. La base de conocimiento se alimenta desde mi exportador linkedin-markdownificator.
+* **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4.1 Flash), Vitest.
 
 ### Knowledge Vault
 Sistema personal de gestión de conocimiento sobre Obsidian, sincronizado con Git (GitHub + iCloud). Capturo fuentes en crudo (artículos, papers, videos, PDFs) y agentes de IA las procesan automáticamente vía skills propias: categorización, extracción de ideas clave, links semánticos entre notas y resúmenes con puntos de acción. El resultado es una base con la que puedo conversar desde cualquier agente, no solo buscar por keyword.
@@ -119,7 +119,7 @@ Completé el recorrido completo de Google Cloud en AI Agents: 10 certificaciones
 
 * **Frontend & Mobile:** React (19), React Native, TypeScript, JavaScript, Expo, Zustand, React Query, Vue.js, Tailwind CSS (v4), Shadcn/ui, Leaflet, amCharts.
 * **Backend, Cloud & Data:** Node.js, NestJS, Python, FastAPI, MySQL, PostgreSQL, Google Cloud Platform (Vertex AI, Cloud Run), Cloudflare Workers (Edge Computing), Serverless, APIs REST, Pino Logger.
-* **IA & Automatización:** Google ADK, LangGraph, Cloudflare Workers AI (embeddings bge-m3), Cloudflare Vectorize (RAG), OpenCode Go (DeepSeek V4 Flash), n8n, APIs de LLMs (Gemini, Anthropic), OpenRouter, Claude Code, Cursor (context management).
+* **IA & Automatización:** Google ADK, LangGraph, Cloudflare Workers AI (embeddings bge-m3), Cloudflare Vectorize (RAG), OpenCode Go (DeepSeek V4.1 Flash), n8n, APIs de LLMs (Gemini, Anthropic), OpenRouter, Claude Code, Cursor (context management).
 * **DevOps, Calidad & Testing:** CI/CD (GitHub Actions, Bitbucket Pipelines), Docker, Git (worktrees), Bash, Sentry, New Relic, Pytest, Jest, Vitest, Playwright, SonarQube.
 * **Metodologías & Procesos:** SCRUM, GitFlow, Code Reviews, Jira, Confluence.
 * **Certificaciones:** Path completo de Google Cloud en AI Agents (10 certificaciones, jun–jul 2026) — ver sección Certificaciones.
