@@ -5,7 +5,7 @@
   "packageManager": "pnpm@11.10.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build --force",
     "preview": "astro preview",
     "chat:populate": "node workers/chat-worker/scripts/populate-index.mjs",
     "chat:stats": "node workers/chat-worker/scripts/chat-stats.mjs",
