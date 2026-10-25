@@ -105,6 +105,47 @@ const t = useTranslations(lang);
   }
   const botardoSessionId = getBotardoSessionId();
 
+  const HISTORY_KEY = "botardo:history";
+  const MAX_HISTORY_TURNS = 10;
+
+  function loadConversationHistory() {
+    try {
+      const raw = sessionStorage.getItem(HISTORY_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(
+        (entry) =>
+          entry &&
+          typeof entry === "object" &&
+          (entry.role === "user" || entry.role === "assistant") &&
+          typeof entry.content === "string" &&
+          entry.content.trim().length > 0,
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  let conversationHistory = loadConversationHistory();
+
+  function persistConversationHistory() {
+    try {
+      sessionStorage.setItem(
+        HISTORY_KEY,
+        JSON.stringify(conversationHistory.slice(-MAX_HISTORY_TURNS)),
+      );
+    } catch {
+      // sessionStorage unavailable
+    }
+  }
+
+  const TRUSTED_LINK_HOSTS = new Set([
+    "ramirocerda.com.ar",
+    "www.ramirocerda.com.ar",
+    "ramirocerda.vercel.app",
+  ]);
+
   const modal = document.getElementById("botardoDialog");
   const islandButton = document.querySelector("[data-botardo-island]");
   const closeButton = modal?.querySelector(".botardo-close");
@@ -213,20 +254,65 @@ const t = useTranslations(lang);
     updateModalState(false);
   }
 
-  function renderMarkdown(text) {
-    let html = String(text)
+  function escapeHtml(value) {
+    return String(value)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function parseSafeHttpUrl(raw) {
+    try {
+      const url = new URL(raw);
+      if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+      return url;
+    } catch {
+      return null;
+    }
+  }
+
+  function linkifyToken(raw) {
+    const token = raw.replace(/[),.;!?]+$/u, "");
+    const suffix = raw.slice(token.length);
+
+    if (token.startsWith("/") && !token.startsWith("//")) {
+      if (/^\/[a-zA-Z0-9/_\-.?#=&%]*$/.test(token)) {
+        return `<a href="${escapeHtml(token)}">${escapeHtml(token)}</a>${suffix}`;
+      }
+      return escapeHtml(raw);
+    }
+
+    const parsed = parseSafeHttpUrl(token);
+    if (!parsed) return escapeHtml(raw);
+
+    const host = parsed.hostname.toLowerCase();
+    const href = escapeHtml(parsed.href);
+    const label = escapeHtml(token);
+    if (TRUSTED_LINK_HOSTS.has(host)) {
+      return `<a href="${href}">${label}</a>${suffix}`;
+    }
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>${suffix}`;
+  }
+
+  function renderMarkdown(text) {
+    const raw = String(text);
+    const urlPattern = /(https?:\/\/\S+|\/[a-zA-Z0-9/_\-.?#=&%]+)/g;
+    let html = "";
+    let lastIndex = 0;
+    for (const match of raw.matchAll(urlPattern)) {
+      const index = match.index ?? 0;
+      html += escapeHtml(raw.slice(lastIndex, index));
+      html += linkifyToken(match[0]);
+      lastIndex = index + match[0].length;
+    }
+    html += escapeHtml(raw.slice(lastIndex));
 
     html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     html = html.replace(/__(.+?)__/g, "<strong>$1</strong>");
     html = html.replace(/(?<!\w)\*(.+?)\*(?!\w)/g, "<em>$1</em>");
     html = html.replace(/`(.+?)`/g, "<code>$1</code>");
-    html = html.replace(
-      /(https?:\/\/[^\s<]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
-    );
 
     return html
       .split(/\n\n+/)
@@ -305,7 +391,11 @@ const t = useTranslations(lang);
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: text, sessionId: botardoSessionId }),
+        body: JSON.stringify({
+          message: text,
+          sessionId: botardoSessionId,
+          history: conversationHistory.slice(-MAX_HISTORY_TURNS),
+        }),
       });
 
       typingIndicator.hidden = true;
@@ -323,6 +413,10 @@ const t = useTranslations(lang);
 
       const data = await response.json();
       appendMessage(data.reply, "assistant");
+      conversationHistory.push({ role: "user", content: text });
+      conversationHistory.push({ role: "assistant", content: data.reply });
+      conversationHistory = conversationHistory.slice(-MAX_HISTORY_TURNS);
+      persistConversationHistory();
       lastFailedMessage = "";
     } catch (error) {
       typingIndicator.hidden = true;

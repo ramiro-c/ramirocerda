@@ -16,6 +16,17 @@
       "binding": "ANALYTICS"
     }
   ],
+  "ratelimits": [
+    {
+      "name": "CHAT_RATE_LIMITER",
+      // Unique namespace on the Cloudflare account; must exist before deploy.
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ],
   "vars": {
     "RAG_ENABLED": "true",
     "TOP_K": "5",
