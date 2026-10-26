@@ -16,8 +16,10 @@ es:
     - "Seis graders: tool_usage, tool_args, numeric_grounding, fact_grounding, no_forbidden_content y language."
     - "Runner con threshold y exit code 0/1 para cortar el build en CI; una suite vacía no pasa."
     - "Replay de transcripts grabados o agente real vía --agent, con el contrato agent(case) -> list[Turn]."
-    - "Python stdlib, sin dependencias. 37 tests."
-  stack: ["Python 3.11+", "unittest", "GitHub Actions"]
+    - "Probado contra un LLM real: agente con tool calling vía OpenRouter, con reintentos ante rate limits."
+    - "Matcher `contains` en tool_args para queries que el modelo reformula, sin perder determinismo."
+    - "Python stdlib, sin dependencias."
+  stack: ["Python 3.11+", "unittest", "GitHub Actions", "OpenRouter"]
 en:
   title: "agent-evals — Deterministic evals for AI agents"
   summary: "Harness for testing agents with golden cases in JSON: which tools it must call, with which arguments, which numbers and facts must appear, and which language it replies in. The runner computes the pass rate against a threshold and exits 0 or 1, so it gates the build in CI."
@@ -27,6 +29,8 @@ en:
     - "Six graders: tool_usage, tool_args, numeric_grounding, fact_grounding, no_forbidden_content, and language."
     - "Runner with a threshold and exit code 0/1 to gate the build in CI; an empty suite does not pass."
     - "Replay recorded transcripts or run a real agent via --agent, with the agent(case) -> list[Turn] contract."
-    - "Python stdlib, no dependencies. 37 tests."
-  stack: ["Python 3.11+", "unittest", "GitHub Actions"]
+    - "Tested against a real LLM: a tool-calling agent via OpenRouter, with retries on rate limits."
+    - "A `contains` matcher in tool_args for queries the model rephrases, without giving up determinism."
+    - "Python stdlib, no dependencies."
+  stack: ["Python 3.11+", "unittest", "GitHub Actions", "OpenRouter"]
 ---

@@ -87,6 +87,20 @@ flowchart TB
     P & F --> S[SuiteReport → exit_code]
 ```
 
+## Contra un modelo real
+
+El ejemplo sintético pasa por diseño: es un `if` por modo de falla. Así que lo probé contra un LLM de verdad, un agente con tool calling servido por OpenRouter, con la misma base de conocimiento y las mismas tools.
+
+El primer grader que se rompió no fue el que esperaba. El agente respondió bien: llamó a `kb_search`, citó el reembolso 1234 desde el resultado y contestó en español. Falló `tool_args`, porque el caso exigía la query textual y el modelo buscó `"reembolso estado"`. No era un bug del agente: era una expectativa escrita para un agente determinista.
+
+La solución no fue aflojar el grader, sino expresar mejor lo que importa:
+
+```json
+"expected_tool_args": { "kb_search": { "query": { "contains": ["reembolso"] } } }
+```
+
+Sigue siendo determinista: todos los términos tienen que estar, sin importar mayúsculas ni acentos. La lección: con un modelo real, testeá la intención de la llamada, no su redacción.
+
 ## Dónde esto NO alcanza
 
 Los evals deterministas verifican hechos, llamadas y límites. No verifican si la respuesta es *buena*.
@@ -98,6 +112,6 @@ El juez LLM entra solo donde los graders no llegan, y sobre un subconjunto chico
 
 ## El asset
 
-Lo dejé en [ramiro-c/agent-evals](https://github.com/ramiro-c/agent-evals): el paquete, los graders, el runner, los tests y un ejemplo sintético de agente de soporte con un caso por modo de falla. Es framework-agnostic y solo stdlib, así que entra en cualquier pipeline sin tocar el entorno.
+Lo dejé en [ramiro-c/agent-evals](https://github.com/ramiro-c/agent-evals): el paquete, los graders, el runner, los tests, un ejemplo sintético de agente de soporte con un caso por modo de falla y el mismo agente corriendo contra un modelo real vía OpenRouter. Es framework-agnostic y solo stdlib, así que entra en cualquier pipeline sin tocar el entorno.
 
 Un caveat: el harness que uso en producción vive en un repo privado. Lo que está afuera es el método y un ejemplo de juguete, no el código de producción. Si la idea te sirve, copiá el formato de caso.

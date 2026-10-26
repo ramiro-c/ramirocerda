@@ -89,6 +89,20 @@ flowchart TB
     P & F --> S[SuiteReport → exit_code]
 ```
 
+## Against a real model
+
+The synthetic example passes by design: it's one `if` per failure mode. So I tested it against an actual LLM, a tool-calling agent served through OpenRouter, with the same knowledge base and the same tools.
+
+The first grader to break wasn't the one I expected. The agent answered well: it called `kb_search`, cited refund 1234 from the result, and replied in Spanish. `tool_args` failed, because the case required the literal query and the model searched for `"reembolso estado"`. It wasn't an agent bug: it was an expectation written for a deterministic agent.
+
+The fix wasn't loosening the grader, it was stating what actually matters:
+
+```json
+"expected_tool_args": { "kb_search": { "query": { "contains": ["reembolso"] } } }
+```
+
+It's still deterministic: every term must be present, ignoring case and accents. The lesson: with a real model, test the intent of the call, not its wording.
+
 ## Where this does NOT reach
 
 Deterministic evals verify facts, calls, and limits. They don't verify whether the answer is *good*.
@@ -100,6 +114,6 @@ The LLM judge only enters where graders cannot reach, and it runs over a small s
 
 ## The asset
 
-I left it in [ramiro-c/agent-evals](https://github.com/ramiro-c/agent-evals): the package, the graders, the runner, the tests, and a synthetic support-agent example with one case per failure mode. It's framework-agnostic and stdlib-only, so it drops into any pipeline without touching the environment.
+I left it in [ramiro-c/agent-evals](https://github.com/ramiro-c/agent-evals): the package, the graders, the runner, the tests, a synthetic support-agent example with one case per failure mode, and the same agent running against a real model via OpenRouter. It's framework-agnostic and stdlib-only, so it drops into any pipeline without touching the environment.
 
 One caveat: the harness I run in production lives in a private repo. What's public is the method and a toy example, not the production code. If the idea is useful to you, copy the case format.
