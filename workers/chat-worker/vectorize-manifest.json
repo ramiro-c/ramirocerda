@@ -1,10 +1,10 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-10-24T04:50:44.084Z",
+  "generatedAt": "2026-10-26T18:01:05.556Z",
   "sources": {
     "kb": 22,
-    "notes": 30
+    "notes": 32
   },
   "ids": [
     "kb-botardo-implementacion-4f48cfdb",
@@ -37,11 +37,13 @@
     "note-3-qa-from-end-of-queue-manual-testing-to-leading-3ec673db",
     "note-4-el-product-manager-de-backlog-groomer-a-dueno--a877da9f",
     "note-4-product-managers-from-backlog-caretakers-to-ow-3cb192c5",
+    "note-against-a-real-model-40fe898b",
     "note-como-esta-armada-f0d6acbc",
+    "note-contra-un-modelo-real-2bb87662",
     "note-determinism-for-the-win-7efa77a1",
     "note-determinism-for-the-win-d72518e1",
     "note-donde-esto-no-alcanza-fa88f4d5",
-    "note-el-asset-d932e9dd",
+    "note-el-asset-e168a00a",
     "note-el-flujo-de-un-caso-517ef2f8",
     "note-equipos-que-gobiernan-agentes-que-ejecutan-dccf1813",
     "note-esto-a-quien-se-lo-vendes-78481eca",
@@ -52,7 +54,7 @@
     "note-los-recursos-49f2c1a3",
     "note-teams-that-govern-agents-that-execute-f26d2ebf",
     "note-the-alternative-golden-cases-and-deterministic-g-96c8a9d8",
-    "note-the-asset-43459111",
+    "note-the-asset-ed0ddfe0",
     "note-the-flow-of-a-case-65db72ae",
     "note-the-limits-he-draws-himself-0ef2efe6",
     "note-the-resources-a336cf53",
