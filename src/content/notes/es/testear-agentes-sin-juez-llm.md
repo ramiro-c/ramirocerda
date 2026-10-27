@@ -1,6 +1,6 @@
 ---
 title: "Testear agentes sin juez LLM"
-description: "Un harness de evals deterministas para agentes: casos dorados, graders verificables y un umbral de passage que corta el CI. Por qué el juez LLM no debería ser la primera opción."
+description: "Un harness de evals deterministas para agentes: casos dorados, graders verificables y un pass-rate mínimo que corta el CI. Por qué el juez LLM no debería ser la primera opción."
 pubDate: 2026-10-22
 lang: "es"
 draft: false
@@ -9,7 +9,7 @@ relatedProjects: ["spec-refinery", "rag-citation-agent"]
 
 Probar un agente es raro. Un test normal verifica una función: entrada, salida, listo. Un agente decide en runtime qué herramienta usar, con qué argumentos, y qué contestar. Si lo probás por el texto que devuelve, cada cambio de modelo te rompe el suite y cada error real se esconde adentro de un snapshot que nadie lee.
 
-Hay una salida conocida: un "juez" con LLM que califica la respuesta. Es flexible, pero me topé con tres problemas. No es determinista (la misma entrada se califica distinto según el día). No es barato (pagás una llamada por caso, por iteración). Y no es diagnosticable: cuando falla no te dice QUÉ se rompió — una herramienta mal llamada, un número inventado, o el idioma incorrecto.
+Hay una salida conocida: un "juez" con LLM que califica la respuesta. Es flexible, pero me topé con tres problemas. No es determinista (la misma entrada se califica distinto según el día). No es barato (pagás una llamada por caso, por iteración). Y no es diagnosticable: cuando falla no te dice qué se rompió, si fue una herramienta mal llamada, un número inventado o el idioma incorrecto.
 
 ## La alternativa: casos dorados y graders deterministas
 
@@ -37,7 +37,7 @@ Los seis graders del harness:
 - **`tool_usage`**: llamó a todas las tools de `expected_tools` y a ninguna de `forbidden_tools`. Borrar una cuenta o mandar un email de escalamiento cuando tocaba consultar la base de conocimiento es un bug real, no un detalle de estilo.
 - **`tool_args`**: cada tool puede declarar el subconjunto de argumentos con el que debe haber sido llamada; si ninguna call matchea, falla.
 - **`numeric_grounding`**: todo número que el agente afirma tiene que aparecer en el resultado de alguna tool call, y todo número que el caso exige tiene que aparecer en la respuesta. Cuando falla nombra el número ofensor: el KB dice 1234, el agente contestó 9999.
-- **`fact_grounding`**: la afirmación esperada tiene que aparecer en la respuesta Y estar respaldada por una tool call. No es "la respuesta es correcta", es "la respuesta cita lo que dice".
+- **`fact_grounding`**: la afirmación esperada tiene que aparecer en la respuesta y estar respaldada por una tool call. No es "la respuesta es correcta", es "la respuesta cita lo que dice".
 - **`no_forbidden_content`**: frases que el agente nunca debe decir ("como IA no puedo...", prometer lo que no puede hacer). El matching ignora mayúsculas, acentos y puntuación.
 - **`language`**: la respuesta tiene que estar en el idioma que usó el usuario, detectado con stopwords, sin pedirle nada a un modelo.
 
@@ -48,7 +48,6 @@ PYTHONPATH=src python3 -m agent_evals.cli casos.json --threshold 1.0
 ```
 
 `--report` escribe los mismos veredictos como artefacto JSON para el CI. Eso es lo que lo hace usable en CI: el exit code corta el build.
-
 
 ## El flujo de un caso
 
@@ -72,21 +71,6 @@ flowchart LR
 
 Cada caso pasa por los seis graders en paralelo; cada grader devuelve un `CheckResult` con el motivo. El runner los agrega en un `SuiteReport` y sale con exit code 0 o 1 según el umbral.
 
-```mermaid
-flowchart TB
-    T[Transcript] --> G1[tool_usage]
-    T --> G2[tool_args]
-    T --> G3[numeric_grounding]
-    T --> G4[fact_grounding]
-    T --> G5[no_forbidden_content]
-    T --> G6[language]
-    G1 & G2 & G3 & G4 & G5 & G6 --> R[CheckResult por grader]
-    R --> V{Todos passed?}
-    V -->|Sí| P[CaseResult.passed = true]
-    V -->|No| F[CaseResult.passed = false + detail]
-    P & F --> S[SuiteReport → exit_code]
-```
-
 ## Contra un modelo real
 
 El ejemplo sintético pasa por diseño: es un `if` por modo de falla. Así que lo probé contra un LLM de verdad, un agente con tool calling servido por OpenRouter, con la misma base de conocimiento y las mismas tools.
@@ -105,7 +89,7 @@ Sigue siendo determinista: todos los términos tienen que estar, sin importar ma
 
 Los evals deterministas verifican hechos, llamadas y límites. No verifican si la respuesta es *buena*.
 
-- ¿Ayudó de verdad al usuario? ¿Es clara? ¿Es el tono correcto? → subjetivo, y un juez LLM (o una persona) sigue siendo la única herramienta razonable.
+- ¿Ayudó de verdad al usuario? ¿Es clara? ¿Es el tono correcto? Eso es subjetivo, y un juez LLM (o una persona) sigue siendo la única herramienta razonable.
 - ¿El agente tomó el camino más eficiente? Eso es un problema de costo y latencia, no de correctitud.
 
 El juez LLM entra solo donde los graders no llegan, y sobre un subconjunto chico, no sobre todo el suite. Si el juez es el único que evalúa, lo que tenés no es un test: es una opinión con latencia.
