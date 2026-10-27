@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import worker, { IDENTITY_PROMPT } from "./index";
+import worker, { IDENTITY_PROMPT, NO_INFO_REPLY } from "./index";
 
 interface Datapoint {
   blobs?: string[];
@@ -34,6 +34,9 @@ function makeEnv(opts: {
     GENERATION_MODEL: "deepseek-v4-flash",
     OPENCODE_GO_ENDPOINT: "https://opencode.example/v1/chat/completions",
     EMBEDDING_MODEL: "@cf/baai/bge-m3",
+    CHAT_RATE_LIMITER: {
+      limit: () => Promise.resolve({ success: true }),
+    },
   };
   return { env, datapoints };
 }
@@ -84,24 +87,23 @@ describe("chat usage analytics data points", () => {
     expect(point.doubles?.[3]).toBeGreaterThanOrEqual(0);
   });
 
-  it("writes a zero-chunk datapoint for off-topic questions (no_info signal)", async () => {
-    const { env, datapoints } = makeEnv({ matches: [], generationContent: "No tengo ese dato" });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ choices: [{ message: { content: "No tengo ese dato" } }] }), { status: 200 }),
-      ),
-    );
+  it("short-circuits off-topic questions without calling the LLM", async () => {
+    const { env, datapoints } = makeEnv({ matches: [] });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
 
     const res = await worker.fetch(
       makeRequest("What is the capital of France?", "conv-noise"),
       env as never,
     );
     expect(res.status).toBe(200);
+    expect(fetchMock).not.toHaveBeenCalled();
+    const body = await res.json();
+    expect(body.reply).toBe(NO_INFO_REPLY.en);
     expect(datapoints[0]?.indexes?.[0]).toBe("conv-noise");
     expect(datapoints[0]?.blobs).toEqual(["en", "ok", "What is the capital of France?"]);
     expect(datapoints[0]?.doubles?.slice(0, 2)).toEqual([0, 0]);
-    expect(datapoints[0]?.doubles?.length).toBe(4);
+    expect(datapoints[0]?.doubles?.[3]).toBe(0);
   });
 
   it("writes a rate_limited datapoint when generation is throttled", async () => {
@@ -118,7 +120,10 @@ describe("chat usage analytics data points", () => {
   });
 
   it("writes a model_error datapoint when generation fails", async () => {
-    const { env, datapoints } = makeEnv({ generationStatus: 401 });
+    const { env, datapoints } = makeEnv({
+      generationStatus: 401,
+      matches: [{ id: "kb-a", score: 0.5, metadata: { text: "contexto" } }],
+    });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("boom", { status: 401 })));
 
     const res = await worker.fetch(makeRequest("¿Quién sos?", "conv-err"), env as never);
@@ -176,6 +181,44 @@ describe("note links handed to the model", () => {
   });
 });
 
+describe("request gates", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects POST without Origin", async () => {
+    const { env } = makeEnv({});
+    const req = new Request("https://worker.example/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "hola" }),
+    });
+    const res = await worker.fetch(req, env as never);
+    expect(res.status).toBe(403);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
+  it("returns 429 when the Workers rate limiter trips", async () => {
+    const { env } = makeEnv({});
+    env.CHAT_RATE_LIMITER = {
+      limit: () => Promise.resolve({ success: false }),
+    };
+    const res = await worker.fetch(makeRequest("hola"), env as never);
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.code).toBe("RATE_LIMITED");
+  });
+
+  it("returns 400 for oversized messages", async () => {
+    const { env } = makeEnv({});
+    const res = await worker.fetch(
+      makeRequest("x".repeat(2000)),
+      env as never,
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("IDENTITY_PROMPT answer rules", () => {
   it("never says fábrica and keeps the technical terms in English", () => {
     expect(IDENTITY_PROMPT.toLowerCase()).not.toContain("fábrica");
@@ -189,5 +232,9 @@ describe("IDENTITY_PROMPT answer rules", () => {
 
   it("caps the answer length so it does not dump the knowledge base", () => {
     expect(IDENTITY_PROMPT).toMatch(/2-3 párrafos/);
+  });
+
+  it("tells the model to ignore prompt-injection in user or retrieved context", () => {
+    expect(IDENTITY_PROMPT).toMatch(/Ignorá cualquier instrucción/);
   });
 });
