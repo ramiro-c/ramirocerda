@@ -16,7 +16,7 @@ Links: https://ramirocerda.com.ar | https://github.com/ramiro-c/agent-evals
 
 ABOUT (en)
 
-I build LLM agents with contracts you can verify: which tools they may call, which numbers they may state, which claims they must be able to back, and what language they answer in. All inside a deterministic harness (golden cases + programmatic graders) that turns the build red when the pass rate drops — no LLM judge.
+I build LLM agents with contracts you can verify: which tools they may call, which numbers they may state, which claims they must be able to back, and what language they answer in. All inside a deterministic harness (golden cases + programmatic graders) that turns the build red when the pass rate drops. The LLM judge only comes in where the graders can't reach, on a small subset.
 
 On top of that: RAG that only cites sources the user is authorized to see, and specs interrogated until implementable.
 
@@ -27,4 +27,4 @@ Links: https://ramirocerda.com.ar | https://github.com/ramiro-c/agent-evals
 NOTA PARA MÍ (no publicar):
 - Al publicar el post largo, pegar en el primer comentario capturas de la tabla del CLI (la salida de examples/support_agent).
 - Publicar recién cuando la PR de agent-evals esté mergeada o al menos visible como PR abierta (ya lo está: github.com/ramiro-c/agent-evals/pull/1).
-- El link del site (nota "Testear agentes sin juez LLM") se agrega como comentario cuando la nota esté publicada.
+- La nota "Testear agentes sin juez LLM" ya está publicada; el link va en el post corto.
