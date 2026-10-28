@@ -1,0 +1,57 @@
+---
+/**
+ * The one primary action of the site. Every placement (hero, after cases,
+ * final band, dock) renders this component so copy, color and tracking stay
+ * identical. With CAL_URL set it links to the booking page; otherwise it
+ * opens the contact form.
+ */
+import { CAL_URL } from "../config/site";
+import { landing } from "../i18n/landing";
+import type { Lang } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  /** Placement id for the funnel: hero, cases, final, dock, ... */
+  position: string;
+  compact?: boolean;
+}
+
+const { lang, position, compact = false } = Astro.props;
+const copy = landing[lang].cta;
+---
+
+{
+  CAL_URL ? (
+    <a
+      class:list={["cta-primary", { "cta-compact": compact }]}
+      href={CAL_URL}
+      target="_blank"
+      rel="noopener"
+      data-cta-id="primary"
+      data-cta-position={position}
+    >
+      <span class="first-visit-only">{copy.primary}</span>
+      <span class="returning-only">{copy.primaryReturning}</span>
+    </a>
+  ) : (
+    <button
+      type="button"
+      class:list={["cta-primary", { "cta-compact": compact }]}
+      aria-haspopup="dialog"
+      data-open-contact="form"
+      data-cta-id="primary"
+      data-cta-position={position}
+    >
+      <span class="first-visit-only">{copy.primary}</span>
+      <span class="returning-only">{copy.primaryReturning}</span>
+    </button>
+  )
+}
+
+<style>
+  .cta-compact {
+    min-height: 44px;
+    padding: var(--space-2) var(--space-4);
+    font-size: 0.9375rem;
+  }
+</style>

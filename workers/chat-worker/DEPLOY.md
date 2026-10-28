@@ -103,6 +103,71 @@ wrangler secret put OPENCODE_GO_API_KEY
    flipped, the pipeline still runs the RAG path. Rollback to the pre-cleanup
    state is a git revert of the removal commit, not a flag flip.
 
+## Leads and funnel events (D1 + Turnstile + Resend)
+
+`POST /lead` stores contact form leads; `POST /event` stores first party funnel
+events (`visit`, `cta_click`; `lead_submitted` is written by `/lead`). Both share
+CORS and `CHAT_RATE_LIMITER` with `/ask` (keys `lead:<ip>` and `event:<ip>`).
+All free tier: D1 (5 GB, 100k writes/day), Turnstile (free), Resend (3,000
+emails/month, 100/day).
+
+Safe by default: until the D1 binding exists, `/lead` answers 503 (the site
+shows the email fallback) and `/event` answers 204 without storing anything.
+
+One time setup, in this order:
+
+```bash
+cd workers/chat-worker
+
+# 1. D1 database. Copy the printed database_id.
+pnpm exec wrangler d1 create ramirocerda-leads
+# 2. Uncomment "d1_databases" in wrangler.jsonc (binding LEADS_DB) and paste the id.
+# 3. Create the tables (migrations/0001_create_leads.sql, 0002_create_events.sql).
+pnpm exec wrangler d1 migrations apply ramirocerda-leads --remote
+
+# 4. Turnstile: Cloudflare dashboard > Turnstile > Add widget, hostnames
+#    ramirocerda.com.ar (+ www, + the Vercel preview host if wanted), mode Managed.
+#    Site key (public)  -> Vercel env PUBLIC_TURNSTILE_SITE_KEY (Production + Preview).
+#    Secret key         -> worker secret:
+pnpm exec wrangler secret put TURNSTILE_SECRET_KEY
+
+# 5. Resend: create an API key (Sending access) and store it.
+pnpm exec wrangler secret put RESEND_API_KEY
+#    LEAD_FROM defaults to onboarding@resend.dev, which only delivers to the
+#    Resend account owner. To send from your own domain (and to enable the
+#    visitor confirmation), verify ramirocerda.com.ar in Resend (DNS records),
+#    then set LEAD_FROM="Ramiro Cerdá <contacto@ramirocerda.com.ar>" and
+#    LEAD_CONFIRMATION_ENABLED="true" in wrangler.jsonc.
+
+# 6. Deploy the worker, then redeploy the site (Vercel picks up the new env var).
+pnpm exec wrangler deploy
+```
+
+Vars (wrangler.jsonc): `LEAD_NOTIFY_TO`, `LEAD_FROM`, `LEAD_CONFIRMATION_ENABLED`.
+Secrets: `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`. Site env (Vercel, public):
+`PUBLIC_TURNSTILE_SITE_KEY`, optional `PUBLIC_CAL_URL`, optional
+`PUBLIC_WHATSAPP_URL` (empty hides the WhatsApp link).
+
+Local dev: `.dev.vars` (gitignored) can hold Cloudflare's test secret
+`1x0000000000000000000000000000000AA` (always passes); `astro dev` uses the
+matching test site key automatically. Use `wrangler d1 migrations apply
+ramirocerda-leads --local` for a local database.
+
+### Funnel queries
+
+```bash
+pnpm exec wrangler d1 execute ramirocerda-leads --remote --file=queries/funnel.sql
+```
+
+Prints clicks per CTA and placement, leads per origin (form vs botardo),
+conversion new vs returning visitors, and primary CTA click through per
+placement, for the last 30 days. Read latest leads:
+
+```bash
+pnpm exec wrangler d1 execute ramirocerda-leads --remote \
+  --command "SELECT created_at, origin, name, email FROM leads ORDER BY created_at DESC LIMIT 20"
+```
+
 ## Local probes
 
 ```bash

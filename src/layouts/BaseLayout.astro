@@ -1,6 +1,9 @@
 ---
 import "../styles/global.css";
 import Botardo from "../components/Botardo.astro";
+import BottomDock from "../components/BottomDock.astro";
+import ContactDialog from "../components/ContactDialog.astro";
+import { STORAGE_KEYS } from "../config/site";
 import { switchLangPath } from "../i18n/utils";
 
 interface Props {
@@ -96,6 +99,31 @@ const structuredData = {
       rel="stylesheet"
     />
     <title>{title}</title>
+    <script is:inline define:vars={{ keys: STORAGE_KEYS }}>
+      // Anonymous visitor state, before first paint so returning visitors never
+      // see the first visit copy flash. First party storage only: a random id
+      // and a visit counter (one visit per browser session). See /privacy/.
+      (function () {
+        var root = document.documentElement;
+        root.classList.add("js");
+        try {
+          var id = localStorage.getItem(keys.visitorId);
+          if (!id || !/^[A-Za-z0-9-]{1,64}$/.test(id)) {
+            id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+            localStorage.setItem(keys.visitorId, id);
+          }
+          var count = parseInt(localStorage.getItem(keys.visitCount) || "0", 10) || 0;
+          if (!sessionStorage.getItem(keys.sessionCounted)) {
+            count += 1;
+            localStorage.setItem(keys.visitCount, String(count));
+            sessionStorage.setItem(keys.sessionCounted, "1");
+          }
+          if (count > 1) root.setAttribute("data-returning", "");
+        } catch (e) {
+          // Storage blocked (private mode, policy): everyone is a first visit.
+        }
+      })();
+    </script>
     <script>
       window.va =
         window.va ||
@@ -182,5 +210,14 @@ const structuredData = {
     </main>
     <slot name="footer" />
     <Botardo lang={lang} />
+    <ContactDialog lang={lang} />
+    <BottomDock lang={lang} />
+    <script>
+      import { initReveal } from "../scripts/reveal";
+      import { initTracking } from "../scripts/track";
+
+      initTracking();
+      initReveal();
+    </script>
   </body>
 </html>

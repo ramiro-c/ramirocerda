@@ -9,6 +9,29 @@
   --font-display: "Archivo Black", "Archivo", system-ui, sans-serif;
   --font-body: "Archivo", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Conversion layer tokens (landing kit: spacing scale, base motion curve,
+     z-index scale). One accent: --accent drives every primary CTA. */
+  --accent-ink: #111111;
+  --surface: #fffefb;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 300ms;
+  --dur-move: 500ms;
+  --z-dock: 990;
+  --z-widget: 999;
+  --z-dialog: 1001;
+  /* Height of the fixed bottom dock (storage notice + mobile CTA bar), set by JS. */
+  --dock-offset: 0px;
 }
 
 *,
@@ -37,7 +60,8 @@ a {
 
 a:focus-visible,
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -67,6 +91,92 @@ input:focus-visible {
 
 .mono {
   font-family: var(--font-mono);
+}
+
+/* Primary CTA: the single accent action, shared by hero, cases, final band,
+   dock and contact form. Restyle here only. */
+.cta-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5rem;
+  text-decoration: none;
+  text-wrap: balance;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+  touch-action: manipulation;
+}
+.cta-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 0 var(--border);
+}
+.cta-primary:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
+}
+.cta-primary[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Secondary actions are text links, never a second button above the fold. */
+.cta-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cta-link:hover {
+  color: var(--accent);
+}
+
+/* Returning visitor swaps (html[data-returning] set before paint in BaseLayout). */
+html[data-returning] .first-visit-only,
+html:not([data-returning]) .returning-only {
+  display: none !important;
+}
+
+/* Scroll reveal: once, rise 32px, base curve. JS adds .is-visible. */
+.reveal {
+  opacity: 0;
+  transform: translateY(var(--space-8));
+  transition:
+    opacity 700ms var(--ease-out),
+    transform 700ms var(--ease-out);
+}
+.reveal.is-visible,
+html:not(.js) .reveal {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transform: none;
+  }
 }
 
 .site-shell {

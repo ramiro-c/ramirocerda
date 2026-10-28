@@ -1,0 +1,14 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import PrivacyNotice from "../../components/PrivacyNotice.astro";
+
+const lang = "en";
+---
+
+<BaseLayout lang={lang} title="Privacy · Ramiro Cerdá" description="What ramirocerda.com.ar stores and receives: no third party cookies or trackers.">
+  <SiteHeader slot="header" lang={lang} />
+  <PrivacyNotice lang={lang} />
+  <SiteFooter slot="footer" lang={lang} />
+</BaseLayout>

@@ -1,0 +1,510 @@
+---
+/**
+ * Home as a conversion page (landing kit structure): hero with one primary CTA
+ * and proof beside it, live demo, cases, repeated CTA, how it works, tagline
+ * reveal, FAQ (with FAQPage schema), the existing projects/notes hub and a
+ * final CTA identical to the hero one. Copy lives in i18n/landing.ts.
+ */
+import { landing } from "../i18n/landing";
+import type { Lang } from "../i18n/ui";
+import { getLocalizedPath, useTranslations } from "../i18n/utils";
+import HomeHub from "./HomeHub.astro";
+import PrimaryCta from "./PrimaryCta.astro";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const c = landing[lang];
+const isDev = import.meta.env.DEV;
+const logos = c.proof.logos.filter((logo) => logo.confirmed || isDev);
+const testimonials = c.testimonials.items;
+const taglineWords = c.tagline.split(" ");
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  inLanguage: lang === "es" ? "es-AR" : "en-US",
+  mainEntity: c.faq.items.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+};
+---
+
+<section class="hero" aria-labelledby="heroTitle">
+  <p class="eyebrow mono">{c.hero.eyebrow}</p>
+  <p class="returning-only welcome-back mono">{c.hero.returningNote}</p>
+  <h1 class="display hero-title" id="heroTitle">
+    {c.hero.headline} <span class="accent">{c.hero.headlineAccent}</span>
+  </h1>
+  <p class="hero-sub">{c.hero.sub}</p>
+
+  <div class="hero-actions">
+    <PrimaryCta lang={lang} position="hero" />
+    <p class="reassurance">{c.cta.reassurance}</p>
+  </div>
+  <p class="secondary-actions">
+    <a class="cta-link" href="#casos" data-cta-id="cases" data-cta-position="hero">{c.cta.cases}</a>
+    <button class="cta-link" type="button" data-open-botardo data-cta-id="botardo" data-cta-position="hero">{c.cta.botardo}</button>
+  </p>
+
+  <div class="hero-proof">
+    <p class="proof-claim">{c.hero.proof}</p>
+    {
+      logos.length > 0 && (
+        <p class="proof-logos mono">
+          <span class="proof-label">{c.proof.workedWith}</span>
+          {logos.map((logo) => (
+            <span class:list={["logo-name", { "is-placeholder": !logo.confirmed }]} title={logo.confirmed ? undefined : "TODO: confirm before publishing (dev only)"}>
+              {logo.name}
+            </span>
+          ))}
+        </p>
+      )
+    }
+    <p class="status-chip mono">
+      <span class="chip-dot" aria-hidden="true"></span>
+      {t("home.statusAvailable")}
+      <span class="chip-sep" aria-hidden="true">·</span>
+      {t("home.location")}
+    </p>
+  </div>
+</section>
+
+<section class="band demo reveal" aria-labelledby="demoTitle">
+  <p class="label mono">{c.demo.label}</p>
+  <h2 class="display section-title" id="demoTitle">{c.demo.title}</h2>
+  <p class="section-body">{c.demo.body}</p>
+  <div class="demo-actions">
+    <button class="cta-secondary" type="button" data-open-botardo data-cta-id="botardo" data-cta-position="demo">{c.cta.botardo}</button>
+    {
+      c.demo.prompts.map((prompt, i) => (
+        <button class="prompt-chip" type="button" data-open-botardo data-botardo-prompt={prompt} data-cta-id="botardo_prompt" data-cta-position={`demo-${i + 1}`}>
+          {prompt}
+        </button>
+      ))
+    }
+  </div>
+</section>
+
+<section class="band cases reveal" id="casos" aria-labelledby="casesTitle">
+  <p class="label mono">{c.cases.label}</p>
+  <h2 class="display section-title" id="casesTitle">{c.cases.title}</h2>
+  <ol class="case-list">
+    {
+      c.cases.items.map((item) => (
+        <li class="case">
+          <p class="case-label mono">{item.label}</p>
+          <h3 class="case-title">{item.title}</h3>
+          <p class="case-result">{item.result}</p>
+          <a class="cta-link case-link" href={item.href} data-cta-id="case" data-cta-position={item.slug ?? "about"}>
+            {c.cases.more}
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+  <div class="cta-row">
+    <PrimaryCta lang={lang} position="cases" />
+  </div>
+</section>
+
+{
+  (testimonials.length > 0 || isDev) && (
+    <section class="band testimonials reveal" aria-label={c.testimonials.label}>
+      <p class="label mono">{c.testimonials.label}</p>
+      {testimonials.length > 0 ? (
+        <ul class="quote-list">
+          {testimonials.map((item) => (
+            <li>
+              <blockquote>
+                <p>{item.quote}</p>
+                <footer class="mono">
+                  {item.name}, {item.role}
+                </footer>
+              </blockquote>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="dev-placeholder mono">TODO (dev only): add real testimonials in src/i18n/landing.ts. Hidden in production while empty.</p>
+      )}
+    </section>
+  )
+}
+
+<section class="band steps reveal" aria-labelledby="stepsTitle">
+  <p class="label mono">{c.steps.label}</p>
+  <h2 class="display section-title" id="stepsTitle">{c.steps.title}</h2>
+  <ol class="step-list">
+    {
+      c.steps.items.map((step, i) => (
+        <li class="step">
+          <span class="step-n mono" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+          <h3 class="step-title">{step.title}</h3>
+          <p>{step.body}</p>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<section class="tagline" aria-label={c.tagline}>
+  <p class="display tagline-text" data-tagline aria-hidden="true">
+    {
+      taglineWords.map((word, i) => (
+        <>
+          <span class="tagline-word" data-index={i}>{word}</span>{" "}
+        </>
+      ))
+    }
+  </p>
+</section>
+
+<section class="band faq reveal" aria-labelledby="faqTitle">
+  <p class="label mono">{c.faq.label}</p>
+  <h2 class="display section-title" id="faqTitle">{c.faq.title}</h2>
+  <dl class="faq-list">
+    {
+      c.faq.items.map((item) => (
+        <div class="faq-item">
+          <dt>{item.q}</dt>
+          <dd>{item.a}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+</section>
+
+<HomeHub lang={lang} />
+
+<section class="final reveal" aria-labelledby="finalTitle">
+  <h2 class="display final-title" id="finalTitle">{c.final.title}</h2>
+  <p class="section-body">{c.final.body}</p>
+  <div class="hero-actions">
+    <PrimaryCta lang={lang} position="final" />
+    <p class="reassurance">{c.cta.reassurance}</p>
+  </div>
+  <p class="secondary-actions">
+    <a class="cta-link" href={getLocalizedPath(lang, "/work/")} data-cta-id="work" data-cta-position="final">{t("cta.work")}</a>
+  </p>
+</section>
+
+<style>
+  .hero {
+    padding: var(--space-4) 0 var(--space-12);
+    border-bottom: 3px solid var(--border);
+  }
+  .eyebrow,
+  .welcome-back {
+    margin: 0 0 var(--space-3);
+    color: var(--muted-2);
+    font-size: 0.875rem;
+  }
+  .welcome-back {
+    color: var(--text);
+  }
+  .hero-title {
+    max-width: 16ch;
+    margin: 0 0 var(--space-6);
+    font-size: clamp(2.25rem, 7vw, 4.5rem);
+    line-height: 1;
+    text-wrap: balance;
+  }
+  .accent {
+    color: var(--accent);
+  }
+  .hero-sub {
+    max-width: 680px;
+    margin: 0 0 var(--space-8);
+    color: var(--muted);
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    text-wrap: pretty;
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-4);
+  }
+  .reassurance {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+  .secondary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    margin: var(--space-3) 0 0;
+  }
+  .hero-proof {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-10);
+    padding-top: var(--space-6);
+    border-top: 1px solid rgba(17, 17, 17, 0.18);
+  }
+  .proof-claim {
+    margin: 0;
+    font-weight: 600;
+    text-wrap: pretty;
+  }
+  .proof-logos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .proof-label {
+    color: var(--muted-2);
+  }
+  .logo-name {
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .logo-name.is-placeholder {
+    border-style: dashed;
+    opacity: 0.55;
+  }
+  .logo-name.is-placeholder::after {
+    content: " (TODO)";
+  }
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .band {
+    padding: var(--space-16) 0;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .label {
+    margin: 0 0 var(--space-3);
+    color: var(--muted-2);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .section-title {
+    max-width: 20ch;
+    margin: 0 0 var(--space-4);
+    font-size: clamp(1.875rem, 4.5vw, 3rem);
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+  .section-body {
+    max-width: 680px;
+    margin: 0 0 var(--space-8);
+    color: var(--muted);
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    text-wrap: pretty;
+  }
+
+  .demo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .cta-secondary,
+  .prompt-chip {
+    min-height: 44px;
+    padding: var(--space-2) var(--space-4);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+  .cta-secondary {
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 700;
+  }
+  .prompt-chip {
+    font-size: 0.9375rem;
+    text-align: left;
+  }
+  .prompt-chip:hover {
+    background: var(--text);
+    color: var(--bg);
+  }
+  .cta-secondary:active,
+  .prompt-chip:active {
+    transform: scale(0.98);
+  }
+
+  .case-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-4);
+    margin: var(--space-8) 0;
+    padding: 0;
+    list-style: none;
+  }
+  .case {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .case-label {
+    margin: 0;
+    color: var(--accent);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .case-title {
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    text-wrap: balance;
+  }
+  .case-result {
+    flex: 1;
+    margin: 0;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+  .case-link {
+    min-height: 0;
+    align-self: flex-start;
+  }
+  .cta-row {
+    display: flex;
+  }
+
+  .quote-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .dev-placeholder {
+    margin: 0;
+    padding: var(--space-4);
+    border: 1.5px dashed var(--border);
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+
+  .step-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-8);
+    margin: var(--space-8) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .step-n {
+    display: block;
+    margin-bottom: var(--space-3);
+    color: var(--accent);
+    font-size: 0.875rem;
+  }
+  .step-title {
+    margin: 0 0 var(--space-2);
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  .step p {
+    margin: 0;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+
+  .tagline {
+    padding: var(--space-20) 0;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .tagline-text {
+    max-width: 22ch;
+    margin: 0;
+    font-size: clamp(2.25rem, 6vw, 3.75rem);
+    line-height: 1.05;
+  }
+  .tagline-word {
+    opacity: 0.3;
+    transition: opacity var(--dur-fast) var(--ease-out);
+  }
+  .tagline-word.is-lit {
+    opacity: 1;
+  }
+  :global(html:not(.js)) .tagline-word {
+    opacity: 1;
+  }
+
+  .faq-list {
+    margin: var(--space-8) 0 0;
+  }
+  .faq-item {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: var(--space-4) var(--space-8);
+    padding: var(--space-6) 0;
+    border-top: 1px solid rgba(17, 17, 17, 0.18);
+  }
+  .faq-item dt {
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  .faq-item dd {
+    margin: 0;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+  @media (max-width: 720px) {
+    .faq-item {
+      grid-template-columns: 1fr;
+      gap: var(--space-2);
+    }
+  }
+
+  .final {
+    padding: var(--space-20) 0 var(--space-16);
+    border-top: 3px solid var(--border);
+  }
+  .final-title {
+    max-width: 18ch;
+    margin: 0 0 var(--space-4);
+    font-size: clamp(2.25rem, 6vw, 3.75rem);
+    line-height: 1;
+    text-wrap: balance;
+  }
+</style>

@@ -2,6 +2,9 @@ import { detectLanguage, type Language } from "./language";
 import { buildRagPrompt, retrieveChunks, type ChatMessage } from "./rag";
 import { generateReply } from "./generate";
 import { validateAskBody } from "./validate";
+import { detectServicesIntent } from "./intent";
+import { handleLead, type LeadEnv, type WaitUntil } from "./lead";
+import { handleEvent } from "./events";
 
 interface AskRequest {
   message: string;
@@ -15,6 +18,8 @@ interface AskRequest {
 
 interface AskResponse {
   reply: string;
+  /** Set when the visitor shows hiring/services intent: the widget offers the contact form. */
+  offerContact?: true;
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -54,14 +59,9 @@ export const NO_INFO_REPLY: Record<Language, string> = {
   en: "I don't have that information. Ask me about Ramiro's experience, projects, or skills.",
 };
 
-interface Env {
+interface Env extends LeadEnv {
   AI: {
-    run: (
-      model: string,
-      input:
-        | { messages: ChatMessage[]; max_tokens?: number; temperature?: number }
-        | { text: string[] },
-    ) => Promise<{ response?: string; data?: unknown; shape?: unknown }>;
+    run: (model: string, input: unknown) => Promise<{ response?: string; data?: unknown; shape?: unknown }>;
   };
   VECTORIZE: {
     query: (
@@ -305,8 +305,16 @@ async function handleRag(
   });
 }
 
+/** Adds `offerContact: true` to a successful /ask reply; other statuses pass through. */
+async function withContactOffer(response: Response, origin: string | null): Promise<Response> {
+  if (response.status !== 200) return response;
+  const body = (await response.json()) as AskResponse;
+  log("chat.contact_offer");
+  return jsonResponse(200, { ...body, offerContact: true }, origin);
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: WaitUntil): Promise<Response> {
     const origin = request.headers.get("Origin");
 
     // Handle CORS preflight
@@ -333,6 +341,26 @@ export default {
     if (!isAllowedOrigin(origin)) {
       log("request.origin_blocked", { origin });
       return jsonResponse(403, { error: "Origin not allowed", code: "INVALID_REQUEST" }, origin);
+    }
+
+    const pathname = new URL(request.url).pathname;
+    if (pathname === "/event") {
+      return handleEvent(
+        request,
+        env,
+        (status, payload) => jsonResponse(status, payload, origin),
+        () => new Response(null, { status: 204, headers: corsHeaders(origin) }),
+        log,
+      );
+    }
+    if (pathname === "/lead") {
+      return handleLead(
+        request,
+        env,
+        ctx,
+        (status, payload) => jsonResponse(status, payload, origin),
+        log,
+      );
     }
 
     const clientIp = request.headers.get("CF-Connecting-IP") ?? "unknown";
@@ -367,13 +395,15 @@ export default {
       // (cleanup is a documented follow-up); the flag stays "true" in config.
       // sessionId: prefer the frontend's stable per-conversation ID; fall back
       // to a fresh UUID so the Go session header is always present.
-      return await handleRag(
+      const response = await handleRag(
         message,
         history,
         env,
         sessionId ?? crypto.randomUUID(),
         origin,
       );
+      // TODO(adaptive-rag): move into the query router as a "services" intent.
+      return detectServicesIntent(message) ? withContactOffer(response, origin) : response;
     } catch (err) {
       // Check for rate limit errors
       const errorMessage = err instanceof Error ? err.message : String(err);

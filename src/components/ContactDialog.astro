@@ -1,0 +1,453 @@
+---
+/**
+ * Contact form as a slide over panel (native <dialog>: focus trap, Esc and
+ * inert background for free). Opened by any [data-open-contact] element, or by
+ * dispatching `contact:open` on document with { detail: { origin } } (Botardo
+ * uses origin "botardo"). Posts to the worker's /lead with a Turnstile token.
+ */
+import { CONTACT_EMAIL, TURNSTILE_SITE_KEY, WORKER_URL } from "../config/site";
+import { landing } from "../i18n/landing";
+import type { Lang } from "../i18n/ui";
+import { getLocalizedPath } from "../i18n/utils";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const f = landing[lang].form;
+const fill = (s: string) => s.replace("{email}", CONTACT_EMAIL);
+const config = {
+  workerUrl: WORKER_URL,
+  siteKey: TURNSTILE_SITE_KEY,
+  lang,
+  email: CONTACT_EMAIL,
+  messages: {
+    submit: f.submit,
+    submitting: f.submitting,
+    success: f.success,
+    errors: {
+      name: f.errors.name,
+      email: f.errors.email,
+      message: f.errors.message,
+      turnstile: f.errors.turnstile,
+      rateLimited: f.errors.rateLimited,
+      unavailable: fill(f.errors.unavailable),
+      generic: fill(f.errors.generic),
+    },
+  },
+};
+---
+
+<dialog class="contact-sheet" id="contactDialog" aria-labelledby="contactTitle" data-config={JSON.stringify(config)}>
+  <div class="contact-inner">
+    <header class="contact-head">
+      <h2 id="contactTitle" class="display">{f.title}</h2>
+      <button type="button" class="contact-close" data-close-contact aria-label={f.close}>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"
+          ><path d="M6 6l12 12M18 6L6 18"></path></svg
+        >
+      </button>
+    </header>
+    <p class="contact-lede">{f.lede}</p>
+
+    {
+      TURNSTILE_SITE_KEY ? (
+        <form class="contact-form" id="contactForm" novalidate>
+          <div class="field">
+            <label for="contactName">{f.name}</label>
+            <input id="contactName" name="name" type="text" autocomplete="name" maxlength="100" required aria-describedby="contactNameError" />
+            <p class="field-error" id="contactNameError" hidden />
+          </div>
+          <div class="field">
+            <label for="contactEmail">{f.email}</label>
+            <input id="contactEmail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required aria-describedby="contactEmailError" />
+            <p class="field-error" id="contactEmailError" hidden />
+          </div>
+          <div class="field">
+            <label for="contactMessage">{f.message}</label>
+            <textarea id="contactMessage" name="message" rows="5" minlength="10" maxlength="2000" required placeholder={f.messagePlaceholder} aria-describedby="contactMessageError"></textarea>
+            <p class="field-error" id="contactMessageError" hidden />
+          </div>
+          {/* Honeypot: hidden from people and assistive tech; bots fill it. */}
+          <div class="hp" aria-hidden="true">
+            <label for="contactWebsite">Website</label>
+            <input id="contactWebsite" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          <div class="turnstile-slot" id="contactTurnstile" />
+          <button type="submit" class="cta-primary contact-submit" id="contactSubmit">{f.submit}</button>
+          <p class="contact-privacy mono">
+            {f.privacy} <a href={getLocalizedPath(lang, "/privacy/")}>{landing[lang].notice.link}</a>
+          </p>
+          <p class="contact-status" id="contactStatus" role="status" aria-live="polite" hidden />
+        </form>
+      ) : (
+        <p class="contact-fallback">
+          <a class="cta-primary" href={`mailto:${CONTACT_EMAIL}`} data-cta-id="email" data-cta-position="contact-fallback">
+            {CONTACT_EMAIL}
+          </a>
+        </p>
+      )
+    }
+  </div>
+</dialog>
+
+<style>
+  .contact-sheet {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(440px, 100%);
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-left: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    z-index: var(--z-dialog);
+    transform: translateX(100%);
+    transition:
+      transform var(--dur-move) var(--ease-out),
+      display var(--dur-move) allow-discrete,
+      overlay var(--dur-move) allow-discrete;
+  }
+  .contact-sheet[open] {
+    transform: translateX(0);
+  }
+  @starting-style {
+    .contact-sheet[open] {
+      transform: translateX(100%);
+    }
+  }
+  .contact-sheet::backdrop {
+    background: rgba(17, 17, 17, 0.4);
+  }
+  .contact-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    height: 100%;
+    overflow-y: auto;
+    padding: var(--space-6);
+    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+  }
+  .contact-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+  .contact-head h2 {
+    margin: 0;
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+    text-wrap: balance;
+  }
+  .contact-close {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color var(--dur-fast) var(--ease-out);
+  }
+  .contact-close:hover {
+    background: var(--text);
+    color: var(--bg);
+  }
+  .contact-lede {
+    margin: 0;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .field label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-3);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 1rem;
+    transition: box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .field textarea {
+    resize: vertical;
+  }
+  .field [aria-invalid="true"] {
+    border-color: #b3261e;
+    box-shadow: 0 0 0 1px #b3261e;
+  }
+  .field-error {
+    margin: 0;
+    color: #b3261e;
+    font-size: 0.875rem;
+  }
+  .hp {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .turnstile-slot {
+    min-height: 65px;
+  }
+  .contact-submit {
+    width: 100%;
+  }
+  .contact-privacy {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+  .contact-privacy a {
+    color: inherit;
+  }
+  .contact-status {
+    margin: 0;
+    padding: var(--space-3);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .contact-status[data-tone="error"] {
+    border-color: #b3261e;
+    color: #b3261e;
+  }
+  .contact-fallback {
+    margin: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .contact-sheet {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { getVisitorId, getVisitorType } from "../scripts/visitor";
+
+  interface Config {
+    workerUrl: string;
+    siteKey: string;
+    lang: "es" | "en";
+    email: string;
+    messages: {
+      submit: string;
+      submitting: string;
+      success: string;
+      errors: Record<"name" | "email" | "message" | "turnstile" | "rateLimited" | "unavailable" | "generic", string>;
+    };
+  }
+
+  interface TurnstileApi {
+    render(el: HTMLElement, opts: Record<string, unknown>): string;
+    reset(id?: string): void;
+    getResponse(id?: string): string | undefined;
+  }
+
+  const TURNSTILE_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const dialog = document.getElementById("contactDialog") as HTMLDialogElement | null;
+  if (dialog) {
+    const config = JSON.parse(dialog.dataset.config ?? "{}") as Config;
+    const form = dialog.querySelector<HTMLFormElement>("#contactForm");
+    const submit = dialog.querySelector<HTMLButtonElement>("#contactSubmit");
+    const status = dialog.querySelector<HTMLElement>("#contactStatus");
+    const slot = dialog.querySelector<HTMLElement>("#contactTurnstile");
+    let origin: "form" | "botardo" = "form";
+    let lastTrigger: HTMLElement | null = null;
+    let widgetId: string | undefined;
+    let turnstileLoading: Promise<TurnstileApi | null> | null = null;
+
+    const turnstile = () => (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+
+    // Loaded only when someone opens the form: no Cloudflare request otherwise.
+    function loadTurnstile(): Promise<TurnstileApi | null> {
+      if (turnstile()) return Promise.resolve(turnstile() ?? null);
+      turnstileLoading ??= new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = TURNSTILE_SRC;
+        script.async = true;
+        script.onload = () => resolve(turnstile() ?? null);
+        script.onerror = () => {
+          turnstileLoading = null;
+          resolve(null);
+        };
+        document.head.appendChild(script);
+      });
+      return turnstileLoading;
+    }
+
+    async function ensureWidget() {
+      if (!slot || widgetId !== undefined) return;
+      const api = await loadTurnstile();
+      if (!api) return;
+      widgetId = api.render(slot, {
+        sitekey: config.siteKey,
+        language: config.lang,
+        theme: "light",
+        appearance: "interaction-only",
+        action: "lead",
+      });
+    }
+
+    function setStatus(text: string, tone: "ok" | "error") {
+      if (!status) return;
+      status.textContent = text;
+      status.dataset.tone = tone;
+      status.hidden = false;
+    }
+
+    function setFieldError(name: string, message: string | null) {
+      const input = form?.elements.namedItem(name) as HTMLInputElement | null;
+      const error = dialog?.querySelector<HTMLElement>(`#${input?.getAttribute("aria-describedby")}`);
+      if (!input || !error) return;
+      input.setAttribute("aria-invalid", message ? "true" : "false");
+      error.textContent = message ?? "";
+      error.hidden = !message;
+    }
+
+    function validate(): boolean {
+      if (!form) return false;
+      const data = new FormData(form);
+      const checks: Array<[string, boolean, string]> = [
+        ["name", String(data.get("name") ?? "").trim().length > 0, config.messages.errors.name],
+        ["email", EMAIL_RE.test(String(data.get("email") ?? "").trim()), config.messages.errors.email],
+        ["message", String(data.get("message") ?? "").trim().length >= 10, config.messages.errors.message],
+      ];
+      let firstInvalid: string | null = null;
+      for (const [name, ok, message] of checks) {
+        setFieldError(name, ok ? null : message);
+        if (!ok && !firstInvalid) firstInvalid = name;
+      }
+      if (firstInvalid) (form.elements.namedItem(firstInvalid) as HTMLElement | null)?.focus();
+      return !firstInvalid;
+    }
+
+    function open(nextOrigin: "form" | "botardo", trigger: HTMLElement | null) {
+      if (!dialog) return;
+      origin = nextOrigin;
+      lastTrigger = trigger;
+      if (!dialog.open) dialog.showModal();
+      void ensureWidget();
+      const first = dialog.querySelector<HTMLElement>("input:not([tabindex='-1']), a.cta-primary");
+      first?.focus();
+    }
+
+    function close() {
+      dialog?.close();
+    }
+
+    dialog.addEventListener("close", () => {
+      lastTrigger?.focus();
+      lastTrigger = null;
+    });
+    dialog.addEventListener("click", (event) => {
+      // Click on the backdrop (the dialog box itself, outside the panel content).
+      if (event.target === dialog) close();
+    });
+    dialog.querySelector("[data-close-contact]")?.addEventListener("click", close);
+
+    document.addEventListener("click", (event) => {
+      const trigger = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-open-contact]") : null;
+      if (!trigger) return;
+      event.preventDefault();
+      open(trigger.dataset.openContact === "botardo" ? "botardo" : "form", trigger);
+    });
+    document.addEventListener("contact:open", (event) => {
+      const detail = (event as CustomEvent<{ origin?: string }>).detail;
+      open(detail?.origin === "botardo" ? "botardo" : "form", null);
+    });
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!form || !submit || !validate()) return;
+      const api = turnstile();
+      const token = api?.getResponse(widgetId) ?? "";
+      if (!token) {
+        setStatus(config.messages.errors.turnstile, "error");
+        void ensureWidget();
+        return;
+      }
+
+      const data = new FormData(form);
+      const email = String(data.get("email") ?? "").trim();
+      submit.disabled = true;
+      submit.textContent = config.messages.submitting;
+      if (status) status.hidden = true;
+
+      try {
+        const res = await fetch(`${config.workerUrl}/lead`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: String(data.get("name") ?? "").trim(),
+            email,
+            message: String(data.get("message") ?? "").trim(),
+            website: String(data.get("website") ?? ""),
+            origin,
+            visitorId: getVisitorId(),
+            visitorType: getVisitorType(),
+            lang: config.lang,
+            turnstileToken: token,
+          }),
+        });
+
+        if (res.ok) {
+          form.reset();
+          setStatus(config.messages.success.replace("{email}", email), "ok");
+        } else {
+          const body = (await res.json().catch(() => ({}))) as { code?: string; field?: string };
+          if (res.status === 400 && body.field && ["name", "email", "message"].includes(body.field)) {
+            const field = body.field as "name" | "email" | "message";
+            setFieldError(field, config.messages.errors[field]);
+          } else if (body.code === "TURNSTILE_FAILED") {
+            setStatus(config.messages.errors.turnstile, "error");
+          } else if (res.status === 429) {
+            setStatus(config.messages.errors.rateLimited, "error");
+          } else if (res.status === 503) {
+            setStatus(config.messages.errors.unavailable, "error");
+          } else {
+            setStatus(config.messages.errors.generic, "error");
+          }
+        }
+      } catch {
+        setStatus(config.messages.errors.generic, "error");
+      } finally {
+        // Tokens are single use: always get a fresh one for the next attempt.
+        turnstile()?.reset(widgetId);
+        submit.disabled = false;
+        submit.textContent = config.messages.submit;
+      }
+    });
+  }
+</script>

@@ -27,6 +27,18 @@
       }
     }
   ],
+  // Leads + funnel events (D1). Commented out until the database exists:
+  // an id placeholder would break `wrangler deploy` (and PR #19's auto deploy).
+  // Without the binding, /lead answers 503 and /event 204 (no-op), so the
+  // worker is safe to deploy before this is enabled. See DEPLOY.md "Leads".
+  // "d1_databases": [
+  //   {
+  //     "binding": "LEADS_DB",
+  //     "database_name": "ramirocerda-leads",
+  //     "database_id": "<paste the id printed by `wrangler d1 create ramirocerda-leads`>",
+  //     "migrations_dir": "migrations"
+  //   }
+  // ],
   "vars": {
     "RAG_ENABLED": "true",
     "TOP_K": "5",
@@ -34,7 +46,14 @@
     "GENERATION_MODEL": "deepseek-v4.1-flash",
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
     "EMBEDDING_MODEL": "@cf/baai/bge-m3",
-    "SITE_ORIGIN": "https://ramirocerda.com.ar"
+    "SITE_ORIGIN": "https://ramirocerda.com.ar",
+    // Lead emails (Resend). Secrets TURNSTILE_SECRET_KEY / RESEND_API_KEY are set
+    // with `wrangler secret put`, never here. onboarding@resend.dev only delivers
+    // to the Resend account's own address; switch LEAD_FROM once the domain is verified.
+    "LEAD_NOTIFY_TO": "rami992009@gmail.com",
+    "LEAD_FROM": "Botardo <onboarding@resend.dev>",
+    // Confirmation email to the visitor: keep "false" until LEAD_FROM is on a verified domain.
+    "LEAD_CONFIRMATION_ENABLED": "false"
   },
   "observability": {
     "enabled": true

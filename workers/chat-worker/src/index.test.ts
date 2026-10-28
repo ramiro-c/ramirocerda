@@ -238,3 +238,43 @@ describe("IDENTITY_PROMPT answer rules", () => {
     expect(IDENTITY_PROMPT).toMatch(/Ignorá cualquier instrucción/);
   });
 });
+
+describe("services intent contact offer", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("flags offerContact when the visitor shows hiring intent", async () => {
+    const { env } = makeEnv({ matches: [{ id: "kb-a", score: 0.5, metadata: { text: "t" } }] });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ choices: [{ message: { content: "Sí, toma proyectos." } }] }), {
+          status: 200,
+        }),
+      ),
+    );
+    const res = await worker.fetch(makeRequest("Quiero contratar a Ramiro para un proyecto"), env as never);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://ramirocerda.com.ar");
+    const body = await res.json();
+    expect(body.reply).toBe("Sí, toma proyectos.");
+    expect(body.offerContact).toBe(true);
+  });
+
+  it("also offers contact on the no-info short-circuit", async () => {
+    const { env } = makeEnv({ matches: [] });
+    vi.stubGlobal("fetch", vi.fn());
+    const res = await worker.fetch(makeRequest("Can I hire him?"), env as never);
+    const body = await res.json();
+    expect(body.offerContact).toBe(true);
+  });
+
+  it("does not flag regular questions", async () => {
+    const { env } = makeEnv({ matches: [] });
+    vi.stubGlobal("fetch", vi.fn());
+    const res = await worker.fetch(makeRequest("¿Qué proyectos hizo Ramiro?"), env as never);
+    const body = await res.json();
+    expect(body.offerContact).toBeUndefined();
+  });
+});

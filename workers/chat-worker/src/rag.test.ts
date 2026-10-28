@@ -26,7 +26,7 @@ describe("filterChunks (D3)", () => {
   });
 
   it("caps injected chunks at MAX_CHUNKS (4)", () => {
-    const result = filterChunks([0.9, 0.8, 0.7, 0.6, 0.5, 0.4].map(match), 0.3);
+    const result = filterChunks([0.9, 0.8, 0.7, 0.6, 0.5, 0.4].map((score) => match(score)), 0.3);
     expect(result).toHaveLength(MAX_CHUNKS);
     expect(MAX_CHUNKS).toBe(4);
   });
