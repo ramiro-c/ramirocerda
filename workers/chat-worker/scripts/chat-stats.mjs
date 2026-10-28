@@ -9,7 +9,8 @@
  * independent of Analytics Engine and therefore always available.
  *
  * Data point schema (written by workers/chat-worker/src/index.ts writeUsage):
- *   blobs:   blob1 = language ("es"|"en"), blob2 = status ("ok"|"rate_limited"|"model_error"), blob3 = question preview (80 chars)
+ *   blobs:   blob1 = language ("es"|"en"), blob2 = status ("ok"|"rate_limited"|"model_error"), blob3 = question preview (80 chars),
+ *            blob4 = router decision model tier ("free"|"paid"|"none"; empty on rows written before the paid fallback)
  *   doubles: double1 = chunk_count, double2 = top similarity score, double3 = retrieval ms, double4 = generation ms,
  *            double5 = route (0 search, 1 smalltalk, 2 off_topic), double6 = retrieval iterations,
  *            double7 = search query used the conversation (0/1), double8 = router ms, double9 = offerContact (0/1),

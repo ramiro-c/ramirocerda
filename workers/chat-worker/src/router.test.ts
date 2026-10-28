@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_DECISION_ENDPOINT, DEFAULT_DECISION_MODEL, readAdaptiveConfig } from "./config";
+import {
+  DEFAULT_DECISION_ENDPOINT,
+  DEFAULT_DECISION_FALLBACK_MODEL,
+  DEFAULT_DECISION_MODEL,
+  readAdaptiveConfig,
+} from "./config";
 import { DECISION_USER_AGENT, parseAnswer, parseDecisionResponse } from "./decision";
 import {
   buildRouterState,
@@ -11,7 +16,7 @@ import {
   routeMessage,
   routerQuestions,
 } from "./router";
-import { DECISION_OFF, DECISION_VARS, routerAnswer, stubFetch } from "./test-utils";
+import { DECISION_OFF, DECISION_VARS, type ScriptedAnswer, routerAnswer, stubFetch } from "./test-utils";
 
 const config = readAdaptiveConfig(DECISION_VARS);
 const history = [
@@ -92,10 +97,10 @@ describe("routeMessage", () => {
     expect(JSON.stringify(headers)).not.toContain("opencode");
   });
 
-  it("sends Bearer DECISION_API_KEY when the optional secret is set", async () => {
+  it("keeps the free primary call anonymous even when DECISION_API_KEY is set", async () => {
     const { calls } = stubFetch({ router: [routerAnswer("smalltalk")] });
     await routeMessage("hola", undefined, readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: " console-key " }));
-    expect(calls.decisionHeaders[0].Authorization).toBe("Bearer console-key");
+    expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
   });
 
   it("asks needs_history only when there is a previous user turn", async () => {
@@ -154,9 +159,91 @@ describe("routeMessage", () => {
     [{ error: new TypeError("fetch failed") }, "network"],
     ["hang", "timeout"],
   ] as const)("falls back to search / raw message / no hire intent on %j", async (answer, via) => {
-    stubFetch({ router: [answer] });
+    const { calls } = stubFetch({ router: [answer] });
     const decision = await routeMessage("quiero contratarlo", history, config);
-    expect(decision).toEqual({ route: "search", hireIntent: false, query: "quiero contratarlo", alternateQuery: null, via });
+    expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "quiero contratarlo", alternateQuery: null, via });
+    // No DECISION_API_KEY in `config`: the paid retry is skipped, a single call is made.
+    expect(calls.router).toHaveLength(1);
+    expect(decision.trace?.tier).toBe("none");
+  });
+});
+
+describe("routeMessage: free then paid fallback", () => {
+  const paidConfig = readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "console-key" });
+
+  it("uses the paid slug jev-1.13 by default (OpenCode docs, console/models.mdx)", () => {
+    expect(DEFAULT_DECISION_FALLBACK_MODEL).toBe("jev-1.13");
+    expect(paidConfig.decision).toMatchObject({ model: "jev-1.13-free", fallbackModel: "jev-1.13", apiKey: "console-key" });
+  });
+
+  it("free OK: answers from jev-1.13-free, anonymous, no paid call", async () => {
+    const { calls } = stubFetch({ router: [routerAnswer("smalltalk")] });
+    const decision = await routeMessage("hola", undefined, paidConfig);
+    expect(decision).toMatchObject({ route: "smalltalk", via: "llm" });
+    expect(calls.router).toHaveLength(1);
+    expect(calls.router[0].model).toBe("jev-1.13-free");
+    expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
+    expect(decision.trace).toEqual({ tier: "free", model: "jev-1.13-free", primaryError: null, fallback: "not_needed" });
+  });
+
+  it.each<[ScriptedAnswer, string]>([
+    [{ status: 500 }, "http_500"],
+    [{ status: 503 }, "http_503"],
+    [{ status: 429 }, "http_429"],
+    [{ status: 401 }, "http_401"],
+    // What System One returns today for an unknown / retired model: 400 "Model is unavailable".
+    [{ status: 400 }, "http_400"],
+    [{ error: new TypeError("fetch failed") }, "network"],
+    ["hang", "timeout"],
+    [{ text: "<html>Bad gateway</html>" }, "invalid_json"],
+  ])("free %j fails, then paid jev-1.13 with Bearer answers", async (freeAnswer, primaryError) => {
+    const { calls } = stubFetch({ router: [freeAnswer, routerAnswer("off_topic", { hire: 0.9 })] });
+    const decision = await routeMessage("¿Cuál es la capital de Francia?", undefined, paidConfig);
+    expect(decision).toMatchObject({ route: "off_topic", hireIntent: true, via: "llm" });
+    expect(calls.router.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
+    expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
+    expect(calls.decisionHeaders[1].Authorization).toBe("Bearer console-key");
+    expect(calls.router[1].questions).toEqual(calls.router[0].questions);
+    expect(calls.router[1].state).toEqual(calls.router[0].state);
+    expect(decision.trace).toEqual({ tier: "paid", model: "jev-1.13", primaryError, fallback: "used" });
+  });
+
+  it("free and paid both fail: search with the raw message, offerContact false", async () => {
+    const { calls } = stubFetch({ router: [{ status: 500 }, "hang"] });
+    const decision = await routeMessage("quiero contratarlo", history, paidConfig);
+    expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "quiero contratarlo", alternateQuery: null, via: "timeout" });
+    expect(calls.router).toHaveLength(2);
+    expect(decision.trace).toEqual({ tier: "none", model: null, primaryError: "http_500", fallback: "failed" });
+  });
+
+  it("no DECISION_API_KEY: skips the paid call", async () => {
+    const { calls } = stubFetch({ router: [{ status: 500 }, routerAnswer("smalltalk")] });
+    const decision = await routeMessage("hola", undefined, config);
+    expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "hola", via: "http_500" });
+    expect(calls.router).toHaveLength(1);
+    expect(decision.trace).toEqual({ tier: "none", model: null, primaryError: "http_500", fallback: "skipped_no_key" });
+  });
+
+  it("empty DECISION_FALLBACK_MODEL: skips the paid call even with a key", async () => {
+    const { calls } = stubFetch({ router: [{ status: 400 }, routerAnswer("smalltalk")] });
+    const decision = await routeMessage(
+      "hola",
+      undefined,
+      readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "console-key", DECISION_FALLBACK_MODEL: "" }),
+    );
+    expect(decision).toMatchObject({ route: "search", via: "http_400" });
+    expect(calls.router).toHaveLength(1);
+    expect(decision.trace?.fallback).toBe("skipped_no_model");
+  });
+
+  it("honors a DECISION_FALLBACK_MODEL override", async () => {
+    const { calls } = stubFetch({ router: [{ status: 500 }, routerAnswer("smalltalk")] });
+    await routeMessage(
+      "hola",
+      undefined,
+      readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "k", DECISION_FALLBACK_MODEL: " jev-1.14 " }),
+    );
+    expect(calls.router.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.14"]);
   });
 });
 

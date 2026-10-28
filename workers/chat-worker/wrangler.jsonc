@@ -37,17 +37,23 @@
     "SITE_ORIGIN": "https://ramirocerda.com.ar",
     // Adaptive RAG (src/pipeline.ts): router + sufficiency judge with Jev (TypeSafe
     // System One) served by OpenCode. Not OpenAI-compatible: typed questions in,
-    // typed answers out (src/decision.ts). jev-1.13-free answers WITHOUT a key; for a
-    // paid model set the optional SECRET DECISION_API_KEY (OpenCode Console key):
-    // wrangler secret put DECISION_API_KEY. Set DECISION_MODEL to "" to turn the
-    // decision model off (linear pipeline, offerContact false).
+    // typed answers out (src/decision.ts). DECISION_MODEL (jev-1.13-free) is always
+    // called WITHOUT a key. If that call fails for any reason, ONE retry goes to
+    // DECISION_FALLBACK_MODEL (jev-1.13, paid) with Authorization: Bearer of the
+    // optional SECRET DECISION_API_KEY (OpenCode Console key):
+    // wrangler secret put DECISION_API_KEY. No secret or DECISION_FALLBACK_MODEL ""
+    // skips the retry. Set DECISION_MODEL to "" to turn the decision model off
+    // (linear pipeline, offerContact false).
     "DECISION_ENDPOINT": "https://opencode.ai/inference/systemone/v1/systemone",
     "DECISION_MODEL": "jev-1.13-free",
+    // Paid slug from the OpenCode docs model table (console/models.mdx): "Jev 1.13 | jev-1.13".
+    "DECISION_FALLBACK_MODEL": "jev-1.13",
     // OpenCode credential integration id. Not sent on the wire (the endpoint only
     // takes a Bearer key); logged on chat.route for traceability.
     "DECISION_INTEGRATION_ID": "opencode",
-    // Per-request timeout for the router and the judge (ms). Measured p95 is well under 1 s.
-    "DECISION_TIMEOUT_MS": "2000",
+    // Per-ATTEMPT timeout for the router and the judge (ms). Measured free p95 is ~0.36 s.
+    // Worst case: 2 attempts x 2 steps (router + judge) = 4 x 1500 = 6 s of decision time.
+    "DECISION_TIMEOUT_MS": "1500",
     // Below this route confidence, smalltalk/off_topic is not trusted and the message is searched.
     "DECISION_MIN_CONFIDENCE": "0.5",
     "MAX_RETRIEVAL_ITERATIONS": "2"

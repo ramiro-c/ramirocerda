@@ -145,6 +145,35 @@ describe("retrieveAdaptive", () => {
     expect(result.iterations).toBe(2);
   });
 
+  it("judge: free fails, paid jev-1.13 with Bearer answers (one retry only)", async () => {
+    const { calls } = stubFetch({ judge: [{ status: 503 }, judgeAnswer(0.9)] });
+    const { env, query } = makeEnv({ rounds: [[chunk("weak", 0.33)]] });
+    const result = await retrieveAdaptive(followUp, env, readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "k" }));
+    expect(calls.judge.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
+    expect(calls.decisionHeaders.map((h) => h.Authorization)).toEqual([undefined, "Bearer k"]);
+    expect(result.verdict).toEqual({ kind: "sufficient", probability: 0.9 });
+    expect(result.judgeTrace).toEqual({ tier: "paid", model: "jev-1.13", primaryError: "http_503", fallback: "used" });
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  it("judge: free and paid both fail, keeps search 1", async () => {
+    const { calls } = stubFetch({ judge: [{ status: 400 }, { error: new TypeError("fetch failed") }] });
+    const { env, query } = makeEnv({ rounds: [[chunk("weak", 0.33)]] });
+    const result = await retrieveAdaptive(followUp, env, readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "k" }));
+    expect(calls.judge).toHaveLength(2);
+    expect(result.verdict).toEqual({ kind: "error", reason: "network" });
+    expect(result.judgeTrace).toMatchObject({ tier: "none", primaryError: "http_400", fallback: "failed" });
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  it("judge: no key, a single free attempt", async () => {
+    const { calls } = stubFetch({ judge: [{ status: 500 }, judgeAnswer(0.9)] });
+    const { env } = makeEnv({ rounds: [[chunk("weak", 0.33)]] });
+    const result = await retrieveAdaptive(followUp, env, config);
+    expect(calls.judge).toHaveLength(1);
+    expect(result.judgeTrace?.fallback).toBe("skipped_no_key");
+  });
+
   it("propagates a first-search failure (same MODEL_ERROR path as before)", async () => {
     stubFetch();
     const env = { ...makeEnv({ rounds: [[]] }).env, VECTORIZE: { query: vi.fn().mockRejectedValue(new Error("down")) } };
@@ -158,6 +187,7 @@ describe("readAdaptiveConfig", () => {
       decision: {
         endpoint: DEFAULT_DECISION_ENDPOINT,
         model: DEFAULT_DECISION_MODEL,
+        fallbackModel: "jev-1.13",
         apiKey: null,
         integrationId: DEFAULT_DECISION_INTEGRATION_ID,
         timeoutMs: DEFAULT_DECISION_TIMEOUT_MS,

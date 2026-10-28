@@ -103,7 +103,7 @@ describe("chat usage analytics data points", () => {
     const body = await res.json();
     expect(body.reply).toBe(NO_INFO_REPLY.en);
     expect(datapoints[0]?.indexes?.[0]).toBe("conv-noise");
-    expect(datapoints[0]?.blobs).toEqual(["en", "ok", "What is the capital of France?"]);
+    expect(datapoints[0]?.blobs).toEqual(["en", "ok", "What is the capital of France?", "none"]);
     expect(datapoints[0]?.doubles?.slice(0, 2)).toEqual([0, 0]);
     expect(datapoints[0]?.doubles?.[3]).toBe(0);
   });

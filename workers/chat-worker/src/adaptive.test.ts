@@ -136,7 +136,9 @@ describe("adaptive RAG through handleRag", () => {
     expect(routeLog).toMatchObject({
       route: "search",
       via: "llm",
+      model_tier: "free",
       model: "jev-1.13-free",
+      fallback: "not_needed",
       integration: "opencode",
       hire_intent: true,
       hire_intent_p: 0.98,
@@ -146,6 +148,47 @@ describe("adaptive RAG through handleRag", () => {
     expect(datapoints[0]?.doubles?.[8]).toBe(1);
     expect(datapoints[0]?.doubles?.[9]).toBe(0);
     expect(datapoints[0]?.doubles?.[10]).toBe(1);
+  });
+
+  it("logs and records which model answered when the free call fails and the paid fallback answers", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const base = makeEnv({ rounds: [[strong]] });
+    const env = { ...base.env, DECISION_API_KEY: "console-key" };
+    const { body, calls } = await ask(
+      env,
+      "¿Está disponible para un proyecto freelance?",
+      { router: [{ status: 400 }, routerAnswer("search", { hire: 0.95, needsHistory: 0.1 })], judge: ["hang", judgeAnswer(0.9)] },
+      history,
+    );
+    expect(body).toEqual({ reply: "Respuesta", offerContact: true });
+    expect(calls.router.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
+    expect(calls.judge.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
+    const events = logSpy.mock.calls.map(([line]) => JSON.parse(String(line)));
+    expect(events.find((e) => e.event === "chat.route")).toMatchObject({
+      model_tier: "paid",
+      model: "jev-1.13",
+      primary_error: "http_400",
+      fallback: "used",
+    });
+    expect(events.find((e) => e.event === "chat.rag_judge")).toMatchObject({
+      model_tier: "paid",
+      primary_error: "timeout",
+      fallback: "used",
+    });
+    expect(base.datapoints[0]?.blobs?.[3]).toBe("paid");
+    expect(JSON.stringify(events)).not.toContain("console-key");
+  });
+
+  it("logs model_tier none and keeps the safe default when both decision attempts fail", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const base = makeEnv({ rounds: [[strong]] });
+    const env = { ...base.env, DECISION_API_KEY: "console-key" };
+    const { body, run } = { ...(await ask(env, "quiero contratarlo", { router: [{ status: 500 }, { status: 500 }] })), run: base.run };
+    expect(body).toEqual({ reply: "Respuesta", offerContact: false });
+    expect(run.mock.calls[0][1]).toEqual({ text: ["quiero contratarlo"] });
+    const routeLog = logSpy.mock.calls.map(([line]) => JSON.parse(String(line))).find((e) => e.event === "chat.route");
+    expect(routeLog).toMatchObject({ route: "search", via: "http_500", model_tier: "none", model: null, fallback: "failed" });
+    expect(base.datapoints[0]?.blobs?.[3]).toBe("none");
   });
 
   it("propagates offerContact on canned replies too (off_topic and no_info)", async () => {

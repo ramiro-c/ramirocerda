@@ -71,6 +71,7 @@ function log(event: string, data: Record<string, unknown> = {}): void {
 
 // Analytics Engine data point schema (shared with scripts/chat-stats.mjs):
 //   blobs:   [0] detected language ("es"|"en") | [1] "ok"|"rate_limited"|"model_error" | [2] first 80 chars of the question
+//            | [3] router model tier: "free" | "paid" | "none" (appended by the paid fallback; "" on older rows)
 //   doubles: [0] chunk_count | [1] top similarity score | [2] retrieval latency ms | [3] generation latency ms
 //            (appended by adaptive RAG, never reorder) [4] route code (0 search, 1 smalltalk, 2 off_topic)
 //            | [5] retrieval iterations (0..2) | [6] search query used the conversation (0/1) | [7] router latency ms
@@ -94,7 +95,8 @@ function writeUsage(
 ): void {
   env.ANALYTICS?.writeDataPoint({
     indexes: [point.sessionId],
-    blobs: [point.lang, point.status, point.preview],
+    // [3] appended: which decision model answered the router (free | paid | none).
+    blobs: [point.lang, point.status, point.preview, point.run?.decision.trace?.tier ?? "none"],
     doubles: [
       point.chunkCount,
       point.topScore,

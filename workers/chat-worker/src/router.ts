@@ -18,7 +18,13 @@
  */
 
 import type { AdaptiveConfig } from "./config";
-import { askDecision, type DecisionFailure, type DecisionQuestion, type DecisionUsage } from "./decision";
+import {
+  askDecision,
+  type DecisionFailure,
+  type DecisionQuestion,
+  type DecisionTrace,
+  type DecisionUsage,
+} from "./decision";
 
 export type Route = "search" | "smalltalk" | "off_topic";
 export const ROUTES: readonly Route[] = ["search", "smalltalk", "off_topic"];
@@ -42,6 +48,8 @@ export interface RouteDecision {
   /** Raw model outputs, for logs and evals. */
   scores?: { routeConfidence: number; hireIntent: number; needsHistory: number | null };
   usage?: DecisionUsage;
+  /** Free/paid attempt trace; absent when the decision model is off. */
+  trace?: DecisionTrace;
 }
 
 /** History turns and characters per turn handed to the router (keeps the call cheap). */
@@ -102,8 +110,8 @@ export function contextualQuery(message: string, history: HistoryTurn[] | undefi
   return joined.slice(-MAX_QUERY_CHARS);
 }
 
-export function fallbackDecision(message: string, via: RouteVia): RouteDecision {
-  return { route: "search", hireIntent: false, query: message, alternateQuery: null, via };
+export function fallbackDecision(message: string, via: RouteVia, trace?: DecisionTrace): RouteDecision {
+  return { route: "search", hireIntent: false, query: message, alternateQuery: null, via, ...(trace ? { trace } : {}) };
 }
 
 export async function routeMessage(
@@ -114,10 +122,12 @@ export async function routeMessage(
   if (!config.decision) return fallbackDecision(message, "not_configured");
   const contextual = contextualQuery(message, history);
   const result = await askDecision(config.decision, buildRouterState(message, history), routerQuestions(contextual !== null));
-  if (!result.ok) return fallbackDecision(message, result.reason);
+  if (!result.ok) return fallbackDecision(message, result.reason, result.trace);
 
   const { route: routeAnswer, hire_intent: hireAnswer, needs_history: historyAnswer } = result.answers;
-  if (routeAnswer?.type !== "choice" || hireAnswer?.type !== "noul") return fallbackDecision(message, "invalid_shape");
+  if (routeAnswer?.type !== "choice" || hireAnswer?.type !== "noul") {
+    return fallbackDecision(message, "invalid_shape", { ...result.trace, tier: "none", model: null });
+  }
   const needsHistory = historyAnswer?.type === "noul" ? historyAnswer.noul : null;
 
   // Skipping the KB is the risky direction: only trust a non-search route when the model is confident.
@@ -135,5 +145,6 @@ export async function routeMessage(
     via: "llm",
     scores: { routeConfidence: routeAnswer.confidence, hireIntent: hireAnswer.noul, needsHistory },
     usage: result.usage,
+    trace: result.trace,
   };
 }

@@ -114,7 +114,11 @@ export async function runAdaptivePipeline(opts: {
   log("chat.route", {
     route: decision.route,
     via: decision.via,
-    model: config.decision?.model ?? null,
+    // Which model answered: free (jev-1.13-free), paid (fallback, Bearer key) or none.
+    model_tier: decision.trace?.tier ?? "none",
+    model: decision.trace?.model ?? null,
+    ...(decision.trace?.primaryError ? { primary_error: decision.trace.primaryError } : {}),
+    fallback: decision.trace?.fallback ?? "off",
     integration: config.decision?.integrationId ?? null,
     ...(decision.scores
       ? {
@@ -187,6 +191,9 @@ export async function runAdaptivePipeline(opts: {
     log("chat.rag_judge", {
       verdict: retrieval.verdict.kind,
       ...(retrieval.verdict.kind === "error" ? { reason: retrieval.verdict.reason } : { p: retrieval.verdict.probability }),
+      model_tier: retrieval.judgeTrace?.tier ?? "none",
+      ...(retrieval.judgeTrace?.primaryError ? { primary_error: retrieval.judgeTrace.primaryError } : {}),
+      fallback: retrieval.judgeTrace?.fallback ?? "off",
       latency_ms: retrieval.judgeMs,
     });
   }

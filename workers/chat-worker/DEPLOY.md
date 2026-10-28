@@ -52,7 +52,8 @@ The worker writes one Analytics Engine data point per question (binding
 `ANALYTICS`, see `writeUsage` in `src/index.ts`):
 
 - `blob1` language, `blob2` status (`ok` / `rate_limited` / `model_error`),
-  `blob3` first 80 chars of the question.
+  `blob3` first 80 chars of the question, `blob4` which decision model
+  answered the router (`free` / `paid` / `none`; empty on older rows).
 - `double1` chunk count, `double2` top similarity score, `double3` retrieval ms,
   `double4` generation ms; `index1` conversation session id.
 - Appended by adaptive RAG (append-only; older rows read them as 0): `double5`
@@ -129,19 +130,53 @@ Response:
   returns a probability in 0..1. Jev does **not** generate text, so there is no
   `messages`, `max_tokens`, `temperature` or `response_format`, and it cannot
   write a rewritten query (see below).
-- Auth: `Authorization: Bearer <key>` only if `DECISION_API_KEY` is set.
-  `jev-1.13-free` answers anonymously (verified: no key returns 200 with
-  `usage.opencode.billing_source: "free"`; an invalid key returns 401). Paid
-  Jev models need an OpenCode **Console** key (OpenCode docs); whether an
-  OpenCode Go key works there is not verified, so the worker does NOT reuse
+- Auth: the primary call (`DECISION_MODEL`, `jev-1.13-free`) is ALWAYS
+  anonymous (verified: no key returns 200 with
+  `usage.opencode.billing_source: "free"`; an invalid key returns 401). Only
+  the paid fallback sends `Authorization: Bearer <DECISION_API_KEY>`. Paid Jev
+  needs an OpenCode **Console** key (OpenCode docs); whether an OpenCode Go
+  key works there is not verified, so the worker does NOT reuse
   `OPENCODE_GO_API_KEY`.
 - `DECISION_INTEGRATION_ID` (`opencode`) is OpenCode's client-side credential
   integration id. It is not a header or body field of the request; the worker
   only logs it.
-- Errors: 400 `{"detail": ...}` for bad requests, 401 for an invalid key. Any
-  non-2xx, timeout, non-JSON body or answer that does not match its question
-  (unknown choice, out-of-range number, missing answer) is a failure and gets
-  the safe default.
+- Errors (probed without a key): 400 `{"detail": ...}` for bad requests, 401
+  for an invalid key, 401 `AuthError "Missing API key."` for `jev-1.13`
+  without a key, and 400 `server_error "Upstream request failed: Model is
+  unavailable."` for an unknown model (what a retired free model would get).
+  Any non-2xx, timeout, network error, non-JSON body or answer that does not
+  match its question (unknown choice, out-of-range number, missing answer) is a
+  failure.
+
+### Free then paid fallback
+
+Applies to every decision request (router and judge), in `askDecision`:
+
+1. Attempt 1: `DECISION_MODEL` (`jev-1.13-free`), no `Authorization` header.
+2. If attempt 1 fails for ANY reason above, ONE retry with
+   `model = DECISION_FALLBACK_MODEL` (`jev-1.13`) and
+   `Authorization: Bearer <DECISION_API_KEY>`, same `state` and `questions`.
+   Skipped when `DECISION_API_KEY` is unset or `DECISION_FALLBACK_MODEL` is
+   `""`. No further retries.
+3. If the retry also fails (or was skipped), the existing safe default:
+   router searches the raw message with `offerContact: false`; judge keeps the
+   first results.
+
+Paid slug evidence (`jev-1.13`): OpenCode docs model table
+(`opencode.ai/docs/zen`, source `console/models.mdx`: "Jev 1.13 | `jev-1.13` |
+`https://opencode.ai/inference/systemone/v1/systemone`" and "Use
+`jev-1.13-free` instead of `jev-1.13` to use the limited-time free model"), the
+OpenCode console itself (`enterprise-spam.ts` calls this endpoint with
+`jev-1.13`), and a live probe without a key: `jev-1.13` answers 401
+"Missing API key." while an unknown model answers 400 "Model is unavailable".
+The paid call itself was NOT exercised (no Console key on the build box).
+
+Latency budget: `DECISION_TIMEOUT_MS` (1500) is per attempt. Worst case per
+step is 2 attempts = 3 s; a `search` message has 2 steps (router + judge), so
+the worst-case decision time is 4 x 1.5 s = 6 s, on top of up to 2 embeddings,
+2 Vectorize queries and 1 generation. Without `DECISION_API_KEY` it stays at
+2 x 1.5 s = 3 s. The measured free p95 is about 0.36 s, so the timeout is only
+hit when the free model is degraded.
 
 ### Flow
 
@@ -175,7 +210,8 @@ With `DECISION_MODEL=""` the router and the judge are skipped: the worker
 searches the raw message once and applies the score gate, exactly like the
 linear pipeline, and `offerContact` is always false.
 
-Max calls per message: `search` 1 router + at most 1 judge (Jev) + up to 2
+Max calls per message (each Jev step counts 1, or 2 when the paid fallback
+runs): `search` 1 router + at most 1 judge (Jev) + up to 2
 embeddings + up to 2 Vectorize queries + up to 1 generation; `smalltalk` 1
 router + 1 generation; `off_topic` 1 router.
 
@@ -184,12 +220,13 @@ Config (vars in `wrangler.jsonc`, defaults in `src/config.ts`):
 | Name | Kind | Default | Notes |
 | --- | --- | --- | --- |
 | `DECISION_ENDPOINT` | var | `https://opencode.ai/inference/systemone/v1/systemone` | `""` turns adaptive off |
-| `DECISION_MODEL` | var | `jev-1.13-free` | `""` turns adaptive off |
+| `DECISION_MODEL` | var | `jev-1.13-free` | primary, anonymous; `""` turns adaptive off |
+| `DECISION_FALLBACK_MODEL` | var | `jev-1.13` | paid retry with Bearer `DECISION_API_KEY`; `""` disables the retry |
 | `DECISION_INTEGRATION_ID` | var | `opencode` | not sent; logged on `chat.route` |
-| `DECISION_TIMEOUT_MS` | var | `2000` | per request |
+| `DECISION_TIMEOUT_MS` | var | `1500` | per attempt (worst case 6 s total, see above) |
 | `DECISION_MIN_CONFIDENCE` | var | `0.5` | min confidence to skip the KB |
 | `MAX_RETRIEVAL_ITERATIONS` | var | `2` | clamped to 1..2 |
-| `DECISION_API_KEY` | secret, optional | unset (anonymous) | `wrangler secret put DECISION_API_KEY`; only for paid Jev models |
+| `DECISION_API_KEY` | secret, optional | unset (no paid retry) | `wrangler secret put DECISION_API_KEY` (OpenCode Console key); only sent on the paid fallback |
 
 Removed: every `OPENROUTER_*` var and the `OPENROUTER_API_KEY` secret (if it
 was ever set: `wrangler secret delete OPENROUTER_API_KEY`), plus the older
@@ -199,13 +236,18 @@ was ever set: `wrangler secret delete OPENROUTER_API_KEY`), plus the older
 System One, so they are gone rather than renamed.
 
 Risks: `jev-1.13-free` is a free, time-limited OpenCode model (it can be
-withdrawn or rate limited; the safe default keeps the worker answering), and
+withdrawn or rate limited; the paid fallback, if the key is set, or else the
+safe default keeps the worker answering; each paid call is billed to the
+Console account), and
 free-tier traffic may be used by the provider, so only the visitor message,
 the last 4 turns and short KB snippets are sent.
 
-Log events: `chat.route` (route, via, model, integration, route_confidence,
-hire_intent_p, needs_history_p, hire_intent, offer_contact, rewritten),
-`chat.rag_judge` (verdict, p or reason), `chat.rag_retrieved`,
+Log events: `chat.route` (route, via, `model_tier` free | paid | none, model
+that answered, `primary_error` when the free call failed, `fallback`
+not_needed | used | failed | skipped_no_key | skipped_no_model | off,
+integration, route_confidence, hire_intent_p, needs_history_p, hire_intent,
+offer_contact, rewritten), `chat.rag_judge` (verdict, p or reason,
+`model_tier`, `primary_error`, `fallback`), `chat.rag_retrieved`,
 `chat.rag_no_context`, `chat.ai_done`.
 
 ### Evals (linear vs adaptive)

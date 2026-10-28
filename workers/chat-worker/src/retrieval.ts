@@ -19,7 +19,13 @@
  */
 
 import type { AdaptiveConfig } from "./config";
-import { askDecision, type DecisionFailure, type DecisionQuestion, type DecisionUsage } from "./decision";
+import {
+  askDecision,
+  type DecisionFailure,
+  type DecisionQuestion,
+  type DecisionTrace,
+  type DecisionUsage,
+} from "./decision";
 import { MAX_CHUNKS, retrieveChunks, type RetrievedChunk } from "./rag";
 import { NOUL_YES } from "./router";
 
@@ -53,16 +59,19 @@ export async function judgeSufficiency(
   question: string,
   chunks: RetrievedChunk[],
   config: AdaptiveConfig,
-): Promise<{ verdict: JudgeVerdict; usage?: DecisionUsage }> {
+): Promise<{ verdict: JudgeVerdict; usage?: DecisionUsage; trace?: DecisionTrace }> {
   if (!config.decision) return { verdict: { kind: "skipped" } };
   const result = await askDecision(config.decision, buildJudgeState(question, chunks), { sufficient: SUFFICIENT_QUESTION });
-  if (!result.ok) return { verdict: { kind: "error", reason: result.reason } };
+  if (!result.ok) return { verdict: { kind: "error", reason: result.reason }, trace: result.trace };
   const answer = result.answers.sufficient;
-  if (answer?.type !== "noul") return { verdict: { kind: "error", reason: "invalid_shape" } };
+  if (answer?.type !== "noul") {
+    return { verdict: { kind: "error", reason: "invalid_shape" }, trace: { ...result.trace, tier: "none", model: null } };
+  }
   const probability = answer.noul;
   return {
     verdict: probability >= NOUL_YES ? { kind: "sufficient", probability } : { kind: "insufficient", probability },
     usage: result.usage,
+    trace: result.trace,
   };
 }
 
@@ -84,6 +93,7 @@ export interface AdaptiveRetrieval {
   verdict: JudgeVerdict;
   judgeMs: number;
   judgeUsage?: DecisionUsage;
+  judgeTrace?: DecisionTrace;
 }
 
 export async function retrieveAdaptive(
@@ -103,9 +113,9 @@ export async function retrieveAdaptive(
   }
 
   const tJudge = Date.now();
-  const { verdict, usage } = await judgeSufficiency(question, first, config);
+  const { verdict, usage, trace } = await judgeSufficiency(question, first, config);
   const judgeMs = Date.now() - tJudge;
-  const done = { chunks: first, iterations: 1, queries, verdict, judgeMs, judgeUsage: usage };
+  const done = { chunks: first, iterations: 1, queries, verdict, judgeMs, judgeUsage: usage, judgeTrace: trace };
   if (verdict.kind !== "insufficient") return done;
 
   queries.push(alternate);

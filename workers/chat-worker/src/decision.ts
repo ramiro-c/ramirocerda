@@ -11,8 +11,13 @@
  *                                            "<name>": { "type": "noul", "noul": 0.98 } },
  *               "usage": { "input_tokens": 120, "output_tokens": 12, ... } }
  *
- * Auth: `Authorization: Bearer <key>` only when a key is configured. Jev does
- * not generate text, so there is no max_tokens / temperature / response_format.
+ * Two tiers: the primary model (jev-1.13-free) is called WITHOUT a key. If that
+ * attempt fails for ANY reason (network, timeout, any non-2xx including the 400
+ * "Model is unavailable" an unknown or retired model gets, or a body that does
+ * not validate), ONE retry goes to the paid fallback model (jev-1.13) with
+ * `Authorization: Bearer <DECISION_API_KEY>`. No key or no fallback model: no
+ * retry. Each attempt has its own DECISION_TIMEOUT_MS. Jev does not generate
+ * text, so there is no max_tokens / temperature / response_format.
  *
  * It never throws: every failure comes back as `{ ok: false, reason }` so the
  * caller can apply its safe default. Each answer is validated against the
@@ -45,7 +50,26 @@ export interface DecisionUsage {
   outputTokens: number;
 }
 
+/** Which model answered: the free primary, the paid fallback, or none (all attempts failed / not run). */
+export type ModelTier = "free" | "paid" | "none";
+
+/** What happened with the paid retry. */
+export type FallbackOutcome = "not_needed" | "used" | "failed" | "skipped_no_key" | "skipped_no_model";
+
+export interface DecisionTrace {
+  tier: ModelTier;
+  /** Model that produced the answers; null when none did. */
+  model: string | null;
+  /** Why the free attempt failed; null when it succeeded. */
+  primaryError: DecisionFailure | null;
+  fallback: FallbackOutcome;
+}
+
 export type DecisionResult =
+  | { ok: true; answers: Record<string, DecisionAnswer>; usage: DecisionUsage; trace: DecisionTrace }
+  | { ok: false; reason: DecisionFailure; trace: DecisionTrace };
+
+type AttemptResult =
   | { ok: true; answers: Record<string, DecisionAnswer>; usage: DecisionUsage }
   | { ok: false; reason: DecisionFailure };
 
@@ -82,11 +106,13 @@ export function parseDecisionResponse(
   return { answers: parsed, usage: { inputTokens: n(usage?.input_tokens), outputTokens: n(usage?.output_tokens) } };
 }
 
-export async function askDecision(
+async function attempt(
   config: DecisionConfig,
+  model: string,
+  apiKey: string | null,
   state: unknown,
   questions: Record<string, DecisionQuestion>,
-): Promise<DecisionResult> {
+): Promise<AttemptResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.timeoutMs);
   try {
@@ -95,9 +121,9 @@ export async function askDecision(
       headers: {
         "Content-Type": "application/json",
         "User-Agent": DECISION_USER_AGENT,
-        ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}),
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
       },
-      body: JSON.stringify({ model: config.model, state, questions }),
+      body: JSON.stringify({ model, state, questions }),
       signal: controller.signal,
     });
     if (!response.ok) return { ok: false, reason: `http_${response.status}` };
@@ -114,4 +140,28 @@ export async function askDecision(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Free attempt (anonymous), then at most ONE paid retry. Never throws. */
+export async function askDecision(
+  config: DecisionConfig,
+  state: unknown,
+  questions: Record<string, DecisionQuestion>,
+): Promise<DecisionResult> {
+  const free = await attempt(config, config.model, null, state, questions);
+  if (free.ok) {
+    return { ...free, trace: { tier: "free", model: config.model, primaryError: null, fallback: "not_needed" } };
+  }
+  const primaryError = free.reason;
+  if (!config.fallbackModel) {
+    return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_model" } };
+  }
+  if (!config.apiKey) {
+    return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_key" } };
+  }
+  const paid = await attempt(config, config.fallbackModel, config.apiKey, state, questions);
+  if (paid.ok) {
+    return { ...paid, trace: { tier: "paid", model: config.fallbackModel, primaryError, fallback: "used" } };
+  }
+  return { ok: false, reason: paid.reason, trace: { tier: "none", model: null, primaryError, fallback: "failed" } };
 }

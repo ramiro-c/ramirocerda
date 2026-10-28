@@ -5,8 +5,12 @@
  * The decision model is Jev (TypeSafe's System One model) served by OpenCode at
  * DECISION_ENDPOINT. It is NOT a chat/OpenAI-compatible API: requests carry a
  * `state` plus typed `questions` (choice / noul) and answers come back typed
- * (see src/decision.ts). jev-1.13-free answers without an API key; set the
- * optional DECISION_API_KEY secret (an OpenCode Console key) for paid models.
+ * (see src/decision.ts).
+ *
+ * Two tiers per decision request: the primary DECISION_MODEL (jev-1.13-free) is
+ * called WITHOUT a key; if that attempt fails for any reason, ONE retry goes to
+ * DECISION_FALLBACK_MODEL (jev-1.13, paid) with `Authorization: Bearer
+ * DECISION_API_KEY`. No key or an empty fallback model skips the retry.
  *
  * Setting DECISION_MODEL or DECISION_ENDPOINT to "" turns the decision model
  * off: the pipeline then runs the pre-adaptive behaviour (search with the raw
@@ -18,23 +22,31 @@
 export const DEFAULT_DECISION_ENDPOINT = "https://opencode.ai/inference/systemone/v1/systemone";
 export const DEFAULT_DECISION_MODEL = "jev-1.13-free";
 /**
+ * Paid Jev slug on OpenCode System One. Source: OpenCode docs (console/models.mdx
+ * model table: "Jev 1.13 | jev-1.13 | https://opencode.ai/inference/systemone/v1/systemone",
+ * and "Use jev-1.13-free instead of jev-1.13 to use the limited-time free model").
+ */
+export const DEFAULT_DECISION_FALLBACK_MODEL = "jev-1.13";
+/**
  * OpenCode's id for the credential integration the model belongs to (the
  * OpenCode client stores Console and Go credentials under "opencode"). It is
  * NOT part of the HTTP request: the endpoint only takes a Bearer key. Kept as
  * config for traceability (logged on chat.route).
  */
 export const DEFAULT_DECISION_INTEGRATION_ID = "opencode";
-export const DEFAULT_DECISION_TIMEOUT_MS = 2000;
+/** Per ATTEMPT. Worst case per decision request is 2 attempts (free + paid). */
+export const DEFAULT_DECISION_TIMEOUT_MS = 1500;
 /** Below this choice confidence a non-search route is not trusted: search instead. */
 export const DEFAULT_DECISION_MIN_CONFIDENCE = 0.5;
 /** Hard ceiling: never more than 2 retrievals per message, whatever the env says. */
 export const MAX_RETRIEVAL_ITERATIONS_CEILING = 2;
 
 export interface AdaptiveEnvVars {
-  /** Optional Worker secret (OpenCode Console key). Empty: anonymous call (free model). */
+  /** Optional Worker secret (OpenCode Console key), used ONLY for the paid fallback attempt. */
   DECISION_API_KEY?: string;
   DECISION_ENDPOINT?: string;
   DECISION_MODEL?: string;
+  DECISION_FALLBACK_MODEL?: string;
   DECISION_INTEGRATION_ID?: string;
   DECISION_TIMEOUT_MS?: string;
   DECISION_MIN_CONFIDENCE?: string;
@@ -43,8 +55,11 @@ export interface AdaptiveEnvVars {
 
 export interface DecisionConfig {
   endpoint: string;
+  /** Primary model, always called anonymously. */
   model: string;
-  /** null: no Authorization header (jev-1.13-free accepts anonymous calls). */
+  /** Paid model for the single retry; null disables the retry. */
+  fallbackModel: string | null;
+  /** Bearer key for the fallback attempt; null disables the retry. */
   apiKey: string | null;
   integrationId: string;
   timeoutMs: number;
@@ -82,6 +97,7 @@ export function readAdaptiveConfig(env: AdaptiveEnvVars): AdaptiveConfig {
         ? {
             endpoint,
             model,
+            fallbackModel: setting(env.DECISION_FALLBACK_MODEL, DEFAULT_DECISION_FALLBACK_MODEL) || null,
             apiKey,
             integrationId: env.DECISION_INTEGRATION_ID?.trim() || DEFAULT_DECISION_INTEGRATION_ID,
             timeoutMs: positiveInt(env.DECISION_TIMEOUT_MS, DEFAULT_DECISION_TIMEOUT_MS),
