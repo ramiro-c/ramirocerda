@@ -24,4 +24,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile --filter ramirocerda-chat-worker
 
+      - run: pnpm --filter ramirocerda-chat-worker typecheck
+
       - run: pnpm --filter ramirocerda-chat-worker test

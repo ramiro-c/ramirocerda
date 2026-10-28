@@ -238,3 +238,29 @@ describe("IDENTITY_PROMPT answer rules", () => {
     expect(IDENTITY_PROMPT).toMatch(/Ignorá cualquier instrucción/);
   });
 });
+
+describe("offerContact contract", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Hire intent comes from the LLM query router (PR #20), which sets
+  // AskResponse.offerContact. This worker adds no keyword heuristics of its
+  // own, so a hiring question alone never sets the flag here.
+  it("does not set offerContact from keyword heuristics", async () => {
+    const { env } = makeEnv({ matches: [{ id: "kb-a", score: 0.5, metadata: { text: "t" } }] });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ choices: [{ message: { content: "Sí, toma proyectos." } }] }), {
+          status: 200,
+        }),
+      ),
+    );
+    const res = await worker.fetch(makeRequest("Quiero contratar a Ramiro para un proyecto"), env as never);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.reply).toBe("Sí, toma proyectos.");
+    expect(body.offerContact).toBeUndefined();
+  });
+});

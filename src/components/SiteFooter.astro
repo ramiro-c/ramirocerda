@@ -1,6 +1,7 @@
 ---
 import type { Lang } from "../i18n/ui";
-import { useTranslations } from "../i18n/utils";
+import { getLocalizedPath, useTranslations } from "../i18n/utils";
+import { landing } from "../i18n/landing";
 
 interface Props {
   lang: Lang;
@@ -22,6 +23,8 @@ const year = new Date().getFullYear();
     >
     <span aria-hidden="true">·</span>
     <a href="mailto:rami992009@gmail.com">{t("footer.email")}</a>
+    <span aria-hidden="true">·</span>
+    <a href={getLocalizedPath(lang, "/privacy/")}>{landing[lang].notice.link}</a>
   </p>
 </footer>
 

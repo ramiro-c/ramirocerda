@@ -2,6 +2,8 @@ import { detectLanguage, type Language } from "./language";
 import { buildRagPrompt, retrieveChunks, type ChatMessage } from "./rag";
 import { generateReply } from "./generate";
 import { validateAskBody } from "./validate";
+import { handleLead, type LeadEnv, type WaitUntil } from "./lead";
+import { handleEvent } from "./events";
 
 interface AskRequest {
   message: string;
@@ -15,6 +17,7 @@ interface AskRequest {
 
 interface AskResponse {
   reply: string;
+  offerContact?: boolean;
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -54,14 +57,9 @@ export const NO_INFO_REPLY: Record<Language, string> = {
   en: "I don't have that information. Ask me about Ramiro's experience, projects, or skills.",
 };
 
-interface Env {
+interface Env extends LeadEnv {
   AI: {
-    run: (
-      model: string,
-      input:
-        | { messages: ChatMessage[]; max_tokens?: number; temperature?: number }
-        | { text: string[] },
-    ) => Promise<{ response?: string; data?: unknown; shape?: unknown }>;
+    run: (model: string, input: unknown) => Promise<{ response?: string; data?: unknown; shape?: unknown }>;
   };
   VECTORIZE: {
     query: (
@@ -306,7 +304,7 @@ async function handleRag(
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: WaitUntil): Promise<Response> {
     const origin = request.headers.get("Origin");
 
     // Handle CORS preflight
@@ -333,6 +331,26 @@ export default {
     if (!isAllowedOrigin(origin)) {
       log("request.origin_blocked", { origin });
       return jsonResponse(403, { error: "Origin not allowed", code: "INVALID_REQUEST" }, origin);
+    }
+
+    const pathname = new URL(request.url).pathname;
+    if (pathname === "/event") {
+      return handleEvent(
+        request,
+        env,
+        (status, payload) => jsonResponse(status, payload, origin),
+        () => new Response(null, { status: 204, headers: corsHeaders(origin) }),
+        log,
+      );
+    }
+    if (pathname === "/lead") {
+      return handleLead(
+        request,
+        env,
+        ctx,
+        (status, payload) => jsonResponse(status, payload, origin),
+        log,
+      );
     }
 
     const clientIp = request.headers.get("CF-Connecting-IP") ?? "unknown";

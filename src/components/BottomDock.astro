@@ -1,0 +1,198 @@
+---
+/**
+ * Fixed bottom layer: storage notice (until dismissed), the mobile sticky CTA
+ * bar and the desktop floating CTA. It publishes its height as --dock-offset
+ * so Botardo's island and the page padding sit above it.
+ * The floating CTA hides while an in page primary CTA is on screen, so there
+ * is never a duplicate primary action in view.
+ */
+import { WHATSAPP_URL } from "../config/site";
+import { landing } from "../i18n/landing";
+import type { Lang } from "../i18n/ui";
+import { getLocalizedPath } from "../i18n/utils";
+import PrimaryCta from "./PrimaryCta.astro";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const copy = landing[lang];
+---
+
+<div class="dock" id="bottomDock">
+  <div class="dock-notice" id="storageNotice" role="region" aria-label={copy.notice.link} hidden>
+    <p>
+      {copy.notice.text}
+      <a href={getLocalizedPath(lang, "/privacy/")}>{copy.notice.link}</a>
+    </p>
+    <button type="button" class="dock-dismiss mono" data-dismiss-notice>{copy.notice.dismiss}</button>
+  </div>
+  <nav class="dock-bar" aria-label={copy.dock.label} data-dock-cta>
+    <PrimaryCta lang={lang} position="dock" compact />
+    {
+      WHATSAPP_URL && (
+        <a class="dock-whatsapp cta-link" href={WHATSAPP_URL} target="_blank" rel="noopener" data-cta-id="whatsapp" data-cta-position="dock">
+          {copy.cta.whatsapp}
+        </a>
+      )
+    }
+  </nav>
+</div>
+
+<style>
+  .dock {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: var(--z-dock);
+    pointer-events: none;
+  }
+  .dock > * {
+    pointer-events: auto;
+  }
+  .dock-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-top: 1.5px solid var(--border);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .dock-notice[hidden] {
+    display: none;
+  }
+  .dock-notice p {
+    margin: 0;
+    max-width: 72ch;
+    text-wrap: pretty;
+  }
+  .dock-notice a {
+    color: inherit;
+  }
+  .dock-dismiss {
+    flex: none;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-4);
+    border: 1.5px solid var(--bg);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--bg);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out);
+  }
+  .dock-dismiss:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* Mobile: full width sticky bar, always present (Botardo floats above it). */
+  .dock-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+    border-top: 1.5px solid var(--border);
+    background: var(--bg);
+  }
+  .dock-bar :global(.cta-primary) {
+    flex: 1;
+  }
+
+  /* Desktop: floating CTA bottom left, out of the way of Botardo (bottom right). */
+  @media (min-width: 768px) {
+    .dock {
+      display: flex;
+      flex-direction: column-reverse;
+    }
+    .dock-bar {
+      position: absolute;
+      left: var(--space-6);
+      bottom: calc(100% + var(--space-6));
+      padding: 0;
+      border: 0;
+      background: none;
+      transition:
+        opacity var(--dur-fast) var(--ease-out),
+        transform var(--dur-move) var(--ease-out);
+    }
+    .dock-bar :global(.cta-primary) {
+      box-shadow: 0 4px 0 var(--border);
+    }
+    .dock-bar[data-hidden] {
+      opacity: 0;
+      transform: translateY(var(--space-4));
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .dock:not(:has(.dock-notice:not([hidden]))) .dock-bar {
+      bottom: var(--space-6);
+    }
+  }
+
+  :global(body) {
+    padding-bottom: var(--dock-offset);
+  }
+</style>
+
+<script>
+  import { STORAGE_KEYS } from "../config/site";
+
+  const dock = document.getElementById("bottomDock");
+  const notice = document.getElementById("storageNotice");
+  const bar = dock?.querySelector<HTMLElement>("[data-dock-cta]");
+  const desktop = window.matchMedia("(min-width: 768px)");
+
+  function publishOffset() {
+    if (!dock) return;
+    // On desktop the CTA floats, so only the notice takes vertical space.
+    const noticeHeight = notice && !notice.hidden ? notice.offsetHeight : 0;
+    const barHeight = bar && !desktop.matches ? bar.offsetHeight : 0;
+    document.documentElement.style.setProperty("--dock-offset", `${noticeHeight + barHeight}px`);
+  }
+
+  try {
+    if (notice && !localStorage.getItem(STORAGE_KEYS.noticeDismissed)) notice.hidden = false;
+  } catch {
+    // Storage blocked: nothing is stored, so there is nothing to disclose.
+  }
+
+  notice?.querySelector("[data-dismiss-notice]")?.addEventListener("click", () => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.noticeDismissed, "1");
+    } catch {
+      // ignore
+    }
+    notice.hidden = true;
+    publishOffset();
+  });
+
+  if (dock && "ResizeObserver" in window) new ResizeObserver(publishOffset).observe(dock);
+  desktop.addEventListener("change", publishOffset);
+  publishOffset();
+
+  // Hide the floating CTA while another primary CTA is visible on the page.
+  const inPage = Array.from(document.querySelectorAll<HTMLElement>(".cta-primary[data-cta-position]")).filter(
+    (el) => !bar?.contains(el),
+  );
+  if (bar && inPage.length && "IntersectionObserver" in window) {
+    const visible = new Set<Element>();
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) visible.add(entry.target);
+        else visible.delete(entry.target);
+      }
+      bar.toggleAttribute("data-hidden", visible.size > 0);
+    });
+    inPage.forEach((el) => observer.observe(el));
+  }
+</script>

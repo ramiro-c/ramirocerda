@@ -1,7 +1,10 @@
 ---
 import "../styles/global.css";
 import Botardo from "../components/Botardo.astro";
-import { switchLangPath } from "../i18n/utils";
+import BottomDock from "../components/BottomDock.astro";
+import ContactDialog from "../components/ContactDialog.astro";
+import { STORAGE_KEYS } from "../config/site";
+import { isNotFoundPath, switchLangPath } from "../i18n/utils";
 
 interface Props {
   title: string;
@@ -10,6 +13,7 @@ interface Props {
 }
 
 const { title, description, lang } = Astro.props;
+const isNotFound = isNotFoundPath(Astro.url.pathname);
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogLocale = lang === "es" ? "es_AR" : "en_US";
 const ogLocaleAlternate = lang === "es" ? "en_US" : "es_AR";
@@ -65,10 +69,18 @@ const structuredData = {
     <meta name="theme-color" content="#F7F5F1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/rc.png" />
-    <link rel="canonical" href={canonicalURL} />
-    <link rel="alternate" hreflang="es" href={esURL} />
-    <link rel="alternate" hreflang="en" href={enURL} />
-    <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
+    {
+      isNotFound ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <>
+          <link rel="canonical" href={canonicalURL} />
+          <link rel="alternate" hreflang="es" href={esURL} />
+          <link rel="alternate" hreflang="en" href={enURL} />
+          <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
+        </>
+      )
+    }
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ramiro Cerdá" />
@@ -76,7 +88,7 @@ const structuredData = {
     <meta property="og:locale:alternate" content={ogLocaleAlternate} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonicalURL} />
+    {!isNotFound && <meta property="og:url" content={canonicalURL} />}
     <meta property="og:image" content={new URL("/og.png", Astro.site)} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -96,6 +108,31 @@ const structuredData = {
       rel="stylesheet"
     />
     <title>{title}</title>
+    <script is:inline define:vars={{ keys: STORAGE_KEYS }}>
+      // Anonymous visitor state, before first paint so returning visitors never
+      // see the first visit copy flash. First party storage only: a random id
+      // and a visit counter (one visit per browser session). See /privacy/.
+      (function () {
+        var root = document.documentElement;
+        root.classList.add("js");
+        try {
+          var id = localStorage.getItem(keys.visitorId);
+          if (!id || !/^[A-Za-z0-9-]{1,64}$/.test(id)) {
+            id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+            localStorage.setItem(keys.visitorId, id);
+          }
+          var count = parseInt(localStorage.getItem(keys.visitCount) || "0", 10) || 0;
+          if (!sessionStorage.getItem(keys.sessionCounted)) {
+            count += 1;
+            localStorage.setItem(keys.visitCount, String(count));
+            sessionStorage.setItem(keys.sessionCounted, "1");
+          }
+          if (count > 1) root.setAttribute("data-returning", "");
+        } catch (e) {
+          // Storage blocked (private mode, policy): everyone is a first visit.
+        }
+      })();
+    </script>
     <script>
       window.va =
         window.va ||
@@ -182,5 +219,14 @@ const structuredData = {
     </main>
     <slot name="footer" />
     <Botardo lang={lang} />
+    <ContactDialog lang={lang} />
+    <BottomDock lang={lang} />
+    <script>
+      import { initReveal } from "../scripts/reveal";
+      import { initTracking } from "../scripts/track";
+
+      initTracking();
+      initReveal();
+    </script>
   </body>
 </html>

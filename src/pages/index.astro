@@ -2,143 +2,17 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
-import HomeHub from "../components/HomeHub.astro";
-import { getLocalizedPath, useTranslations } from "../i18n/utils";
+import HomeLanding from "../components/HomeLanding.astro";
+import { landing } from "../i18n/landing";
+import { useTranslations } from "../i18n/utils";
 
 const lang = "es";
 const t = useTranslations(lang);
-
-const thesis = t("home.thesis");
-const lastSpace = thesis.lastIndexOf(" ");
-const thesisHead = lastSpace === -1 ? "" : thesis.slice(0, lastSpace);
-const thesisTail = thesis.slice(lastSpace + 1);
+const hero = landing[lang].hero;
 ---
 
-<BaseLayout
-  lang={lang}
-  title={`${t("home.brand")} — ${t("home.thesis")}`}
-  description={t("home.support")}
->
+<BaseLayout lang={lang} title={`${t("home.brand")} · ${hero.headline} ${hero.headlineAccent}`} description={hero.sub}>
   <SiteHeader slot="header" lang={lang} />
-
-  <section class="hero">
-    <p class="brand-line mono">{t("home.brand")}</p>
-    <h1 class="display">
-      {thesisHead && <span class="line">{thesisHead}</span>}
-      <span class="line accent">{thesisTail}</span>
-    </h1>
-    <div class="poster-row">
-      <p class="support">{t("home.support")}</p>
-      <div class="ctas">
-        <a class="btn solid" href="mailto:rami992009@gmail.com">{t("cta.email")}</a>
-        <a class="btn" href={getLocalizedPath(lang, "/work/")}>{t("cta.work")}</a>
-        <button class="btn" type="button" data-open-botardo>{t("cta.botardo")}</button>
-      </div>
-    </div>
-    <p class="status-chip mono">
-      <span class="chip-dot" aria-hidden="true"></span>
-      {t("home.statusAvailable")}
-      <span class="chip-loc"><span class="chip-sep" aria-hidden="true">·</span> {t("home.location")}</span>
-    </p>
-  </section>
-
-  <HomeHub lang={lang} />
-
+  <HomeLanding lang={lang} />
   <SiteFooter slot="footer" lang={lang} />
 </BaseLayout>
-
-<style>
-  .hero {
-    padding: 1rem 0 2rem;
-    border-bottom: 3px solid var(--border);
-  }
-  .brand-line {
-    margin: 0 0 0.75rem;
-    color: var(--muted-2);
-    font-size: 0.9rem;
-  }
-  .display {
-    margin: 0 0 1.75rem;
-    font-size: clamp(3rem, 10vw, 6.5rem);
-  }
-  .display .line {
-    display: block;
-  }
-  .accent {
-    color: var(--accent);
-  }
-  .poster-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1.5rem;
-  }
-  .support {
-    max-width: 34rem;
-    color: var(--muted);
-    margin: 0;
-  }
-  .ctas {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-  }
-  .btn {
-    border: 1.5px solid var(--border);
-    background: transparent;
-    color: var(--text);
-    padding: 0.65rem 0.95rem;
-    text-decoration: none;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    border-radius: var(--radius);
-  }
-  .btn.solid {
-    background: var(--border);
-    color: var(--bg);
-  }
-  .chip-loc {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    white-space: nowrap;
-  }
-  .status-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 1.75rem 0 0;
-    padding: 0.4rem 0.7rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .chip-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .hero {
-      animation: rise 0.6s ease both;
-    }
-  }
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-</style>

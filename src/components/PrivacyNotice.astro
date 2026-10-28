@@ -1,0 +1,95 @@
+---
+/** Plain language privacy page for the conversion layer (storage, events, leads). */
+import { CONTACT_EMAIL } from "../config/site";
+import type { Lang } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const copy = {
+  es: {
+    title: "Privacidad",
+    intro: "Esta web no usa cookies de terceros, píxeles de publicidad ni trackers externos. Esto es todo lo que guarda o recibe:",
+    sections: [
+      {
+        h: "En tu navegador",
+        p: "Un identificador anónimo al azar y un contador de visitas (localStorage), para saber si ya pasaste antes y mostrarte un mensaje distinto. No contiene tu nombre, tu email ni tu IP. También recuerdo si cerraste el aviso de almacenamiento. Botardo guarda la conversación en sessionStorage, que se borra al cerrar la pestaña. Podés borrar todo desde la configuración de tu navegador.",
+      },
+      {
+        h: "Métricas propias",
+        p: "Cuando visitás el sitio o tocás un botón de contacto, se envía un evento a mi propio servidor (Cloudflare) con el tipo de evento, el botón, la página, el idioma, si sos visita nueva o recurrente y el identificador anónimo. Lo uso solo para saber qué botones funcionan. Si tu navegador envía Global Privacy Control o Do Not Track, no se envía ningún evento.",
+      },
+      {
+        h: "Formulario de contacto",
+        p: "Si me escribís, guardo tu nombre, email, mensaje, idioma, el navegador que usaste y el identificador anónimo, en una base de datos en Cloudflare, y me llega una copia por mail (enviada con Resend). Cloudflare Turnstile verifica que seas una persona; Turnstile no usa cookies de seguimiento. Uso tus datos solo para responderte.",
+      },
+      {
+        h: "Borrar tus datos",
+        p: `Escribime a ${CONTACT_EMAIL} y borro lo que tenga asociado a tu email.`,
+      },
+    ],
+  },
+  en: {
+    title: "Privacy",
+    intro: "This site uses no third party cookies, ad pixels, or external trackers. This is everything it stores or receives:",
+    sections: [
+      {
+        h: "In your browser",
+        p: "A random anonymous id and a visit counter (localStorage), so the site knows you have been here before and shows a different message. It holds no name, email, or IP. It also remembers whether you dismissed the storage notice. Botardo keeps the conversation in sessionStorage, which clears when you close the tab. You can delete all of it from your browser settings.",
+      },
+      {
+        h: "First party metrics",
+        p: "When you visit or tap a contact button, an event goes to my own server (Cloudflare) with the event type, the button, the page, the language, whether you are a new or returning visitor, and the anonymous id. I only use it to learn which buttons work. If your browser sends Global Privacy Control or Do Not Track, no event is sent.",
+      },
+      {
+        h: "Contact form",
+        p: "If you write to me, I store your name, email, message, language, browser, and the anonymous id in a database on Cloudflare, and get a copy by email (sent through Resend). Cloudflare Turnstile checks that you are human; Turnstile does not use tracking cookies. I only use your details to reply to you.",
+      },
+      {
+        h: "Deleting your data",
+        p: `Email me at ${CONTACT_EMAIL} and I will delete what I have tied to your email.`,
+      },
+    ],
+  },
+}[lang];
+---
+
+<article class="privacy">
+  <h1 class="display">{copy.title}</h1>
+  <p class="intro">{copy.intro}</p>
+  {
+    copy.sections.map((s) => (
+      <section>
+        <h2>{s.h}</h2>
+        <p>{s.p}</p>
+      </section>
+    ))
+  }
+</article>
+
+<style>
+  .privacy {
+    max-width: 680px;
+    padding: var(--space-4) 0 var(--space-12);
+  }
+  h1 {
+    margin: 0 0 var(--space-6);
+    font-size: clamp(2.25rem, 6vw, 3.75rem);
+  }
+  h2 {
+    margin: var(--space-8) 0 var(--space-2);
+    font-size: 1.25rem;
+  }
+  p {
+    margin: 0;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+  .intro {
+    color: var(--text);
+    font-size: 1.125rem;
+  }
+</style>

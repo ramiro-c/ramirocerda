@@ -1,6 +1,7 @@
 ---
 import type { Lang } from "../i18n/ui";
 import { useTranslations } from "../i18n/utils";
+import { landing } from "../i18n/landing";
 
 interface Props {
   lang: Lang;
@@ -8,6 +9,7 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = useTranslations(lang);
+const offer = landing[lang].botardoOffer;
 ---
 
 <button
@@ -40,6 +42,8 @@ const t = useTranslations(lang);
   aria-hidden="true"
   aria-labelledby="botardoTitle"
   data-retry-label={t("botardo.retry")}
+  data-offer-text={offer.text}
+  data-offer-button={offer.button}
   inert
 >
   <header class="botardo-header">
@@ -52,7 +56,8 @@ const t = useTranslations(lang);
 
   <div class="botardo-messages" role="log" aria-live="polite" aria-relevant="additions">
     <div class="botardo-message botardo-assistant botardo-welcome">
-      {t("botardo.welcome")}
+      <span class="first-visit-only">{t("botardo.welcome")}</span>
+      <span class="returning-only">{t("botardo.welcomeReturning")}</span>
     </div>
     <div class="botardo-typing" hidden aria-label={t("botardo.typing")}>
       <span class="botardo-dot"></span>
@@ -82,6 +87,7 @@ const t = useTranslations(lang);
 </section>
 
 <script>
+  import { shouldOfferContact } from "../scripts/botardo-offer.mjs";
   // Production worker by default. For local testing run `wrangler dev --remote`
   // in workers/chat-worker and start the site with
   // PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 pnpm dev
@@ -343,6 +349,30 @@ const t = useTranslations(lang);
     scrollMessagesToBottom(prefersReducedMotion() ? "auto" : "smooth");
   }
 
+  // Hire intent comes from the worker's LLM router (PR #20) as
+  // `offerContact: true`. Offer the shared contact form (lead origin
+  // "botardo"). UI only, never added to the chat history.
+  function appendContactOffer() {
+    if (messages.querySelector(".botardo-offer")) return;
+    const offer = document.createElement("div");
+    offer.className = "botardo-message botardo-assistant botardo-offer";
+    const text = document.createElement("p");
+    text.textContent = modal.getAttribute("data-offer-text") || "";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cta-primary botardo-offer-button";
+    button.dataset.ctaId = "botardo_offer";
+    button.dataset.ctaPosition = "chat";
+    button.textContent = modal.getAttribute("data-offer-button") || "";
+    button.addEventListener("click", () => {
+      closeBotardo();
+      document.dispatchEvent(new CustomEvent("contact:open", { detail: { origin: "botardo" } }));
+    });
+    offer.append(text, button);
+    messages.insertBefore(offer, typingIndicator);
+    scrollMessagesToBottom(prefersReducedMotion() ? "auto" : "smooth");
+  }
+
   function showError(text) {
     const existingError = messages.querySelector(".botardo-error");
     if (existingError) existingError.remove();
@@ -413,6 +443,7 @@ const t = useTranslations(lang);
 
       const data = await response.json();
       appendMessage(data.reply, "assistant");
+      if (shouldOfferContact(data)) appendContactOffer();
       conversationHistory.push({ role: "user", content: text });
       conversationHistory.push({ role: "assistant", content: data.reply });
       conversationHistory = conversationHistory.slice(-MAX_HISTORY_TURNS);
@@ -444,7 +475,11 @@ const t = useTranslations(lang);
 
   function onOpenTriggerClick(event) {
     event.preventDefault();
-    openBotardo(event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+    const trigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    openBotardo(trigger);
+    // Demo chips: data-botardo-prompt sends a sample question right away.
+    const prompt = trigger?.dataset.botardoPrompt;
+    if (prompt && !input.disabled) sendMessage(prompt);
   }
 
   for (const trigger of openTriggers) {
@@ -525,7 +560,7 @@ const t = useTranslations(lang);
   .botardo-island {
     position: fixed;
     right: calc(20px + env(safe-area-inset-right));
-    bottom: calc(20px + env(safe-area-inset-bottom));
+    bottom: calc(20px + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
     width: 58px;
     height: 58px;
     display: grid;
@@ -561,9 +596,9 @@ const t = useTranslations(lang);
   .botardo-modal {
     position: fixed;
     right: calc(20px + env(safe-area-inset-right));
-    bottom: calc(88px + env(safe-area-inset-bottom));
+    bottom: calc(88px + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
     width: min(400px, calc(100vw - 40px));
-    height: min(560px, calc(100vh - 112px));
+    height: min(560px, calc(100vh - 112px - var(--dock-offset, 0px)));
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -736,6 +771,15 @@ const t = useTranslations(lang);
     cursor: pointer;
   }
 
+  .botardo-offer p {
+    margin: 0 0 0.6rem;
+  }
+
+  .botardo-offer-button {
+    min-height: 40px;
+    font-size: 0.9rem;
+  }
+
   .botardo-typing {
     display: flex;
     align-items: center;
@@ -838,13 +882,13 @@ const t = useTranslations(lang);
       right: 16px;
       left: 16px;
       width: auto;
-      bottom: calc(82px + env(safe-area-inset-bottom));
-      height: min(68vh, 520px);
+      bottom: calc(82px + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
+      height: min(68vh, 520px, calc(100dvh - 120px - var(--dock-offset, 0px)));
     }
 
     .botardo-island {
       right: 16px;
-      bottom: 16px;
+      bottom: calc(16px + var(--dock-offset, 0px));
     }
   }
 

@@ -1,0 +1,35 @@
+# Build the Astro site and check every link in the output (es and en).
+# Broken internal links fail the job. External links are fetched with retries:
+# 404, 410 and DNS failures fail the job; bot blocks (401, 403, 429), 5xx and
+# timeouts only warn. See scripts/check-links.mjs for the allowlist.
+name: site links
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Mondays 12:00 UTC (09:00 Buenos Aires), to catch external links that rot.
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: node --test scripts/check-links.test.mjs src/scripts/botardo-offer.test.mjs
+
+      - run: pnpm run build
+
+      - run: pnpm run links -- --external
