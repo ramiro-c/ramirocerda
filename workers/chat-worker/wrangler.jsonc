@@ -40,9 +40,8 @@
     // typed answers out (src/decision.ts). DECISION_MODEL (jev-1.13-free) is always
     // called WITHOUT a key. If that call fails for any reason, ONE retry goes to
     // DECISION_FALLBACK_MODEL (jev-1.13, paid) with Authorization: Bearer of the
-    // optional SECRET DECISION_API_KEY (OpenCode Console key):
-    // wrangler secret put DECISION_API_KEY. No secret or DECISION_FALLBACK_MODEL ""
-    // skips the retry. Set DECISION_MODEL to "" to turn the decision model off
+    // existing SECRET OPENCODE_GO_API_KEY (the generation key; no new secret).
+    // Key unset or DECISION_FALLBACK_MODEL "" skips the retry. Set DECISION_MODEL to "" to turn the decision model off
     // (linear pipeline, offerContact false).
     "DECISION_ENDPOINT": "https://opencode.ai/inference/systemone/v1/systemone",
     "DECISION_MODEL": "jev-1.13-free",

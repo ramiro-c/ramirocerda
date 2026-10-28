@@ -133,10 +133,14 @@ Response:
 - Auth: the primary call (`DECISION_MODEL`, `jev-1.13-free`) is ALWAYS
   anonymous (verified: no key returns 200 with
   `usage.opencode.billing_source: "free"`; an invalid key returns 401). Only
-  the paid fallback sends `Authorization: Bearer <DECISION_API_KEY>`. Paid Jev
-  needs an OpenCode **Console** key (OpenCode docs); whether an OpenCode Go
-  key works there is not verified, so the worker does NOT reuse
-  `OPENCODE_GO_API_KEY`.
+  the paid fallback sends `Authorization: Bearer <OPENCODE_GO_API_KEY>`, the
+  same secret Botardo already uses for generation (no new secret). The
+  OpenCode docs say to use a Console API key on this endpoint; the Go docs
+  say the Go key is copied from the Console too, and nothing in the docs or
+  the OpenCode source says System One rejects it. **Not tested with the real
+  key.** Jev is not in the Go model list, so the paid call is expected to bill
+  the Console pay-as-you-go balance, and the billing docs say paid requests
+  fail with `402` once that balance is zero.
 - `DECISION_INTEGRATION_ID` (`opencode`) is OpenCode's client-side credential
   integration id. It is not a header or body field of the request; the worker
   only logs it.
@@ -155,8 +159,8 @@ Applies to every decision request (router and judge), in `askDecision`:
 1. Attempt 1: `DECISION_MODEL` (`jev-1.13-free`), no `Authorization` header.
 2. If attempt 1 fails for ANY reason above, ONE retry with
    `model = DECISION_FALLBACK_MODEL` (`jev-1.13`) and
-   `Authorization: Bearer <DECISION_API_KEY>`, same `state` and `questions`.
-   Skipped when `DECISION_API_KEY` is unset or `DECISION_FALLBACK_MODEL` is
+   `Authorization: Bearer <OPENCODE_GO_API_KEY>`, same `state` and `questions`.
+   Skipped when `OPENCODE_GO_API_KEY` is unset or `DECISION_FALLBACK_MODEL` is
    `""`. No further retries.
 3. If the retry also fails (or was skipped), the existing safe default:
    router searches the raw message with `offerContact: false`; judge keeps the
@@ -169,12 +173,16 @@ Paid slug evidence (`jev-1.13`): OpenCode docs model table
 OpenCode console itself (`enterprise-spam.ts` calls this endpoint with
 `jev-1.13`), and a live probe without a key: `jev-1.13` answers 401
 "Missing API key." while an unknown model answers 400 "Model is unavailable".
-The paid call itself was NOT exercised (no Console key on the build box).
+The paid call itself was NOT exercised (no real key on the build box). If the
+key is refused, `chat.route` / `chat.rag_judge` show `fallback: "failed"`,
+`model_tier: "none"`, `primary_error` with the free failure and `via` /
+`reason` with the paid failure (`http_401` for a rejected key, `http_402` for
+an empty balance); set `DECISION_FALLBACK_MODEL=""` to stop retrying.
 
 Latency budget: `DECISION_TIMEOUT_MS` (1500) is per attempt. Worst case per
 step is 2 attempts = 3 s; a `search` message has 2 steps (router + judge), so
 the worst-case decision time is 4 x 1.5 s = 6 s, on top of up to 2 embeddings,
-2 Vectorize queries and 1 generation. Without `DECISION_API_KEY` it stays at
+2 Vectorize queries and 1 generation. Without `OPENCODE_GO_API_KEY` it stays at
 2 x 1.5 s = 3 s. The measured free p95 is about 0.36 s, so the timeout is only
 hit when the free model is degraded.
 
@@ -221,12 +229,12 @@ Config (vars in `wrangler.jsonc`, defaults in `src/config.ts`):
 | --- | --- | --- | --- |
 | `DECISION_ENDPOINT` | var | `https://opencode.ai/inference/systemone/v1/systemone` | `""` turns adaptive off |
 | `DECISION_MODEL` | var | `jev-1.13-free` | primary, anonymous; `""` turns adaptive off |
-| `DECISION_FALLBACK_MODEL` | var | `jev-1.13` | paid retry with Bearer `DECISION_API_KEY`; `""` disables the retry |
+| `DECISION_FALLBACK_MODEL` | var | `jev-1.13` | paid retry with Bearer `OPENCODE_GO_API_KEY`; `""` disables the retry |
 | `DECISION_INTEGRATION_ID` | var | `opencode` | not sent; logged on `chat.route` |
 | `DECISION_TIMEOUT_MS` | var | `1500` | per attempt (worst case 6 s total, see above) |
 | `DECISION_MIN_CONFIDENCE` | var | `0.5` | min confidence to skip the KB |
 | `MAX_RETRIEVAL_ITERATIONS` | var | `2` | clamped to 1..2 |
-| `DECISION_API_KEY` | secret, optional | unset (no paid retry) | `wrangler secret put DECISION_API_KEY` (OpenCode Console key); only sent on the paid fallback |
+| `OPENCODE_GO_API_KEY` | secret (existing) | | generation key; also sent as Bearer on the paid Jev fallback only, never on the free call |
 
 Removed: every `OPENROUTER_*` var and the `OPENROUTER_API_KEY` secret (if it
 was ever set: `wrangler secret delete OPENROUTER_API_KEY`), plus the older
@@ -269,7 +277,8 @@ pnpm --filter ramirocerda-chat-worker eval -- --no-judge    # skip the faithfuln
 Real mode needs `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (Workers AI +
 Vectorize read) and `OPENCODE_GO_API_KEY` (generation and the faithfulness
 judge), taken from the environment or the gitignored root `.env` and
-`.dev.vars`; `DECISION_API_KEY` is optional. `DECISION_*` env vars override the
+`.dev.vars`; real mode also enables the paid Jev fallback with that key
+(decision and offline modes turn it off). `DECISION_*` env vars override the
 `wrangler.jsonc` values. It only calls `ai/run`, the Vectorize `query` endpoint
 (no writes), the System One endpoint and the generation endpoint. Decision mode
 calls the real Jev endpoint (anonymous) with no-match Vectorize and stubbed

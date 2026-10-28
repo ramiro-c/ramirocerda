@@ -10,7 +10,8 @@
  * Two tiers per decision request: the primary DECISION_MODEL (jev-1.13-free) is
  * called WITHOUT a key; if that attempt fails for any reason, ONE retry goes to
  * DECISION_FALLBACK_MODEL (jev-1.13, paid) with `Authorization: Bearer
- * DECISION_API_KEY`. No key or an empty fallback model skips the retry.
+ * OPENCODE_GO_API_KEY` (the same key Botardo uses for generation). No key or an
+ * empty fallback model skips the retry.
  *
  * Setting DECISION_MODEL or DECISION_ENDPOINT to "" turns the decision model
  * off: the pipeline then runs the pre-adaptive behaviour (search with the raw
@@ -42,8 +43,8 @@ export const DEFAULT_DECISION_MIN_CONFIDENCE = 0.5;
 export const MAX_RETRIEVAL_ITERATIONS_CEILING = 2;
 
 export interface AdaptiveEnvVars {
-  /** Optional Worker secret (OpenCode Console key), used ONLY for the paid fallback attempt. */
-  DECISION_API_KEY?: string;
+  /** Botardo's OpenCode key (the generation secret). Sent ONLY on the paid fallback attempt. */
+  OPENCODE_GO_API_KEY?: string;
   DECISION_ENDPOINT?: string;
   DECISION_MODEL?: string;
   DECISION_FALLBACK_MODEL?: string;
@@ -59,7 +60,7 @@ export interface DecisionConfig {
   model: string;
   /** Paid model for the single retry; null disables the retry. */
   fallbackModel: string | null;
-  /** Bearer key for the fallback attempt; null disables the retry. */
+  /** Bearer key for the fallback attempt (OPENCODE_GO_API_KEY); null disables the retry. */
   apiKey: string | null;
   integrationId: string;
   timeoutMs: number;
@@ -90,7 +91,7 @@ function setting(raw: string | undefined, fallback: string): string {
 export function readAdaptiveConfig(env: AdaptiveEnvVars): AdaptiveConfig {
   const endpoint = setting(env.DECISION_ENDPOINT, DEFAULT_DECISION_ENDPOINT);
   const model = setting(env.DECISION_MODEL, DEFAULT_DECISION_MODEL);
-  const apiKey = env.DECISION_API_KEY?.trim() || null;
+  const apiKey = env.OPENCODE_GO_API_KEY?.trim() || null;
   return {
     decision:
       endpoint && model

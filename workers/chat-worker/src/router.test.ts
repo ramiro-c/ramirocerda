@@ -97,9 +97,9 @@ describe("routeMessage", () => {
     expect(JSON.stringify(headers)).not.toContain("opencode");
   });
 
-  it("keeps the free primary call anonymous even when DECISION_API_KEY is set", async () => {
+  it("never sends OPENCODE_GO_API_KEY on the free primary call", async () => {
     const { calls } = stubFetch({ router: [routerAnswer("smalltalk")] });
-    await routeMessage("hola", undefined, readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: " console-key " }));
+    await routeMessage("hola", undefined, readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: " go-key " }));
     expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
   });
 
@@ -162,18 +162,18 @@ describe("routeMessage", () => {
     const { calls } = stubFetch({ router: [answer] });
     const decision = await routeMessage("quiero contratarlo", history, config);
     expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "quiero contratarlo", alternateQuery: null, via });
-    // No DECISION_API_KEY in `config`: the paid retry is skipped, a single call is made.
+    // No OPENCODE_GO_API_KEY in `config`: the paid retry is skipped, a single call is made.
     expect(calls.router).toHaveLength(1);
     expect(decision.trace?.tier).toBe("none");
   });
 });
 
 describe("routeMessage: free then paid fallback", () => {
-  const paidConfig = readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "console-key" });
+  const paidConfig = readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "go-key" });
 
   it("uses the paid slug jev-1.13 by default (OpenCode docs, console/models.mdx)", () => {
     expect(DEFAULT_DECISION_FALLBACK_MODEL).toBe("jev-1.13");
-    expect(paidConfig.decision).toMatchObject({ model: "jev-1.13-free", fallbackModel: "jev-1.13", apiKey: "console-key" });
+    expect(paidConfig.decision).toMatchObject({ model: "jev-1.13-free", fallbackModel: "jev-1.13", apiKey: "go-key" });
   });
 
   it("free OK: answers from jev-1.13-free, anonymous, no paid call", async () => {
@@ -202,7 +202,7 @@ describe("routeMessage: free then paid fallback", () => {
     expect(decision).toMatchObject({ route: "off_topic", hireIntent: true, via: "llm" });
     expect(calls.router.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
     expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
-    expect(calls.decisionHeaders[1].Authorization).toBe("Bearer console-key");
+    expect(calls.decisionHeaders[1].Authorization).toBe("Bearer go-key");
     expect(calls.router[1].questions).toEqual(calls.router[0].questions);
     expect(calls.router[1].state).toEqual(calls.router[0].state);
     expect(decision.trace).toEqual({ tier: "paid", model: "jev-1.13", primaryError, fallback: "used" });
@@ -216,7 +216,15 @@ describe("routeMessage: free then paid fallback", () => {
     expect(decision.trace).toEqual({ tier: "none", model: null, primaryError: "http_500", fallback: "failed" });
   });
 
-  it("no DECISION_API_KEY: skips the paid call", async () => {
+  it.each(["http_401", "http_402"] as const)("paid answers %s (key rejected / no balance): safe default, both errors traced", async (paidError) => {
+    const status = Number(paidError.slice(5));
+    stubFetch({ router: [{ status: 400 }, { status }] });
+    const decision = await routeMessage("hola", undefined, paidConfig);
+    expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "hola", via: paidError });
+    expect(decision.trace).toEqual({ tier: "none", model: null, primaryError: "http_400", fallback: "failed" });
+  });
+
+  it("no OPENCODE_GO_API_KEY: skips the paid call", async () => {
     const { calls } = stubFetch({ router: [{ status: 500 }, routerAnswer("smalltalk")] });
     const decision = await routeMessage("hola", undefined, config);
     expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "hola", via: "http_500" });
@@ -229,7 +237,7 @@ describe("routeMessage: free then paid fallback", () => {
     const decision = await routeMessage(
       "hola",
       undefined,
-      readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "console-key", DECISION_FALLBACK_MODEL: "" }),
+      readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "go-key", DECISION_FALLBACK_MODEL: "" }),
     );
     expect(decision).toMatchObject({ route: "search", via: "http_400" });
     expect(calls.router).toHaveLength(1);
@@ -241,7 +249,7 @@ describe("routeMessage: free then paid fallback", () => {
     await routeMessage(
       "hola",
       undefined,
-      readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "k", DECISION_FALLBACK_MODEL: " jev-1.14 " }),
+      readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "k", DECISION_FALLBACK_MODEL: " jev-1.14 " }),
     );
     expect(calls.router.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.14"]);
   });

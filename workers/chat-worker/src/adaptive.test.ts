@@ -153,7 +153,7 @@ describe("adaptive RAG through handleRag", () => {
   it("logs and records which model answered when the free call fails and the paid fallback answers", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const base = makeEnv({ rounds: [[strong]] });
-    const env = { ...base.env, DECISION_API_KEY: "console-key" };
+    const env = { ...base.env, OPENCODE_GO_API_KEY: "go-key" };
     const { body, calls } = await ask(
       env,
       "¿Está disponible para un proyecto freelance?",
@@ -176,19 +176,57 @@ describe("adaptive RAG through handleRag", () => {
       fallback: "used",
     });
     expect(base.datapoints[0]?.blobs?.[3]).toBe("paid");
-    expect(JSON.stringify(events)).not.toContain("console-key");
+    expect(JSON.stringify(events)).not.toContain("go-key");
   });
 
   it("logs model_tier none and keeps the safe default when both decision attempts fail", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const base = makeEnv({ rounds: [[strong]] });
-    const env = { ...base.env, DECISION_API_KEY: "console-key" };
+    const env = { ...base.env, OPENCODE_GO_API_KEY: "go-key" };
     const { body, run } = { ...(await ask(env, "quiero contratarlo", { router: [{ status: 500 }, { status: 500 }] })), run: base.run };
     expect(body).toEqual({ reply: "Respuesta", offerContact: false });
     expect(run.mock.calls[0][1]).toEqual({ text: ["quiero contratarlo"] });
     const routeLog = logSpy.mock.calls.map(([line]) => JSON.parse(String(line))).find((e) => e.event === "chat.route");
     expect(routeLog).toMatchObject({ route: "search", via: "http_500", model_tier: "none", model: null, fallback: "failed" });
     expect(base.datapoints[0]?.blobs?.[3]).toBe("none");
+  });
+
+  it("paid retry reuses the generation key OPENCODE_GO_API_KEY as Bearer; the free call never carries it; never logged", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { env } = makeEnv({ rounds: [[strong]] }); // OPENCODE_GO_API_KEY: "secret-key", no extra secret
+    const { body, calls, fetchMock } = await ask(env, "¿Dónde trabaja?", { router: [{ status: 503 }, routerAnswer("search")] });
+    expect(body.reply).toBe("Respuesta");
+    expect(calls.router.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
+    expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
+    expect(calls.decisionHeaders[1].Authorization).toBe("Bearer secret-key");
+    const genCall = fetchMock.mock.calls.find(([url]) => url === GENERATION_ENDPOINT);
+    const genHeaders = new Headers(genCall?.[1]?.headers as HeadersInit);
+    expect(genHeaders.get("Authorization")).toBe("Bearer secret-key");
+    const output = JSON.stringify([logSpy.mock.calls, errSpy.mock.calls, warnSpy.mock.calls]);
+    expect(output).not.toContain("secret-key");
+  });
+
+  it("skips the paid retry when OPENCODE_GO_API_KEY is unset (fallback skipped_no_key)", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { env } = makeEnv({ rounds: [[strong]] });
+    const { OPENCODE_GO_API_KEY: _omit, ...noKey } = env;
+    const { calls } = await ask(noKey, "¿Dónde trabaja?", { router: [{ status: 500 }, routerAnswer("search")] });
+    expect(calls.router).toHaveLength(1);
+    expect(calls.decisionHeaders.every((h) => h.Authorization === undefined)).toBe(true);
+    const routeLog = logSpy.mock.calls.map(([line]) => JSON.parse(String(line))).find((e) => e.event === "chat.route");
+    expect(routeLog).toMatchObject({ via: "http_500", model_tier: "none", primary_error: "http_500", fallback: "skipped_no_key" });
+  });
+
+  it("a rejected key shows as fallback failed with the free and paid errors in chat.route", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { env } = makeEnv({ rounds: [[strong]] });
+    const { body } = await ask(env, "quiero contratarlo", { router: [{ status: 400 }, { status: 401 }] });
+    expect(body).toEqual({ reply: "Respuesta", offerContact: false });
+    const routeLog = logSpy.mock.calls.map(([line]) => JSON.parse(String(line))).find((e) => e.event === "chat.route");
+    expect(routeLog).toMatchObject({ via: "http_401", model_tier: "none", primary_error: "http_400", fallback: "failed" });
   });
 
   it("propagates offerContact on canned replies too (off_topic and no_info)", async () => {

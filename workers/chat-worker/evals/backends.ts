@@ -6,8 +6,8 @@
  *             delete), the real decision endpoint (Jev via OpenCode System One) for
  *             the router and the sufficiency judge, and the real OpenCode Go
  *             endpoint for generation.
- * - decision: the REAL decision endpoint (anonymous for jev-1.13-free, or
- *             DECISION_API_KEY) with offline Vectorize / generation stubs. Measures
+ * - decision: the REAL decision endpoint (anonymous jev-1.13-free, paid fallback
+ *             off) with offline Vectorize / generation stubs. Measures
  *             the router for real (route, hire_intent, fallbacks, latency, tokens)
  *             without any Cloudflare or OpenCode Go credential.
  * - offline:  deterministic stubs. Vectorize returns no matches, generation is a

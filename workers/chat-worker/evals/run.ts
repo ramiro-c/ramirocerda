@@ -14,8 +14,9 @@
  * Real mode needs, as env vars or in the gitignored files the worker already uses
  * (root .env for Cloudflare, workers/chat-worker/.dev.vars for the model keys):
  *   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN (Workers AI + Vectorize read),
- *   OPENCODE_GO_API_KEY. DECISION_API_KEY is optional (only for the paid fallback
- *   jev-1.13; without it a failed free call is not retried). Router / judge call
+ *   OPENCODE_GO_API_KEY (generation, the faithfulness judge and the paid Jev fallback
+ *   jev-1.13). Decision and offline modes have no real key, so they turn the paid
+ *   fallback off (DECISION_FALLBACK_MODEL=""). Router / judge call
  *   counts include paid retries.
  * The decision model config (DECISION_ENDPOINT / DECISION_MODEL / ...) comes from
  * wrangler.jsonc vars, overridable by env vars of the same name.
@@ -85,15 +86,16 @@ async function main(): Promise<void> {
   let apiKey = "offline";
   // Decision config: wrangler vars, overridable from the environment (key only from the environment).
   const decisionVars: Record<string, string> = {};
-  for (const k of ["DECISION_ENDPOINT", "DECISION_MODEL", "DECISION_FALLBACK_MODEL", "DECISION_INTEGRATION_ID", "DECISION_TIMEOUT_MS", "DECISION_MIN_CONFIDENCE", "MAX_RETRIEVAL_ITERATIONS", "DECISION_API_KEY"]) {
+  for (const k of ["DECISION_ENDPOINT", "DECISION_MODEL", "DECISION_FALLBACK_MODEL", "DECISION_INTEGRATION_ID", "DECISION_TIMEOUT_MS", "DECISION_MIN_CONFIDENCE", "MAX_RETRIEVAL_ITERATIONS"]) {
     const v = process.env[k];
     if (v !== undefined) decisionVars[k] = v;
   }
   if (mode !== "real") {
     bindings = offlineBindings();
+    // No real OPENCODE_GO_API_KEY here: never send the "offline" placeholder as a Bearer key.
+    decisionVars.DECISION_FALLBACK_MODEL = "";
   } else {
     loadLocalSecrets();
-    if (process.env.DECISION_API_KEY && decisionVars.DECISION_API_KEY === undefined) decisionVars.DECISION_API_KEY = process.env.DECISION_API_KEY;
     const required = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OPENCODE_GO_API_KEY"];
     const missing = required.filter((k) => !process.env[k]?.trim());
     if (missing.length > 0) {
@@ -207,7 +209,7 @@ async function main(): Promise<void> {
     linear: summarize("linear", cases, results),
     adaptive: summarize("adaptive", cases, results),
   };
-  const decisionModel = `${envVars.DECISION_MODEL ?? "jev-1.13-free"} vía ${envVars.DECISION_ENDPOINT ?? "OpenCode System One"}${envVars.DECISION_API_KEY ? ` (fallback pago ${envVars.DECISION_FALLBACK_MODEL ?? "jev-1.13"} con DECISION_API_KEY)` : " (sin key, sin fallback pago)"}`;
+  const decisionModel = `${envVars.DECISION_MODEL ?? "jev-1.13-free"} vía ${envVars.DECISION_ENDPOINT ?? "OpenCode System One"}${mode === "real" && envVars.DECISION_FALLBACK_MODEL !== "" ? ` (fallback pago ${envVars.DECISION_FALLBACK_MODEL ?? "jev-1.13"} con OPENCODE_GO_API_KEY)` : " (sin key, sin fallback pago)"}`;
   const modeText =
     mode === "offline"
       ? "OFFLINE con modelo de decisión MOCKEADO (oráculo: devuelve la ruta y el hire_intent esperados de cada caso; el juez de suficiencia siempre dice insuficiente), Vectorize sin matches y generación stub. Solo son reales el conteo de llamadas bajo esos mocks; nada de esto mide la calidad del router."

@@ -148,7 +148,7 @@ describe("retrieveAdaptive", () => {
   it("judge: free fails, paid jev-1.13 with Bearer answers (one retry only)", async () => {
     const { calls } = stubFetch({ judge: [{ status: 503 }, judgeAnswer(0.9)] });
     const { env, query } = makeEnv({ rounds: [[chunk("weak", 0.33)]] });
-    const result = await retrieveAdaptive(followUp, env, readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "k" }));
+    const result = await retrieveAdaptive(followUp, env, readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "k" }));
     expect(calls.judge.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
     expect(calls.decisionHeaders.map((h) => h.Authorization)).toEqual([undefined, "Bearer k"]);
     expect(result.verdict).toEqual({ kind: "sufficient", probability: 0.9 });
@@ -159,7 +159,7 @@ describe("retrieveAdaptive", () => {
   it("judge: free and paid both fail, keeps search 1", async () => {
     const { calls } = stubFetch({ judge: [{ status: 400 }, { error: new TypeError("fetch failed") }] });
     const { env, query } = makeEnv({ rounds: [[chunk("weak", 0.33)]] });
-    const result = await retrieveAdaptive(followUp, env, readAdaptiveConfig({ ...DECISION_VARS, DECISION_API_KEY: "k" }));
+    const result = await retrieveAdaptive(followUp, env, readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "k" }));
     expect(calls.judge).toHaveLength(2);
     expect(result.verdict).toEqual({ kind: "error", reason: "network" });
     expect(result.judgeTrace).toMatchObject({ tier: "none", primaryError: "http_400", fallback: "failed" });
@@ -208,7 +208,7 @@ describe("readAdaptiveConfig", () => {
 
   it("uses safe defaults when optional vars are malformed", () => {
     const cfg = readAdaptiveConfig({
-      DECISION_API_KEY: "  ",
+      OPENCODE_GO_API_KEY: "  ",
       DECISION_MODEL: " jev-1.13 ",
       DECISION_INTEGRATION_ID: " ",
       DECISION_TIMEOUT_MS: "-5",

@@ -15,7 +15,7 @@
  * attempt fails for ANY reason (network, timeout, any non-2xx including the 400
  * "Model is unavailable" an unknown or retired model gets, or a body that does
  * not validate), ONE retry goes to the paid fallback model (jev-1.13) with
- * `Authorization: Bearer <DECISION_API_KEY>`. No key or no fallback model: no
+ * `Authorization: Bearer <OPENCODE_GO_API_KEY>`. No key or no fallback model: no
  * retry. Each attempt has its own DECISION_TIMEOUT_MS. Jev does not generate
  * text, so there is no max_tokens / temperature / response_format.
  *
