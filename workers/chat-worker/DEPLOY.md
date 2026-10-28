@@ -16,7 +16,7 @@ Real RAG + OpenCode Go generation (SDD change `botardo-rag-opencode-go`).
 
 ```bash
 # 1. Create the Vectorize index. IMMUTABLE: dimensions/metric cannot change later.
-wrangler vectorize create botardo-kb --dimensions=1024 --metric=cosine
+pnpm dlx wrangler vectorize create botardo-kb --dimensions=1024 --metric=cosine
 
 # 2. Populate the index from the KB (chunk -> bge-m3 embed -> upsert + prune).
 #    Credentials come from the gitignored root `.env` (auto-loaded) — nothing to export.
@@ -49,7 +49,13 @@ pruned on the next populate run.
 ## Usage observability
 
 The worker writes one Analytics Engine data point per question (binding
-`ANALYTICS`, see `writeUsage` in `src/index.ts`):
+`ANALYTICS`, dataset `ramirocerda_chat_ANALYTICS`, see `writeUsage` in
+`src/index.ts`). The binding is declared under `analytics_engine_datasets` in
+`wrangler.jsonc`; until this fix it sat under an invalid `analytics_engine` key
+(wrangler warned "Unexpected fields" and never bound it), so no data points
+were written before the first deploy that includes the fix. The dataset name
+is pinned in `wrangler.jsonc` and must equal `DATASET` in
+`scripts/chat-stats.mjs` (a test checks it):
 
 - `blob1` language, `blob2` status (`ok` / `rate_limited` / `model_error`),
   `blob3` first 80 chars of the question, `blob4` which decision model
@@ -237,7 +243,7 @@ Config (vars in `wrangler.jsonc`, defaults in `src/config.ts`):
 | `OPENCODE_GO_API_KEY` | secret (existing) | | generation key; also sent as Bearer on the paid Jev fallback only, never on the free call |
 
 Removed: every `OPENROUTER_*` var and the `OPENROUTER_API_KEY` secret (if it
-was ever set: `wrangler secret delete OPENROUTER_API_KEY`), plus the older
+was ever set: `pnpm dlx wrangler secret delete OPENROUTER_API_KEY`), plus the older
 `ROUTER_MODEL`, `REWRITE_MODEL`, `ROUTER_LLM_ENABLED`, `ROUTER_TIMEOUT_MS`,
 `REWRITE_TIMEOUT_MS`, `SUFFICIENCY_MIN_TOP_SCORE`, `SUFFICIENCY_MIN_CHUNKS`.
 `max_tokens`, `response_format` and reasoning effort have no equivalent in
@@ -290,7 +296,7 @@ counts are meaningful. Results are written to `evals/results/` (gitignored).
 ## Secret (step 2.6 — requires the real OpenCode Go key, run manually)
 
 ```bash
-wrangler secret put OPENCODE_GO_API_KEY
+pnpm dlx wrangler secret put OPENCODE_GO_API_KEY
 # paste the OpenCode Go API key at the prompt. It is stored encrypted in
 # Cloudflare and never appears in the repo. Production reads it from the
 # environment; local dev reads it from workers/chat-worker/.dev.vars (gitignored).
@@ -299,7 +305,7 @@ wrangler secret put OPENCODE_GO_API_KEY
 ## Deploy sequence (order matters)
 
 1. Set the secret (below) and populate the index (above) BEFORE the first deploy.
-2. `wrangler deploy` — committed config ships with `RAG_ENABLED="true"`; the RAG
+2. `pnpm dlx wrangler deploy` — committed config ships with `RAG_ENABLED="true"`; the RAG
    pipeline is the only path since the legacy static-KB + llama branch was
    removed (commit "chore(chat-worker): remove legacy kb path").
 3. `RAG_ENABLED` is now a **vestigial flag**: kept in config while its removal
@@ -309,19 +315,57 @@ wrangler secret put OPENCODE_GO_API_KEY
 
 ## Local probes
 
+wrangler is not a dependency of this repo: use `pnpm dlx wrangler` (or a global
+install). Every `wrangler dev` needs Cloudflare auth first (`pnpm dlx wrangler
+login`, or `CLOUDFLARE_API_TOKEN` in a non-interactive shell), because:
+
+- `env.AI` always runs remotely (Workers AI has no local emulation);
+- `env.VECTORIZE` is "not supported" in local mode unless the binding is remote.
+
+So the documented mode is `--remote` (whole worker on Cloudflare's preview,
+real AI + Vectorize). Plain `wrangler dev` (local workerd) also needs the
+login for AI and has no Vectorize, so retrieval cannot work there. Copy
+`.dev.vars.example` to `.dev.vars` and fill `OPENCODE_GO_API_KEY` first
+(without it `/ask` answers 500 `MODEL_ERROR`).
+
 ```bash
-wrangler dev --remote --port 8787        # remote mode: real AI + Vectorize bindings
+cd workers/chat-worker
+cp .dev.vars.example .dev.vars            # then fill OPENCODE_GO_API_KEY
+pnpm dlx wrangler login                   # once per machine
+pnpm dlx wrangler dev --remote --port 8787
 ```
+
+The worker only answers allowed origins (`ALLOWED_ORIGINS` in `src/index.ts`).
+`curl` sends no `Origin` header, so without one every request is `403`. Use the
+local site origin:
+
+```bash
+curl -s http://localhost:8787/ask \
+  -H 'Origin: http://localhost:4321' -H 'Content-Type: application/json' \
+  -d '{"message":"¿Dónde trabaja Ramiro?","sessionId":"local-1"}'
+# 200 {"reply":"...","offerContact":false}
+# follow-up: add "history":[{"role":"user","content":"..."},{"role":"assistant","content":"..."}]
+```
+
+Each request logs JSON lines in the wrangler terminal: `chat.route` (route,
+via, model_tier, fallback, primary_error, hire_intent, offer_contact),
+`chat.rag_judge`, `chat.rag_retrieved`, `chat.ai_done`.
+
+Local Analytics Engine writes are discarded (no `remote: true` on the
+binding), so `pnpm chat:stats` only shows deployed traffic.
 
 ### Testing the widget against the local worker
 
 The site calls the deployed worker by default. To point the widget at a local
-worker, run the site with the override (CORS already allows `http://localhost:4321`):
+worker, run the site with the override (CORS already allows `http://localhost:4321`,
+the `astro dev` default port; another port is rejected with `403`):
 
 ```bash
-cd workers/chat-worker && wrangler dev --remote --port 8787   # terminal 1
-PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 pnpm dev      # terminal 2, repo root
+cd workers/chat-worker && pnpm dlx wrangler dev --remote --port 8787   # terminal 1
+PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 pnpm dev               # terminal 2, repo root
 ```
+
+`PUBLIC_BOTARDO_WORKER_URL` can also live in the root `.env` (see `.env.example`).
 
 Note the widget still reads `url` / `urlAlt` from Vectorize metadata, so note
 links only appear after `pnpm chat:populate` pushes the new metadata.

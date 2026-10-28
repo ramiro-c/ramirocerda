@@ -4,7 +4,8 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import worker, { NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./index";
+import worker from "./index";
+import { NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
 import {
   DECISION_OFF,
   DECISION_VARS,

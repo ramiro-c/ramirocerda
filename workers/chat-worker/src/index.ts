@@ -30,7 +30,11 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:4321",
 ]);
 
-export { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
+// Entry module rule: workerd treats every named VALUE export of this module as
+// an entrypoint and refuses to boot `wrangler dev` on a string/object export
+// ("Incorrect type for map entry ... not of type 'function or ExportedHandler'").
+// Only the default handler and type-only exports live here; prompts are
+// imported from ./prompts directly (tests included).
 
 interface Env extends AdaptiveEnvVars {
   AI: {

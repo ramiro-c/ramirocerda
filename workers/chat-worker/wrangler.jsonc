@@ -11,9 +11,15 @@
       "index_name": "botardo-kb"
     }
   ],
-  "analytics_engine": [
+  // Usage analytics (writeUsage in src/index.ts). The key must be
+  // "analytics_engine_datasets": the old "analytics_engine" key was not a valid
+  // wrangler field, so the binding was never created and writeUsage no-oped.
+  // The dataset name is pinned here and must match DATASET in
+  // scripts/chat-stats.mjs (without "dataset" it would default to "ANALYTICS").
+  "analytics_engine_datasets": [
     {
-      "binding": "ANALYTICS"
+      "binding": "ANALYTICS",
+      "dataset": "ramirocerda_chat_ANALYTICS"
     }
   ],
   "ratelimits": [

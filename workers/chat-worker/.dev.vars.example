@@ -1,0 +1,8 @@
+# Local secrets for `pnpm dlx wrangler dev` (copy to .dev.vars, which is gitignored).
+# Names only: never commit real values.
+
+# REQUIRED. OpenCode Go key: answer generation, plus the single paid Jev retry
+# (DECISION_FALLBACK_MODEL) when the free router/judge call fails.
+# Unset: /ask answers 500 MODEL_ERROR and the paid retry is skipped.
+# Also read by `pnpm chat:eval`.
+OPENCODE_GO_API_KEY=

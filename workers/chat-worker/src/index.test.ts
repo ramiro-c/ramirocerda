@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import worker, { IDENTITY_PROMPT, NO_INFO_REPLY } from "./index";
+import worker from "./index";
+import { IDENTITY_PROMPT, NO_INFO_REPLY } from "./prompts";
 
 interface Datapoint {
   blobs?: string[];

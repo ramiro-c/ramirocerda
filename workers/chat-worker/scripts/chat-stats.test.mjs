@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { DATASET, defaultQueries, runInvocations, runSql } from "./chat-stats.mjs";
@@ -80,5 +82,15 @@ describe("runInvocations", () => {
       { day: "2026-10-15", requests: 15, errors: 1 },
       { day: "2026-09-21", requests: 10, errors: 0 },
     ]);
+  });
+});
+
+describe("DATASET", () => {
+  it("matches the Analytics Engine dataset bound in wrangler.jsonc", () => {
+    const config = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8");
+    expect(config).toContain('"analytics_engine_datasets"');
+    expect(config).not.toMatch(/"analytics_engine"\s*:/);
+    const bound = config.match(/"binding":\s*"ANALYTICS",\s*"dataset":\s*"([^"]+)"/);
+    expect(bound?.[1]).toBe(DATASET);
   });
 });

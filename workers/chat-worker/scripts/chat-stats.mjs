@@ -55,9 +55,9 @@ if (!process.env.CLOUDFLARE_ACCOUNT_ID) {
   }
 }
 
-const WORKER_NAME = "ramirocerda-chat";
-const BINDING_NAME = "ANALYTICS";
-const DATASET = `${WORKER_NAME.replace(/-/g, "_")}_${BINDING_NAME}`;
+// Must equal analytics_engine_datasets[0].dataset in wrangler.jsonc (pinned
+// there explicitly; chat-stats.test.mjs checks they match).
+const DATASET = "ramirocerda_chat_ANALYTICS";
 const TABLE = `events.analyticsEngine.${DATASET}`;
 const SQL_ENDPOINT = "https://api.cloudflare.com/client/v4/analytics/sql";
 const GRAPHQL_ENDPOINT = "https://api.cloudflare.com/client/v4/graphql";
