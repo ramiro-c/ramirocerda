@@ -1,27 +1,27 @@
 /**
- * Adaptive RAG pipeline (control flow owned by code, not by an agent loop).
+ * Adaptive RAG pipeline. The control flow is fixed in code; an LLM (via
+ * OpenRouter) only fills in decisions at two points, each one bounded call:
  *
- *   1. route      heuristics first, small LLM only when ambiguous, fail-open to about_ramiro
- *   2. smalltalk  canned identity reply (no retrieval, no LLM)
- *      off_topic  canned polite refusal (no retrieval, no generation)
- *   3. rewrite    with history only: standalone search query (small LLM, fallback raw message)
- *   4. retrieve   search, score-based sufficiency check, at most one reformulated re-search
- *   5. no chunks  NO_INFO_REPLY (no generation)
- *   6. generate   once, with the ORIGINAL message + history (the rewrite only drives search)
+ *   1. route     ONE call: {route, hire_intent, query}. Any failure, or no
+ *                OpenRouter config: route=search, hire_intent=false, query=raw message.
+ *   2. smalltalk one short generation, no retrieval
+ *      off_topic fixed localized reply, no retrieval, no generation
+ *   3. search    retrieve with the standalone query; ONE judge call decides
+ *                sufficiency and may give a reformulated query for ONE more
+ *                search (hard cap of 2 searches); judge failure keeps search 1
+ *   4. no chunks NO_INFO_REPLY (similarity gate unchanged, no generation)
+ *   5. generate  once, with the ORIGINAL message + history
  *
- * Extra cost over the old linear pipeline, per message, is bounded: at most one
- * router call, one rewrite call, one reformulation call (all small, low
- * max_tokens, temperature 0, hard timeout) and one extra embedding + Vectorize
- * query. Smalltalk and off-topic messages are strictly cheaper than before.
+ * Without OPENROUTER_MODEL / OPENROUTER_API_KEY this is exactly the linear
+ * pipeline that shipped before: search the raw message, gate, generate.
  */
 
 import { readAdaptiveConfig, type AdaptiveEnvVars } from "./config";
 import { generateReply, type GenerateResult } from "./generate";
 import { detectLanguage, type Language } from "./language";
-import { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_REPLY } from "./prompts";
-import { buildRagPrompt, type RetrievedChunk } from "./rag";
-import { rewriteQuery } from "./query";
-import { retrieveAdaptive } from "./retrieval";
+import { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
+import { buildRagPrompt, HISTORY_TURNS, type ChatMessage, type RetrievedChunk } from "./rag";
+import { retrieveAdaptive, type JudgeVerdict } from "./retrieval";
 import { routeMessage, type HistoryTurn, type Route, type RouteDecision } from "./router";
 
 export interface PipelineEnv extends AdaptiveEnvVars {
@@ -44,11 +44,17 @@ export interface PipelineEnv extends AdaptiveEnvVars {
 /** Fallback origin when SITE_ORIGIN is not configured. */
 export const DEFAULT_SITE_ORIGIN = "https://ramirocerda.com.ar";
 
-/** Numeric route codes for the Analytics Engine `double5` column. */
-export const ROUTE_CODE: Record<Route, number> = { about_ramiro: 0, smalltalk: 1, off_topic: 2 };
+/** Numeric codes for the Analytics Engine doubles (append-only schema, see index.ts). */
+export const ROUTE_CODE: Record<Route, number> = { search: 0, smalltalk: 1, off_topic: 2 };
+/** 0 llm answered validly, 1 fallback after an error, 2 OpenRouter not configured. */
+export function routerStatusCode(decision: RouteDecision): number {
+  if (decision.via === "llm") return 0;
+  return decision.via === "not_configured" ? 2 : 1;
+}
+/** 0 skipped, 1 sufficient, 2 insufficient, 3 judge error. */
+export const VERDICT_CODE: Record<JudgeVerdict["kind"], number> = { skipped: 0, sufficient: 1, insufficient: 2, error: 3 };
 
 export type PipelineReply =
-  | { kind: "smalltalk"; reply: string }
   | { kind: "off_topic"; reply: string }
   | { kind: "no_info"; reply: string }
   | { kind: "generated"; result: GenerateResult };
@@ -56,21 +62,32 @@ export type PipelineReply =
 export interface PipelineOutcome {
   lang: Language;
   decision: RouteDecision;
+  /** Contract with the widget (AskResponse.offerContact): the router's hire_intent, false when unknown. */
+  offerContact: boolean;
   outcome: PipelineReply;
   chunks: RetrievedChunk[];
   topScore: number;
-  /** Router + rewrite latency (before the first search). */
-  preRetrievalMs: number;
-  /** Whole adaptive retrieval, including the reformulation call when it happens. */
+  routerMs: number;
+  /** Searches plus the judge call. */
   retrievalMs: number;
+  judgeMs: number;
   generationMs: number;
   /** Vectorize searches actually run (0 for smalltalk/off_topic, otherwise 1 or 2). */
   retrievalIterations: number;
+  /** True when the router's standalone query differs from the raw message. */
   rewritten: boolean;
   searchQueries: string[];
+  verdict: JudgeVerdict;
 }
 
 export type PipelineLogger = (event: string, data?: Record<string, unknown>) => void;
+
+function smalltalkMessages(history: HistoryTurn[] | undefined, message: string): ChatMessage[] {
+  const messages: ChatMessage[] = [{ role: "system", content: `${IDENTITY_PROMPT}\n\n${SMALLTALK_INSTRUCTION}` }];
+  for (const entry of (history ?? []).slice(-HISTORY_TURNS)) messages.push({ role: entry.role, content: entry.content });
+  messages.push({ role: "user", content: message });
+  return messages;
+}
 
 export async function runAdaptivePipeline(opts: {
   message: string;
@@ -83,54 +100,77 @@ export async function runAdaptivePipeline(opts: {
   const log: PipelineLogger = opts.log ?? (() => {});
   const config = readAdaptiveConfig(env);
   const lang = detectLanguage(message);
+  const siteOrigin = env.SITE_ORIGIN ?? DEFAULT_SITE_ORIGIN;
 
-  const tPre = Date.now();
-  const decision = await routeMessage(message, history, env, config);
-  log("chat.route", { route: decision.route, via: decision.via, latency_ms: Date.now() - tPre });
+  const tRoute = Date.now();
+  const decision = await routeMessage(message, history, config, { referer: siteOrigin });
+  const routerMs = Date.now() - tRoute;
+  const offerContact = decision.hireIntent;
+  const rewritten = decision.route === "search" && decision.query !== message;
+  log("chat.route", {
+    route: decision.route,
+    via: decision.via,
+    hire_intent: decision.hireIntent,
+    offer_contact: offerContact,
+    rewritten,
+    latency_ms: routerMs,
+    ...(rewritten ? { query_preview: decision.query.slice(0, 80) } : {}),
+  });
 
   const base = {
     lang,
     decision,
+    offerContact,
     chunks: [] as RetrievedChunk[],
     topScore: 0,
+    routerMs,
     retrievalMs: 0,
+    judgeMs: 0,
     generationMs: 0,
     retrievalIterations: 0,
-    rewritten: false,
+    rewritten,
     searchQueries: [] as string[],
+    verdict: { kind: "skipped" } as JudgeVerdict,
   };
 
-  if (decision.route === "smalltalk") {
-    const replyLang = decision.smalltalkLang ?? lang;
-    const reply = SMALLTALK_REPLY[decision.smalltalkKind ?? "greeting"][replyLang];
-    return { ...base, lang: replyLang, preRetrievalMs: Date.now() - tPre, outcome: { kind: "smalltalk", reply } };
-  }
-  if (decision.route === "off_topic") {
-    return { ...base, preRetrievalMs: Date.now() - tPre, outcome: { kind: "off_topic", reply: OFF_TOPIC_REPLY[lang] } };
-  }
-
-  const tRewrite = Date.now();
-  const rewrite = await rewriteQuery(message, history, env, config);
-  if (history && history.length > 0) {
-    log("chat.query_rewrite", {
-      rewritten: rewrite.rewritten,
-      latency_ms: Date.now() - tRewrite,
-      query_preview: rewrite.query.slice(0, 80),
+  const generate = async (messages: ChatMessage[]) => {
+    const tGen = Date.now();
+    const result = await generateReply({
+      endpoint: env.OPENCODE_GO_ENDPOINT,
+      apiKey: env.OPENCODE_GO_API_KEY,
+      model: env.GENERATION_MODEL,
+      messages,
+      sessionId,
     });
+    const generationMs = Date.now() - tGen;
+    log("chat.ai_done", {
+      latency_ms: generationMs,
+      reply_length: result.status === 200 ? result.content.length : 0,
+      // True only when the upstream ran out of output budget even after the
+      // doubled-budget retry: the visitor got an answer cut mid-sentence.
+      truncated: result.status === 200 && result.truncated === true,
+    });
+    return { result, generationMs };
+  };
+
+  if (decision.route === "off_topic") {
+    return { ...base, outcome: { kind: "off_topic", reply: OFF_TOPIC_REPLY[lang] } };
   }
-  const preRetrievalMs = Date.now() - tPre;
+  if (decision.route === "smalltalk") {
+    const { result, generationMs } = await generate(smalltalkMessages(history, message));
+    return { ...base, generationMs, outcome: { kind: "generated", result } };
+  }
 
   const tRet = Date.now();
-  const retrieval = await retrieveAdaptive(rewrite.query, env, config);
+  const retrieval = await retrieveAdaptive(decision.query, env, config, { referer: siteOrigin });
   const retrievalMs = Date.now() - tRet;
   const chunks = retrieval.chunks;
   const topScore = chunks.reduce((max, c) => Math.max(max, c.score), 0);
-  for (const it of retrieval.log) {
-    log("chat.rag_iteration", {
-      iteration: it.iteration,
-      chunk_count: it.chunkCount,
-      top_score: it.topScore,
-      sufficient: it.sufficient,
+  if (retrieval.verdict.kind !== "skipped") {
+    log("chat.rag_judge", {
+      verdict: retrieval.verdict.kind,
+      ...(retrieval.verdict.kind === "error" ? { reason: retrieval.verdict.reason } : {}),
+      latency_ms: retrieval.judgeMs,
     });
   }
   log("chat.rag_retrieved", { chunk_count: chunks.length, latency_ms: retrievalMs, iterations: retrieval.iterations });
@@ -139,11 +179,11 @@ export async function runAdaptivePipeline(opts: {
     ...base,
     chunks,
     topScore,
-    preRetrievalMs,
     retrievalMs,
+    judgeMs: retrieval.judgeMs,
     retrievalIterations: retrieval.iterations,
-    rewritten: rewrite.rewritten,
     searchQueries: retrieval.queries,
+    verdict: retrieval.verdict,
   };
 
   if (chunks.length === 0) {
@@ -158,25 +198,8 @@ export async function runAdaptivePipeline(opts: {
     history,
     message,
     // Absolute so the widget auto-links the note instead of showing a dead path.
-    siteOrigin: env.SITE_ORIGIN ?? DEFAULT_SITE_ORIGIN,
+    siteOrigin,
   });
-
-  const tGen = Date.now();
-  const result = await generateReply({
-    endpoint: env.OPENCODE_GO_ENDPOINT,
-    apiKey: env.OPENCODE_GO_API_KEY,
-    model: env.GENERATION_MODEL,
-    messages,
-    sessionId,
-  });
-  const generationMs = Date.now() - tGen;
-  log("chat.ai_done", {
-    latency_ms: generationMs,
-    reply_length: result.status === 200 ? result.content.length : 0,
-    // True only when the upstream ran out of output budget even after the
-    // doubled-budget retry: the visitor got an answer cut mid-sentence.
-    truncated: result.status === 200 && result.truncated === true,
-  });
-
+  const { result, generationMs } = await generate(messages);
   return { ...retrieved, generationMs, outcome: { kind: "generated", result } };
 }

@@ -1,5 +1,4 @@
 import type { Language } from "./language";
-import type { SmalltalkKind } from "./router";
 
 // Identity + rules. Kept verbatim from the pre-RAG prompt (R7). The RAG path
 // uses this block plus retrieved chunks + a firm language instruction instead
@@ -37,22 +36,9 @@ export const OFF_TOPIC_REPLY: Record<Language, string> = {
   en: "I only answer questions about Ramiro's professional profile: experience, projects, skills, and his notes. What would you like to know?",
 };
 
-/** Canned identity replies for smalltalk (router said smalltalk): no retrieval, no LLM. */
-export const SMALLTALK_REPLY: Record<SmalltalkKind, Record<Language, string>> = {
-  greeting: {
-    es: "¡Hola! Soy Botardo, el asistente de la web de Ramiro. Preguntame sobre su experiencia, proyectos o skills.",
-    en: "Hi! I'm Botardo, the assistant on Ramiro's website. Ask me about his experience, projects, or skills.",
-  },
-  thanks: {
-    es: "¡De nada! Si querés saber algo más sobre la experiencia, proyectos o skills de Ramiro, preguntame.",
-    en: "You're welcome! If you want to know more about Ramiro's experience, projects, or skills, just ask.",
-  },
-  bye: {
-    es: "¡Chau! Cuando quieras, volvé a preguntarme sobre Ramiro.",
-    en: "Bye! Come back anytime to ask about Ramiro.",
-  },
-  ack: {
-    es: "¡Dale! ¿Querés saber algo más sobre la experiencia, proyectos o skills de Ramiro?",
-    en: "Sure! Anything else you'd like to know about Ramiro's experience, projects, or skills?",
-  },
-};
+/**
+ * Smalltalk (router said smalltalk): no retrieval, one short generation in
+ * Botardo's voice. Appended to IDENTITY_PROMPT instead of retrieved context.
+ */
+export const SMALLTALK_INSTRUCTION = `=== CHARLA ===
+El mensaje del visitante es charla (saludo, agradecimiento, despedida o acuse de recibo), no una pregunta. Respondé en 1 o 2 frases cortas, en el MISMO idioma que usó el visitante (español rioplatense con voseo o inglés). Si corresponde, presentate como Botardo e invitalo a preguntar por la experiencia, proyectos o skills de Ramiro. No des datos sobre Ramiro.`;

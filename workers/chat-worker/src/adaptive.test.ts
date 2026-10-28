@@ -1,9 +1,11 @@
 /**
- * handleRag integration paths for adaptive RAG, driven through worker.fetch.
+ * Adaptive RAG through worker.fetch (handleRag): routing, judge, re-search cap,
+ * the offerContact contract and the not-configured fallback.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import worker, { NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_REPLY } from "./index";
+import worker, { NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./index";
+import { GENERATION_ENDPOINT, OPENROUTER_VARS, stubFetch, type FetchScript } from "./test-utils";
 
 interface Datapoint {
   blobs?: string[];
@@ -13,13 +15,7 @@ interface Datapoint {
 
 type Match = { id: string; score: number; metadata?: Record<string, unknown> };
 
-function makeEnv(opts: {
-  /** Vectorize results per search, in order (last one repeats). */
-  rounds?: Match[][];
-  /** Answer of the small Workers AI model (router / rewrite / reformulation), by call order. */
-  smallLlm?: Array<string | Error>;
-  extraVars?: Record<string, string>;
-}) {
+function makeEnv(opts: { rounds?: Match[][]; configured?: boolean } = {}) {
   const datapoints: Datapoint[] = [];
   const rounds = opts.rounds ?? [[]];
   let round = 0;
@@ -28,14 +24,7 @@ function makeEnv(opts: {
     round += 1;
     return Promise.resolve({ matches });
   });
-  const small = [...(opts.smallLlm ?? [])];
-  const run = vi.fn().mockImplementation((model: string) => {
-    if (model === "@cf/baai/bge-m3") return Promise.resolve({ data: [[0.1, 0.2, 0.3]] });
-    const next = small.shift();
-    if (next === undefined) return Promise.resolve({});
-    if (next instanceof Error) return Promise.reject(next);
-    return Promise.resolve({ response: next });
-  });
+  const run = vi.fn().mockResolvedValue({ data: [[0.1, 0.2, 0.3]] });
   const env = {
     AI: { run },
     VECTORIZE: { query },
@@ -45,13 +34,12 @@ function makeEnv(opts: {
     TOP_K: "5",
     SIMILARITY_THRESHOLD: "0.30",
     GENERATION_MODEL: "deepseek-v4-flash",
-    OPENCODE_GO_ENDPOINT: "https://opencode.example/v1/chat/completions",
+    OPENCODE_GO_ENDPOINT: GENERATION_ENDPOINT,
     EMBEDDING_MODEL: "@cf/baai/bge-m3",
     CHAT_RATE_LIMITER: { limit: () => Promise.resolve({ success: true }) },
-    ...opts.extraVars,
+    ...(opts.configured === false ? {} : OPENROUTER_VARS),
   };
-  const smallCalls = () => run.mock.calls.filter(([model]) => model !== "@cf/baai/bge-m3");
-  return { env, datapoints, query, run, smallCalls };
+  return { env, datapoints, query, run };
 }
 
 function makeRequest(message: string, history: Array<{ role: string; content: string }> = []): Request {
@@ -62,140 +50,157 @@ function makeRequest(message: string, history: Array<{ role: string; content: st
   });
 }
 
-function stubGeneration(content = "Respuesta") {
-  const fetchMock = vi
-    .fn()
-    .mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200 }));
-  vi.stubGlobal("fetch", fetchMock);
-  return fetchMock;
+async function ask(env: unknown, message: string, script: FetchScript, history: Array<{ role: string; content: string }> = []) {
+  const stub = stubFetch(script);
+  const res = await worker.fetch(makeRequest(message, history), env as never);
+  return { res, body: (await res.json()) as Record<string, unknown>, ...stub };
 }
+
+const route = (r: string, hire = false, query = "") => ({ json: { route: r, hire_intent: hire, query } });
+const strong: Match = { id: "kb-a", score: 0.62, metadata: { section: "Experiencia", text: "Ramiro trabaja en LDP." } };
 
 describe("adaptive RAG through handleRag", () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
-  it("answers smalltalk with a canned reply: no Vectorize, no embedding, no LLM", async () => {
-    const { env, query, run, datapoints } = makeEnv({});
-    const fetchMock = stubGeneration();
-
-    const res = await worker.fetch(makeRequest("¡Hola!"), env as never);
+  it("without OPENROUTER_MODEL/KEY behaves like the linear pipeline: no OpenRouter call, raw query, offerContact false", async () => {
+    const { env, query, run } = makeEnv({ rounds: [[strong]], configured: false });
+    const { res, body, calls } = await ask(env, "¿Dónde trabaja?", {});
     expect(res.status).toBe(200);
-    expect((await res.json()).reply).toBe(SMALLTALK_REPLY.greeting.es);
+    expect(body).toEqual({ reply: "Respuesta", offerContact: false });
+    expect(calls.router).toHaveLength(0);
+    expect(calls.judge).toHaveLength(0);
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(run.mock.calls[0][1]).toEqual({ text: ["¿Dónde trabaja?"] });
+  });
+
+  it("smalltalk: one short generation, no embedding, no Vectorize, no judge", async () => {
+    const { env, query, run, datapoints } = makeEnv();
+    const { body, calls } = await ask(env, "hola!", { router: [route("smalltalk")], generation: "¡Hola! Soy Botardo." });
+    expect(body).toEqual({ reply: "¡Hola! Soy Botardo.", offerContact: false });
     expect(query).not.toHaveBeenCalled();
     expect(run).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
-    // Existing columns untouched; appended: route=1 (smalltalk), 0 iterations, not rewritten.
-    expect(datapoints[0]?.blobs).toEqual(["es", "ok", "¡Hola!"]);
-    expect(datapoints[0]?.doubles?.slice(0, 2)).toEqual([0, 0]);
-    expect(datapoints[0]?.doubles?.slice(4, 7)).toEqual([1, 0, 0]);
+    expect(calls.judge).toHaveLength(0);
+    expect(calls.generation).toHaveLength(1);
+    const gen = calls.generation[0] as { messages: Array<{ role: string; content: string }> };
+    expect(gen.messages[0].content).toContain(SMALLTALK_INSTRUCTION);
+    expect(gen.messages.at(-1)).toEqual({ role: "user", content: "hola!" });
+    expect(datapoints[0]?.doubles?.slice(4, 11)).toEqual([1, 0, 0, expect.any(Number), 0, 0, 0]);
   });
 
-  it("answers English smalltalk in English even though language detection defaults to es", async () => {
-    const { env } = makeEnv({});
-    stubGeneration();
-    const res = await worker.fetch(makeRequest("thanks!"), env as never);
-    expect((await res.json()).reply).toBe(SMALLTALK_REPLY.thanks.en);
-  });
-
-  it("refuses off-topic messages: no Vectorize, no generation, one small router call", async () => {
-    const { env, query, smallCalls, datapoints } = makeEnv({ smallLlm: ["off_topic"] });
-    const fetchMock = stubGeneration();
-
-    const res = await worker.fetch(makeRequest("What is the capital of France?"), env as never);
-    expect(res.status).toBe(200);
-    expect((await res.json()).reply).toBe(OFF_TOPIC_REPLY.en);
+  it("off_topic: fixed localized reply, no retrieval, no generation", async () => {
+    const { env, query, run, datapoints } = makeEnv();
+    const { body, calls } = await ask(env, "¿Cuál es la capital de Francia?", { router: [route("off_topic")] });
+    expect(body).toEqual({ reply: OFF_TOPIC_REPLY.es, offerContact: false });
     expect(query).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(smallCalls()).toHaveLength(1);
+    expect(run).not.toHaveBeenCalled();
+    expect(calls.generation).toHaveLength(0);
     expect(datapoints[0]?.doubles?.[4]).toBe(2);
     expect(datapoints[0]?.doubles?.[5]).toBe(0);
   });
 
-  it("fails open to retrieval when the router LLM errors", async () => {
-    const { env, query } = makeEnv({
-      smallLlm: [new Error("router down")],
-      rounds: [[{ id: "kb-a", score: 0.6, metadata: { text: "t" } }]],
+  it("exposes hire_intent as offerContact on the reply, in the logs and in analytics", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { env, datapoints } = makeEnv({ rounds: [[strong]] });
+    const { body } = await ask(env, "¿Está disponible para un proyecto freelance?", {
+      router: [route("search", true, "disponibilidad de Ramiro para freelance")],
+      judge: [{ json: { sufficient: true, reformulated_query: "" } }],
     });
-    const fetchMock = stubGeneration("Ok");
-    const res = await worker.fetch(makeRequest("Tell me something interesting"), env as never);
-    expect(res.status).toBe(200);
-    expect(query).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(body).toEqual({ reply: "Respuesta", offerContact: true });
+    const routeLog = logSpy.mock.calls.map(([line]) => JSON.parse(String(line))).find((e) => e.event === "chat.route");
+    expect(routeLog).toMatchObject({ route: "search", via: "llm", hire_intent: true, offer_contact: true, rewritten: true });
+    expect(datapoints[0]?.doubles?.[8]).toBe(1);
+    expect(datapoints[0]?.doubles?.[9]).toBe(0);
+    expect(datapoints[0]?.doubles?.[10]).toBe(1);
   });
 
-  it("re-searches once when the first retrieval is insufficient, then generates with merged chunks", async () => {
-    const { env, query, datapoints } = makeEnv({
-      // Router is heuristic (mentions Ramiro), so the only small call is the reformulation.
-      smallLlm: ["certificaciones de Ramiro en Google Cloud"],
-      rounds: [
-        [{ id: "kb-weak", score: 0.33, metadata: { section: "Stack", text: "texto débil" } }],
-        [{ id: "kb-cert", score: 0.66, metadata: { section: "Certificaciones", text: "10 certificaciones" } }],
-      ],
+  it("propagates offerContact on canned replies too (off_topic and no_info)", async () => {
+    const offTopic = await ask(makeEnv().env, "¿me ayudás con un script?", { router: [route("off_topic", true)] });
+    expect(offTopic.body.offerContact).toBe(true);
+    vi.unstubAllGlobals();
+    const noInfo = await ask(makeEnv({ rounds: [[]] }).env, "¿Cuál es su tarifa?", {
+      router: [route("search", true, "tarifa de Ramiro")],
+      judge: [{ json: { sufficient: false, reformulated_query: "precio por hora Ramiro" } }],
     });
-    const fetchMock = stubGeneration("Hizo el path de AI Agents.");
-
-    const res = await worker.fetch(makeRequest("¿Qué cursos hizo Ramiro?"), env as never);
-    expect(res.status).toBe(200);
-    expect(query).toHaveBeenCalledTimes(2);
-    const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
-    expect(body.messages[0].content).toContain("10 certificaciones");
-    expect(body.messages[0].content).toContain("texto débil");
-    // The visitor's original message is what the generation model answers.
-    expect(body.messages.at(-1).content).toBe("¿Qué cursos hizo Ramiro?");
-    expect(datapoints[0]?.doubles?.[0]).toBe(2);
-    expect(datapoints[0]?.doubles?.[1]).toBeCloseTo(0.66);
-    expect(datapoints[0]?.doubles?.[5]).toBe(2);
+    expect(noInfo.body).toEqual({ reply: NO_INFO_REPLY.es, offerContact: true });
   });
 
-  it("keeps NO_INFO_REPLY without generation when both searches find nothing", async () => {
-    const { env, query } = makeEnv({ smallLlm: ["otra consulta sobre Ramiro"], rounds: [[], []] });
-    const fetchMock = stubGeneration();
-    const res = await worker.fetch(makeRequest("¿Cuál es el color favorito de Ramiro?"), env as never);
-    expect((await res.json()).reply).toBe(NO_INFO_REPLY.es);
-    expect(query).toHaveBeenCalledTimes(2);
-    expect(fetchMock).not.toHaveBeenCalled();
+  it("falls back to search with the raw message and offerContact false when the router fails", async () => {
+    const { env, run, datapoints } = makeEnv({ rounds: [[strong]] });
+    const { body, calls } = await ask(env, "¿Quiero contratarlo, cómo hago?", {
+      router: [{ content: "definitely hiring!" }],
+      judge: [{ json: { sufficient: true, reformulated_query: "" } }],
+    });
+    expect(body).toEqual({ reply: "Respuesta", offerContact: false });
+    expect(run.mock.calls[0][1]).toEqual({ text: ["¿Quiero contratarlo, cómo hago?"] });
+    expect(calls.generation).toHaveLength(1);
+    expect(datapoints[0]?.doubles?.[9]).toBe(1);
   });
 
-  it("rewrites follow-ups with history and searches with the standalone query", async () => {
-    const { env, run, query, datapoints } = makeEnv({
-      smallLlm: ["about_ramiro", "¿Dónde trabajó Ramiro antes de LDP?"],
-      rounds: [[{ id: "kb-prev", score: 0.58, metadata: { text: "DevGAM" } }]],
-    });
-    const fetchMock = stubGeneration("En DevGAM.");
-    const history = [
-      { role: "user", content: "¿Dónde trabaja Ramiro?" },
-      { role: "assistant", content: "En LDP como Tech Lead." },
-    ];
-    const res = await worker.fetch(makeRequest("¿y antes?", history), env as never);
-    expect(res.status).toBe(200);
-    const embedCall = run.mock.calls.find(([model]) => model === "@cf/baai/bge-m3");
-    expect(embedCall?.[1]).toEqual({ text: ["¿Dónde trabajó Ramiro antes de LDP?"] });
-    expect(query).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
-    expect(body.messages.at(-1).content).toBe("¿y antes?");
-    expect(datapoints[0]?.doubles?.[6]).toBe(1);
-  });
-
-  it("searches with the raw message when the rewrite fails", async () => {
-    const { env, run } = makeEnv({
-      smallLlm: ["about_ramiro", new Error("rewrite down")],
-      rounds: [[{ id: "kb-prev", score: 0.58, metadata: { text: "DevGAM" } }]],
-    });
-    stubGeneration("Ok");
+  it("searches with the router's standalone query but generates with the original message + history", async () => {
+    const { env, run, datapoints } = makeEnv({ rounds: [[strong]] });
     const history = [
       { role: "user", content: "¿Dónde trabaja Ramiro?" },
       { role: "assistant", content: "En LDP." },
     ];
-    await worker.fetch(makeRequest("¿y antes?", history), env as never);
-    const embedCall = run.mock.calls.find(([model]) => model === "@cf/baai/bge-m3");
-    expect(embedCall?.[1]).toEqual({ text: ["¿y antes?"] });
+    const { calls } = await ask(
+      env,
+      "¿y antes?",
+      { router: [route("search", false, "trabajos anteriores de Ramiro antes de LDP")], judge: [{ json: { sufficient: true, reformulated_query: "" } }] },
+      history,
+    );
+    expect(run.mock.calls[0][1]).toEqual({ text: ["trabajos anteriores de Ramiro antes de LDP"] });
+    const gen = calls.generation[0] as { messages: Array<{ role: string; content: string }> };
+    expect(gen.messages.at(-1)).toEqual({ role: "user", content: "¿y antes?" });
+    expect(gen.messages[1]).toEqual({ role: "user", content: "¿Dónde trabaja Ramiro?" });
+    expect(datapoints[0]?.doubles?.[6]).toBe(1);
   });
 
-  it("does not call the rewrite model without history", async () => {
-    const { env, smallCalls } = makeEnv({ rounds: [[{ id: "kb-a", score: 0.6, metadata: { text: "t" } }]] });
-    stubGeneration("Ok");
-    await worker.fetch(makeRequest("¿Qué stack usa Ramiro?"), env as never);
-    expect(smallCalls()).toHaveLength(0);
+  it("re-searches once when the judge says insufficient, then generates with merged chunks", async () => {
+    const weak: Match = { id: "kb-weak", score: 0.33, metadata: { section: "Cursos", text: "algo" } };
+    const good: Match = { id: "kb-certs", score: 0.66, metadata: { section: "Certificaciones", text: "GCP" } };
+    const { env, query, datapoints } = makeEnv({ rounds: [[weak], [good, weak]] });
+    const { body, calls } = await ask(env, "¿hizo cursos?", {
+      router: [route("search", false, "cursos de Ramiro")],
+      judge: [{ json: { sufficient: false, reformulated_query: "certificaciones de Ramiro" } }],
+    });
+    expect(body.reply).toBe("Respuesta");
+    expect(query).toHaveBeenCalledTimes(2);
+    expect(calls.judge).toHaveLength(1);
+    const gen = calls.generation[0] as { messages: Array<{ content: string }> };
+    expect(gen.messages[0].content).toContain("GCP");
+    expect(datapoints[0]?.doubles?.[0]).toBe(2);
+    expect(datapoints[0]?.doubles?.[1]).toBeCloseTo(0.66);
+    expect(datapoints[0]?.doubles?.[5]).toBe(2);
+    expect(datapoints[0]?.doubles?.[10]).toBe(2);
+  });
+
+  it("caps a message at 1 router call, 1 judge call and 2 searches", async () => {
+    const { env, query } = makeEnv({ rounds: [[], [], []] });
+    const { body, calls } = await ask(env, "algo muy raro", {
+      router: [route("search", false, "algo muy raro"), route("search")],
+      judge: [
+        { json: { sufficient: false, reformulated_query: "otra cosa" } },
+        { json: { sufficient: false, reformulated_query: "tercera" } },
+      ],
+    });
+    expect(body).toEqual({ reply: NO_INFO_REPLY.es, offerContact: false });
+    expect(calls.router).toHaveLength(1);
+    expect(calls.judge).toHaveLength(1);
+    expect(query).toHaveBeenCalledTimes(2);
+    expect(calls.generation).toHaveLength(0);
+  });
+
+  it("keeps the 429 error body verbatim (no offerContact) when generation is rate limited", async () => {
+    const { env } = makeEnv({ rounds: [[strong]], configured: false });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("rate", { status: 429 })));
+    const res = await worker.fetch(makeRequest("¿Dónde trabaja?"), env as never);
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({
+      error: "Demasiadas consultas. Esperá un momento y volvé a intentar.",
+      code: "RATE_LIMITED",
+    });
   });
 });

@@ -1,7 +1,6 @@
 import type { AdaptiveEnvVars } from "./config";
 import { detectLanguage } from "./language";
-import { ROUTE_CODE, runAdaptivePipeline } from "./pipeline";
-import type { Route } from "./router";
+import { ROUTE_CODE, routerStatusCode, runAdaptivePipeline, VERDICT_CODE, type PipelineOutcome } from "./pipeline";
 import { validateAskBody } from "./validate";
 
 interface AskRequest {
@@ -14,8 +13,14 @@ interface AskRequest {
   sessionId?: string;
 }
 
-interface AskResponse {
+/**
+ * 200 body. CONTRACT with the widget (PR #21): `offerContact` is ALWAYS present;
+ * true only when the router detected hiring intent, false when unknown (router
+ * not configured or failed). Error bodies (429/500) keep their verbatim shape.
+ */
+export interface AskResponse {
   reply: string;
+  offerContact: boolean;
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -25,7 +30,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:4321",
 ]);
 
-export { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_REPLY } from "./prompts";
+export { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
 
 interface Env extends AdaptiveEnvVars {
   AI: {
@@ -67,8 +72,10 @@ function log(event: string, data: Record<string, unknown> = {}): void {
 // Analytics Engine data point schema (shared with scripts/chat-stats.mjs):
 //   blobs:   [0] detected language ("es"|"en") | [1] "ok"|"rate_limited"|"model_error" | [2] first 80 chars of the question
 //   doubles: [0] chunk_count | [1] top similarity score | [2] retrieval latency ms | [3] generation latency ms
-//            (appended by adaptive RAG, never reorder) [4] route code (0 about_ramiro, 1 smalltalk, 2 off_topic)
-//            | [5] retrieval iterations (0..2) | [6] query rewritten (0/1) | [7] router + rewrite latency ms
+//            (appended by adaptive RAG, never reorder) [4] route code (0 search, 1 smalltalk, 2 off_topic)
+//            | [5] retrieval iterations (0..2) | [6] query rewritten by the router (0/1) | [7] router latency ms
+//            | [8] offerContact (0/1) | [9] router status (0 llm, 1 fallback after error, 2 not configured)
+//            | [10] judge verdict (0 skipped, 1 sufficient, 2 insufficient, 3 error) | [11] judge latency ms
 //   indexes: [0] conversation sessionId (one conversation = one AE index slot)
 function writeUsage(
   env: Env,
@@ -81,10 +88,8 @@ function writeUsage(
     topScore: number;
     retrievalMs: number;
     generationMs: number;
-    route?: Route;
-    retrievalIterations?: number;
-    rewritten?: boolean;
-    preRetrievalMs?: number;
+    /** Absent on the rate-limit gate datapoint: adaptive doubles are written as 0. */
+    run?: PipelineOutcome;
   },
 ): void {
   env.ANALYTICS?.writeDataPoint({
@@ -95,10 +100,14 @@ function writeUsage(
       point.topScore,
       point.retrievalMs,
       point.generationMs,
-      ROUTE_CODE[point.route ?? "about_ramiro"],
-      point.retrievalIterations ?? 0,
-      point.rewritten ? 1 : 0,
-      point.preRetrievalMs ?? 0,
+      point.run ? ROUTE_CODE[point.run.decision.route] : 0,
+      point.run?.retrievalIterations ?? 0,
+      point.run?.rewritten ? 1 : 0,
+      point.run?.routerMs ?? 0,
+      point.run?.offerContact ? 1 : 0,
+      point.run ? routerStatusCode(point.run.decision) : 0,
+      point.run ? VERDICT_CODE[point.run.verdict.kind] : 0,
+      point.run?.judgeMs ?? 0,
     ],
   });
 }
@@ -168,8 +177,8 @@ function modelErrorResponse(origin: string | null): Response {
   );
 }
 
-function okReply(reply: string, origin: string | null): Response {
-  const response: AskResponse = { reply };
+function okReply(reply: string, offerContact: boolean, origin: string | null): Response {
+  const response: AskResponse = { reply, offerContact };
   return new Response(JSON.stringify(response), {
     status: 200,
     headers: {
@@ -204,15 +213,12 @@ async function handleRag(
       topScore: run.topScore,
       retrievalMs: run.retrievalMs,
       generationMs: run.generationMs,
-      route: run.decision.route,
-      retrievalIterations: run.retrievalIterations,
-      rewritten: run.rewritten,
-      preRetrievalMs: run.preRetrievalMs,
+      run,
     });
 
   if (outcome.kind !== "generated") {
     usage("ok");
-    return okReply(outcome.reply, origin);
+    return okReply(outcome.reply, run.offerContact, origin);
   }
 
   const gen = outcome.result;
@@ -226,7 +232,7 @@ async function handleRag(
   }
 
   usage("ok");
-  return okReply(gen.content.trim(), origin);
+  return okReply(gen.content.trim(), run.offerContact, origin);
 }
 
 export default {
@@ -285,8 +291,8 @@ export default {
 
       const { message, history, sessionId } = parsed.value;
 
-      // Adaptive RAG pipeline (route -> rewrite -> retrieve with sufficiency
-      // check and at most one re-search -> generate via OpenCode Go, see
+      // Adaptive RAG pipeline (LLM router, retrieval with an LLM sufficiency
+      // judge and at most one re-search, generation via OpenCode Go; see
       // src/pipeline.ts) is the only path since the legacy static-KB + llama
       // branch was removed. RAG_ENABLED is retained as a vestigial flag
       // (cleanup is a documented follow-up); the flag stays "true" in config.

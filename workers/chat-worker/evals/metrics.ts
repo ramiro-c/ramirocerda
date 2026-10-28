@@ -8,16 +8,18 @@ export type PipelineName = "linear" | "adaptive";
 
 export interface EvalCase {
   id: string;
-  category: "smalltalk" | "kb" | "followup" | "off_topic" | "unanswerable";
+  category: "smalltalk" | "kb" | "followup" | "off_topic" | "unanswerable" | "hire";
   lang: "es" | "en";
   message: string;
   history?: Array<{ role: "user" | "assistant"; content: string }>;
   expected: {
-    route: "smalltalk" | "about_ramiro" | "off_topic" | null;
+    route: "search" | "smalltalk" | "off_topic" | null;
     retrieve: boolean | null;
     answerable: boolean | null;
     expectedChunks?: string[];
     expectedFacts?: string[];
+    /** Expected AskResponse.offerContact (router hire_intent); null = not graded. */
+    offerContact: boolean | null;
   };
 }
 
@@ -27,9 +29,11 @@ export interface CaseResult {
   /** Adaptive only. */
   route: string | null;
   routeVia: string | null;
+  /** AskResponse.offerContact. The linear pipeline has no router: always false. */
+  offerContact: boolean;
   searched: boolean;
   chunkIds: string[];
-  replyKind: "smalltalk" | "off_topic" | "no_info" | "generated" | "error";
+  replyKind: "off_topic" | "no_info" | "generated" | "error";
   reply: string | null;
   /** true/false when known (canned decline, or judge verdict); null when not judged. */
   declined: boolean | null;
@@ -78,6 +82,9 @@ export interface PipelineSummary {
   errors: number;
   retrievalDecision: Ratio;
   route: Ratio | null;
+  offerContact: Ratio;
+  /** Router answers that were NOT a valid LLM decision (error, timeout, invalid JSON). */
+  routerFallbacks: Ratio | null;
   recall: { mean: number; total: number };
   facts: Ratio;
   faithfulness: Ratio;
@@ -96,6 +103,10 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     pipeline === "adaptive"
       ? ratio(withCase.filter(({ c }) => c.expected.route !== null).map(({ r, c }) => r.route === c.expected.route))
       : null;
+  const offer = withCase
+    .filter(({ c }) => c.expected.offerContact !== null)
+    .map(({ r, c }) => r.offerContact === c.expected.offerContact);
+  const fallbacks = pipeline === "adaptive" ? ratio(rs.filter((r) => r.routeVia !== null).map((r) => r.routeVia !== "llm")) : null;
   const recalls = withCase
     .filter(({ c }) => (c.expected.expectedChunks?.length ?? 0) > 0)
     .map(({ r, c }) => chunkRecall(c.expected.expectedChunks!, r.chunkIds));
@@ -120,6 +131,8 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     errors: rs.filter((r) => r.replyKind === "error").length,
     retrievalDecision: ratio(decision),
     route,
+    offerContact: ratio(offer),
+    routerFallbacks: fallbacks,
     recall: { mean: recalls.length ? recalls.reduce((a, b) => a + b, 0) / recalls.length : 0, total: recalls.length },
     facts: ratio(facts),
     faithfulness: ratio(faithful),
@@ -134,6 +147,7 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
 }
 
 const PENDING = "pending (real backends)";
+const MOCKED = "mock (no mide el router)";
 
 function fmtRatio(r: Ratio | null): string {
   if (!r) return "n/a";
@@ -143,14 +157,23 @@ function fmtRatio(r: Ratio | null): string {
 
 const f1 = (n: number) => (Math.round(n * 100) / 100).toString();
 
+/**
+ * Offline: quality metrics are pending, and every adaptive metric that depends on
+ * the router's judgement is labeled as mocked (the offline router is an oracle
+ * that echoes the expected labels). Call counts are real counts under the mocks.
+ */
 export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, opts: { offline: boolean }): string {
   const { linear, adaptive } = summaries;
   const real = (s: string) => (opts.offline ? PENDING : s);
+  const routerDependent = (s: string) => (opts.offline ? MOCKED : s);
+  const pair = (a: number, b: number) => `${Math.round(a)} / ${Math.round(b)}`;
   const rows: Array<[string, string, string]> = [
     ["Casos", String(linear.cases), String(adaptive.cases)],
     ["Errores (excepción o 429/500)", String(linear.errors), String(adaptive.errors)],
-    ["Decisión de buscar correcta", fmtRatio(linear.retrievalDecision), fmtRatio(adaptive.retrievalDecision)],
-    ["Ruta correcta (router)", "n/a", fmtRatio(adaptive.route)],
+    ["Decisión de buscar correcta", fmtRatio(linear.retrievalDecision), routerDependent(fmtRatio(adaptive.retrievalDecision))],
+    ["Ruta correcta (router LLM)", "n/a (sin router)", routerDependent(fmtRatio(adaptive.route))],
+    ["offerContact (hire_intent) correcto", fmtRatio(linear.offerContact), routerDependent(fmtRatio(adaptive.offerContact))],
+    ["Fallbacks del router (error, timeout, JSON inválido)", "n/a", routerDependent(fmtRatio(adaptive.routerFallbacks))],
     [
       "Recall de chunks esperados (promedio)",
       real(`${f1(linear.recall.mean)} (n=${linear.recall.total})`),
@@ -164,19 +187,20 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
       real(`${Math.round(linear.latency.p50)} / ${Math.round(linear.latency.p95)} / ${Math.round(linear.latency.mean)}`),
       real(`${Math.round(adaptive.latency.p50)} / ${Math.round(adaptive.latency.p95)} / ${Math.round(adaptive.latency.mean)}`),
     ],
+    ["Llamadas al router (OpenRouter) por consulta", f1(linear.perQuery.routerCalls), f1(adaptive.perQuery.routerCalls)],
+    ["Llamadas al juez de suficiencia por consulta", f1(linear.perQuery.judgeCalls), f1(adaptive.perQuery.judgeCalls)],
     ["Llamadas de generación por consulta", f1(linear.perQuery.generationCalls), f1(adaptive.perQuery.generationCalls)],
-    ["Llamadas LLM chico por consulta", f1(linear.perQuery.smallLlmCalls), f1(adaptive.perQuery.smallLlmCalls)],
     ["Embeddings por consulta", f1(linear.perQuery.embeddingCalls), f1(adaptive.perQuery.embeddingCalls)],
     ["Queries a Vectorize por consulta", f1(linear.perQuery.vectorizeQueries), f1(adaptive.perQuery.vectorizeQueries)],
     [
-      "Tokens generación in / out por consulta",
-      real(`${Math.round(linear.perQuery.genTokensIn)} / ${Math.round(linear.perQuery.genTokensOut)}`),
-      real(`${Math.round(adaptive.perQuery.genTokensIn)} / ${Math.round(adaptive.perQuery.genTokensOut)}`),
+      "Tokens OpenRouter in / out por consulta",
+      real(pair(linear.perQuery.orTokensIn, linear.perQuery.orTokensOut)),
+      real(pair(adaptive.perQuery.orTokensIn, adaptive.perQuery.orTokensOut)),
     ],
     [
-      "Tokens LLM chico in / out por consulta",
-      real(`${Math.round(linear.perQuery.smallTokensIn)} / ${Math.round(linear.perQuery.smallTokensOut)}`),
-      real(`${Math.round(adaptive.perQuery.smallTokensIn)} / ${Math.round(adaptive.perQuery.smallTokensOut)}`),
+      "Tokens generación in / out por consulta",
+      real(pair(linear.perQuery.genTokensIn, linear.perQuery.genTokensOut)),
+      real(pair(adaptive.perQuery.genTokensIn, adaptive.perQuery.genTokensOut)),
     ],
   ];
   return [

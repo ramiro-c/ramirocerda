@@ -2,17 +2,19 @@
  * Botardo eval runner: linear (main) vs adaptive RAG on the fixed case set.
  *
  *   pnpm eval              real backends (read-only), prints a markdown table
- *   pnpm eval -- --offline deterministic stubs: only routing + call counts are meaningful
+ *   pnpm eval:offline      stubs + MOCKED OpenRouter (oracle of the expected labels):
+ *                          only plumbing and call counts mean anything, never router quality
  *
  * Options: --cases <path> (default evals/cases.json), --only <id-substring>,
  *          --pipelines linear,adaptive, --no-judge, --out <dir> (default evals/results).
  *
  * Real mode needs, as env vars or in the gitignored files the worker already uses
- * (root .env for Cloudflare, workers/chat-worker/.dev.vars for OpenCode Go):
+ * (root .env for Cloudflare, workers/chat-worker/.dev.vars for the model keys):
  *   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN (Workers AI + Vectorize read),
- *   OPENCODE_GO_API_KEY.
- * It only calls /ai/run, /vectorize/v2/indexes/<index>/query and the generation
- * endpoint. It never writes to Vectorize and never deploys anything.
+ *   OPENCODE_GO_API_KEY, OPENROUTER_API_KEY, OPENROUTER_MODEL.
+ * It only calls /ai/run, /vectorize/v2/indexes/<index>/query, OpenRouter chat
+ * completions and the generation endpoint. It never writes to Vectorize and
+ * never deploys anything.
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -20,7 +22,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { runAdaptivePipeline, type PipelineEnv } from "../src/pipeline";
-import { instrument, offlineBindings, realBindings, zeroCounters } from "./backends";
+import { instrument, offlineBindings, realBindings, zeroCounters, type MockRouterAnswer } from "./backends";
 import { judgeAnswer } from "./judge";
 import { runLinearPipeline } from "./linear-pipeline";
 import { markdownTable, summarize, type CaseResult, type EvalCase, type PipelineName } from "./metrics";
@@ -54,7 +56,9 @@ function loadLocalSecrets(): void {
     }
   };
   if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID) tryLoad(path.join(ROOT_DIR, ".env"));
-  if (!process.env.OPENCODE_GO_API_KEY) tryLoad(path.join(WORKER_DIR, ".dev.vars"));
+  if (!process.env.OPENCODE_GO_API_KEY || !process.env.OPENROUTER_API_KEY || !process.env.OPENROUTER_MODEL) {
+    tryLoad(path.join(WORKER_DIR, ".dev.vars"));
+  }
 }
 
 async function main(): Promise<void> {
@@ -71,11 +75,13 @@ async function main(): Promise<void> {
 
   let bindings: Pick<PipelineEnv, "AI" | "VECTORIZE">;
   let apiKey = "offline";
+  let openRouter = { OPENROUTER_API_KEY: "offline-mock", OPENROUTER_MODEL: "offline/mock" };
   if (offline) {
-    bindings = offlineBindings(vars.EMBEDDING_MODEL);
+    bindings = offlineBindings();
   } else {
     loadLocalSecrets();
-    const missing = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OPENCODE_GO_API_KEY"].filter((k) => !process.env[k]);
+    const required = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OPENCODE_GO_API_KEY", "OPENROUTER_API_KEY", "OPENROUTER_MODEL"];
+    const missing = required.filter((k) => !process.env[k]?.trim());
     if (missing.length > 0) {
       console.error(`Missing ${missing.join(", ")}. Export them (or use the root .env / .dev.vars), or run with --offline.`);
       process.exit(2);
@@ -86,9 +92,10 @@ async function main(): Promise<void> {
       indexName: process.env.VECTORIZE_INDEX ?? "botardo-kb",
     });
     apiKey = process.env.OPENCODE_GO_API_KEY!;
+    openRouter = { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY!, OPENROUTER_MODEL: process.env.OPENROUTER_MODEL!.trim() };
   }
 
-  const envVars = { ...vars, OPENCODE_GO_API_KEY: apiKey } as unknown as Omit<PipelineEnv, "AI" | "VECTORIZE">;
+  const envVars = { ...vars, ...openRouter, OPENCODE_GO_API_KEY: apiKey } as unknown as Omit<PipelineEnv, "AI" | "VECTORIZE">;
   const rawFetch = globalThis.fetch;
   const results: CaseResult[] = [];
 
@@ -98,7 +105,12 @@ async function main(): Promise<void> {
       const t0 = Date.now();
       let result: CaseResult;
       try {
-        const { value, counters } = await instrument(envVars, bindings, offline, async (env) =>
+        const mockRouter: MockRouterAnswer = {
+          route: c.expected.route ?? "search",
+          hire_intent: c.expected.offerContact ?? false,
+          query: c.message,
+        };
+        const { value, counters } = await instrument(envVars, bindings, offline ? { mockRouter } : null, async (env) =>
           pipeline === "linear"
             ? { kind: "linear" as const, run: await runLinearPipeline({ message: c.message, history: c.history, env, sessionId }) }
             : {
@@ -118,7 +130,7 @@ async function main(): Promise<void> {
         } else {
           replyKind = outcome.kind;
           reply = outcome.reply;
-          declined = outcome.kind === "smalltalk" ? null : true;
+          declined = true;
         }
         let faithful: boolean | null = null;
         if (replyKind === "generated" && reply && useJudge) {
@@ -141,6 +153,7 @@ async function main(): Promise<void> {
           pipeline,
           route: value.kind === "adaptive" ? value.run.decision.route : null,
           routeVia: value.kind === "adaptive" ? value.run.decision.via : null,
+          offerContact: value.kind === "adaptive" ? value.run.offerContact : false,
           searched: counters.vectorizeQueries > 0,
           chunkIds: chunks.map((ch) => ch.id),
           replyKind,
@@ -156,6 +169,7 @@ async function main(): Promise<void> {
           pipeline,
           route: null,
           routeVia: null,
+          offerContact: false,
           searched: false,
           chunkIds: [],
           replyKind: "error",
@@ -169,7 +183,7 @@ async function main(): Promise<void> {
       }
       results.push(result);
       console.error(
-        `[${pipeline}] ${c.id}: ${result.replyKind}${result.route ? ` route=${result.route}/${result.routeVia}` : ""} searches=${result.counters.vectorizeQueries} ${result.latencyMs}ms${result.error ? ` error=${result.error}` : ""}`,
+        `[${pipeline}] ${c.id}: ${result.replyKind}${result.route ? ` route=${result.route}/${result.routeVia} offerContact=${result.offerContact}` : ""} searches=${result.counters.vectorizeQueries} ${result.latencyMs}ms${result.error ? ` error=${result.error}` : ""}`,
       );
     }
   }
@@ -179,8 +193,8 @@ async function main(): Promise<void> {
     adaptive: summarize("adaptive", cases, results),
   };
   const mode = offline
-    ? "OFFLINE (stubs: router solo heurísticas, Vectorize sin matches, sin generación). Solo son reales la decisión de buscar, la ruta y el conteo de llamadas bajo stubs."
-    : `REAL (Workers AI + Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"} + ${vars.GENERATION_MODEL}${useJudge ? ", juez LLM" : ", sin juez"})`;
+    ? "OFFLINE con OpenRouter MOCKEADO (oráculo: devuelve la ruta y el hire_intent esperados de cada caso; el juez de suficiencia siempre pide una re-búsqueda), Vectorize sin matches y generación stub. Solo son reales el conteo de llamadas bajo esos mocks; nada de esto mide la calidad del router."
+    : `REAL (router y juez: OpenRouter ${openRouter.OPENROUTER_MODEL}; Workers AI + Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"}; generación ${vars.GENERATION_MODEL}${useJudge ? "; juez de fidelidad LLM" : "; sin juez de fidelidad"})`;
   const table = markdownTable(summaries, { offline });
   const report = `### Evals Botardo: lineal vs adaptativo\n\nModo: ${mode}\nCasos: ${cases.length} (${new Date().toISOString()})\n\n${table}\n`;
   console.log(report);
