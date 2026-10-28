@@ -1,31 +1,35 @@
 /**
  * Backends for the eval runner.
  *
- * - real:    Workers AI + Vectorize through the Cloudflare REST API (READ-ONLY:
- *            /ai/run and /vectorize/v2/indexes/<index>/query only, never upsert or
- *            delete), the real OpenRouter endpoint for the router and the
- *            sufficiency judge, and the real OpenCode Go endpoint for generation.
- * - offline: deterministic stubs. Vectorize returns no matches, generation is a
- *            stub, and OpenRouter is a MOCK that echoes the case's expected labels
- *            (an oracle) and always asks for one re-search. Offline numbers are
- *            plumbing and call counts under that mock, never router quality.
+ * - real:     Workers AI + Vectorize through the Cloudflare REST API (READ-ONLY:
+ *             /ai/run and /vectorize/v2/indexes/<index>/query only, never upsert or
+ *             delete), the real decision endpoint (Jev via OpenCode System One) for
+ *             the router and the sufficiency judge, and the real OpenCode Go
+ *             endpoint for generation.
+ * - decision: the REAL decision endpoint (anonymous for jev-1.13-free, or
+ *             DECISION_API_KEY) with offline Vectorize / generation stubs. Measures
+ *             the router for real (route, hire_intent, fallbacks, latency, tokens)
+ *             without any Cloudflare or OpenCode Go credential.
+ * - offline:  deterministic stubs. Vectorize returns no matches, generation is a
+ *             stub, and the decision model is a MOCK that echoes the case's
+ *             expected labels (an oracle) and always calls the snippets
+ *             insufficient. Offline numbers are plumbing and call counts under
+ *             that mock, never router quality.
  *
- * Both are wrapped by `instrument`, which counts calls and tokens per query.
+ * All are wrapped by `instrument`, which counts calls and tokens per query.
  */
 
-import { DEFAULT_OPENROUTER_ENDPOINT } from "../src/config";
+import { DEFAULT_DECISION_ENDPOINT } from "../src/config";
 import type { PipelineEnv } from "../src/pipeline";
-import { JUDGE_SYSTEM_PROMPT } from "../src/retrieval";
-import { ROUTER_SYSTEM_PROMPT } from "../src/router";
 
 export interface Counters {
   embeddingCalls: number;
   vectorizeQueries: number;
   routerCalls: number;
   judgeCalls: number;
-  /** OpenRouter tokens (router + judge). */
-  orTokensIn: number;
-  orTokensOut: number;
+  /** Decision model tokens (router + judge), from System One `usage`. */
+  decisionTokensIn: number;
+  decisionTokensOut: number;
   generationCalls: number;
   genTokensIn: number;
   genTokensOut: number;
@@ -37,8 +41,8 @@ export function zeroCounters(): Counters {
     vectorizeQueries: 0,
     routerCalls: 0,
     judgeCalls: 0,
-    orTokensIn: 0,
-    orTokensOut: 0,
+    decisionTokensIn: 0,
+    decisionTokensOut: 0,
     generationCalls: 0,
     genTokensIn: 0,
     genTokensOut: 0,
@@ -48,17 +52,26 @@ export function zeroCounters(): Counters {
 type Vars = Omit<PipelineEnv, "AI" | "VECTORIZE">;
 type Bindings = Pick<PipelineEnv, "AI" | "VECTORIZE">;
 
-/** What the offline OpenRouter mock answers for the current case. */
+/** What the offline decision mock answers for the current case (System One answer values). */
 export interface MockRouterAnswer {
   route: "search" | "smalltalk" | "off_topic";
-  hire_intent: boolean;
-  query: string;
+  /** noul probabilities */
+  hireIntent: number;
+  needsHistory: number;
 }
 
-function usageOf(value: unknown): { in: number; out: number } {
+const n = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
+
+/** OpenAI-style usage (generation). */
+function chatUsageOf(value: unknown): { in: number; out: number } {
   const usage = (value as { usage?: { prompt_tokens?: unknown; completion_tokens?: unknown } } | null)?.usage;
-  const n = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
   return { in: n(usage?.prompt_tokens), out: n(usage?.completion_tokens) };
+}
+
+/** System One usage (decision model). */
+function decisionUsageOf(value: unknown): { in: number; out: number } {
+  const usage = (value as { usage?: { input_tokens?: unknown; output_tokens?: unknown } } | null)?.usage;
+  return { in: n(usage?.input_tokens), out: n(usage?.output_tokens) };
 }
 
 export function realBindings(opts: { accountId: string; apiToken: string; indexName: string }): Bindings {
@@ -96,22 +109,34 @@ export function offlineBindings(): Bindings {
   };
 }
 
-function completion(content: unknown): Response {
-  return new Response(JSON.stringify({ choices: [{ message: { content: typeof content === "string" ? content : JSON.stringify(content) } }] }), {
+function completion(content: string): Response {
+  return new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200 });
+}
+
+/** Offline System One answers: the oracle for the router, "insufficient" for the judge. Only asked questions are answered. */
+function mockDecision(questions: Record<string, unknown>, mock: MockRouterAnswer): Response {
+  const all: Record<string, unknown> = {
+    route: { type: "choice", choice: mock.route, confidence: 1, probabilities: { [mock.route]: 1 } },
+    hire_intent: { type: "noul", noul: mock.hireIntent },
+    needs_history: { type: "noul", noul: mock.needsHistory },
+    sufficient: { type: "noul", noul: 0 },
+  };
+  const answers = Object.fromEntries(Object.keys(questions).map((k) => [k, all[k]]));
+  return new Response(JSON.stringify({ model: "offline-mock", answers, usage: { input_tokens: 0, output_tokens: 0 } }), {
     status: 200,
   });
 }
 
 /**
  * Wraps bindings + global fetch so every call made while `fn` runs is counted.
- * OpenRouter calls are split into router / judge by their system prompt;
+ * Decision calls are split into router / judge by their question names;
  * generation calls are detected by URL (the OpenCode Go endpoint). The eval's
  * faithfulness judge uses the raw fetch, so it is never counted as pipeline cost.
  */
 export async function instrument<T>(
   vars: Vars,
   bindings: Bindings,
-  offline: { mockRouter: MockRouterAnswer } | null,
+  mode: { kind: "offline"; mockRouter: MockRouterAnswer } | { kind: "decision" } | { kind: "real" },
   fn: (env: PipelineEnv) => Promise<T>,
 ): Promise<{ value: T; counters: Counters }> {
   const counters = zeroCounters();
@@ -130,32 +155,28 @@ export async function instrument<T>(
       },
     },
   };
-  const openRouterEndpoint = vars.OPENROUTER_ENDPOINT?.trim() || DEFAULT_OPENROUTER_ENDPOINT;
+  const decisionEndpoint = vars.DECISION_ENDPOINT?.trim() || DEFAULT_DECISION_ENDPOINT;
+  const stubGeneration = mode.kind !== "real";
 
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    if (url === openRouterEndpoint) {
-      const system = JSON.parse(String(init?.body ?? "{}"))?.messages?.[0]?.content;
-      const isRouter = system === ROUTER_SYSTEM_PROMPT;
-      if (isRouter) counters.routerCalls += 1;
-      else if (system === JUDGE_SYSTEM_PROMPT) counters.judgeCalls += 1;
-      if (offline) {
-        return isRouter
-          ? completion(offline.mockRouter)
-          : completion({ sufficient: false, reformulated_query: "offline mock reformulation" });
-      }
+    if (url === decisionEndpoint) {
+      const questions = (JSON.parse(String(init?.body ?? "{}"))?.questions ?? {}) as Record<string, unknown>;
+      if ("route" in questions) counters.routerCalls += 1;
+      else if ("sufficient" in questions) counters.judgeCalls += 1;
+      if (mode.kind === "offline") return mockDecision(questions, mode.mockRouter);
       const res = await originalFetch(input, init);
-      const u = usageOf(await res.clone().json().catch(() => null));
-      counters.orTokensIn += u.in;
-      counters.orTokensOut += u.out;
+      const u = decisionUsageOf(await res.clone().json().catch(() => null));
+      counters.decisionTokensIn += u.in;
+      counters.decisionTokensOut += u.out;
       return res;
     }
     if (url === vars.OPENCODE_GO_ENDPOINT) {
       counters.generationCalls += 1;
-      if (offline) return completion("(offline stub)");
+      if (stubGeneration) return completion("(offline stub)");
       const res = await originalFetch(input, init);
-      const u = usageOf(await res.clone().json().catch(() => null));
+      const u = chatUsageOf(await res.clone().json().catch(() => null));
       counters.genTokensIn += u.in;
       counters.genTokensOut += u.out;
       return res;

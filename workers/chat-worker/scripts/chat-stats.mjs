@@ -12,8 +12,8 @@
  *   blobs:   blob1 = language ("es"|"en"), blob2 = status ("ok"|"rate_limited"|"model_error"), blob3 = question preview (80 chars)
  *   doubles: double1 = chunk_count, double2 = top similarity score, double3 = retrieval ms, double4 = generation ms,
  *            double5 = route (0 search, 1 smalltalk, 2 off_topic), double6 = retrieval iterations,
- *            double7 = query rewritten by the router (0/1), double8 = router ms, double9 = offerContact (0/1),
- *            double10 = router status (0 llm, 1 fallback after error, 2 not configured),
+ *            double7 = search query used the conversation (0/1), double8 = router ms, double9 = offerContact (0/1),
+ *            double10 = router status (0 decision model answered, 1 fallback after error, 2 decision model off),
  *            double11 = judge verdict (0 skipped, 1 sufficient, 2 insufficient, 3 error), double12 = judge ms
  *            (5..12 appended by adaptive RAG; 0 on older rows)
  *   indexes: index1 = conversation session id

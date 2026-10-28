@@ -1,19 +1,23 @@
 /**
- * Adaptive RAG pipeline. The control flow is fixed in code; an LLM (via
- * OpenRouter) only fills in decisions at two points, each one bounded call:
+ * Adaptive RAG pipeline. The control flow is fixed in code; a decision model
+ * (Jev, TypeSafe System One, served by OpenCode) only fills in typed decisions
+ * at two points, each one bounded request:
  *
- *   1. route     ONE call: {route, hire_intent, query}. Any failure, or no
- *                OpenRouter config: route=search, hire_intent=false, query=raw message.
+ *   1. route     ONE request: route (choice) + hire_intent (noul) + needs_history
+ *                (noul, only with history). Any failure, or the decision model off:
+ *                route=search, hire_intent=false, query=raw message.
  *   2. smalltalk one short generation, no retrieval
  *      off_topic fixed localized reply, no retrieval, no generation
- *   3. search    retrieve with the standalone query; ONE judge call decides
- *                sufficiency and may give a reformulated query for ONE more
- *                search (hard cap of 2 searches); judge failure keeps search 1
+ *   3. search    retrieve with the query (raw message, or previous user turn +
+ *                message when the model says it needs the history); ONE judge
+ *                request (noul) decides sufficiency and, when insufficient,
+ *                ONE more search with the alternate query (hard cap of 2
+ *                searches); judge failure keeps search 1
  *   4. no chunks NO_INFO_REPLY (similarity gate unchanged, no generation)
  *   5. generate  once, with the ORIGINAL message + history
  *
- * Without OPENROUTER_MODEL / OPENROUTER_API_KEY this is exactly the linear
- * pipeline that shipped before: search the raw message, gate, generate.
+ * With DECISION_MODEL="" this is exactly the linear pipeline that shipped
+ * before: search the raw message, gate, generate.
  */
 
 import { readAdaptiveConfig, type AdaptiveEnvVars } from "./config";
@@ -46,7 +50,7 @@ export const DEFAULT_SITE_ORIGIN = "https://ramirocerda.com.ar";
 
 /** Numeric codes for the Analytics Engine doubles (append-only schema, see index.ts). */
 export const ROUTE_CODE: Record<Route, number> = { search: 0, smalltalk: 1, off_topic: 2 };
-/** 0 llm answered validly, 1 fallback after an error, 2 OpenRouter not configured. */
+/** 0 decision model answered validly, 1 fallback after an error, 2 decision model off. */
 export function routerStatusCode(decision: RouteDecision): number {
   if (decision.via === "llm") return 0;
   return decision.via === "not_configured" ? 2 : 1;
@@ -74,7 +78,7 @@ export interface PipelineOutcome {
   generationMs: number;
   /** Vectorize searches actually run (0 for smalltalk/off_topic, otherwise 1 or 2). */
   retrievalIterations: number;
-  /** True when the router's standalone query differs from the raw message. */
+  /** True when the search query differs from the raw message (follow-up with context). */
   rewritten: boolean;
   searchQueries: string[];
   verdict: JudgeVerdict;
@@ -103,13 +107,22 @@ export async function runAdaptivePipeline(opts: {
   const siteOrigin = env.SITE_ORIGIN ?? DEFAULT_SITE_ORIGIN;
 
   const tRoute = Date.now();
-  const decision = await routeMessage(message, history, config, { referer: siteOrigin });
+  const decision = await routeMessage(message, history, config);
   const routerMs = Date.now() - tRoute;
   const offerContact = decision.hireIntent;
   const rewritten = decision.route === "search" && decision.query !== message;
   log("chat.route", {
     route: decision.route,
     via: decision.via,
+    model: config.decision?.model ?? null,
+    integration: config.decision?.integrationId ?? null,
+    ...(decision.scores
+      ? {
+          route_confidence: decision.scores.routeConfidence,
+          hire_intent_p: decision.scores.hireIntent,
+          needs_history_p: decision.scores.needsHistory,
+        }
+      : {}),
     hire_intent: decision.hireIntent,
     offer_contact: offerContact,
     rewritten,
@@ -162,14 +175,18 @@ export async function runAdaptivePipeline(opts: {
   }
 
   const tRet = Date.now();
-  const retrieval = await retrieveAdaptive(decision.query, env, config, { referer: siteOrigin });
+  const retrieval = await retrieveAdaptive(
+    { question: message, query: decision.query, alternateQuery: decision.alternateQuery },
+    env,
+    config,
+  );
   const retrievalMs = Date.now() - tRet;
   const chunks = retrieval.chunks;
   const topScore = chunks.reduce((max, c) => Math.max(max, c.score), 0);
   if (retrieval.verdict.kind !== "skipped") {
     log("chat.rag_judge", {
       verdict: retrieval.verdict.kind,
-      ...(retrieval.verdict.kind === "error" ? { reason: retrieval.verdict.reason } : {}),
+      ...(retrieval.verdict.kind === "error" ? { reason: retrieval.verdict.reason } : { p: retrieval.verdict.probability }),
       latency_ms: retrieval.judgeMs,
     });
   }

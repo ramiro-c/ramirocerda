@@ -73,8 +73,8 @@ function log(event: string, data: Record<string, unknown> = {}): void {
 //   blobs:   [0] detected language ("es"|"en") | [1] "ok"|"rate_limited"|"model_error" | [2] first 80 chars of the question
 //   doubles: [0] chunk_count | [1] top similarity score | [2] retrieval latency ms | [3] generation latency ms
 //            (appended by adaptive RAG, never reorder) [4] route code (0 search, 1 smalltalk, 2 off_topic)
-//            | [5] retrieval iterations (0..2) | [6] query rewritten by the router (0/1) | [7] router latency ms
-//            | [8] offerContact (0/1) | [9] router status (0 llm, 1 fallback after error, 2 not configured)
+//            | [5] retrieval iterations (0..2) | [6] search query used the conversation (0/1) | [7] router latency ms
+//            | [8] offerContact (0/1) | [9] router status (0 decision model answered, 1 fallback, 2 off)
 //            | [10] judge verdict (0 skipped, 1 sufficient, 2 insufficient, 3 error) | [11] judge latency ms
 //   indexes: [0] conversation sessionId (one conversation = one AE index slot)
 function writeUsage(

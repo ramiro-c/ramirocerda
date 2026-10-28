@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { zeroCounters } from "./backends";
-import { chunkRecall, factHit, summarize, type CaseResult, type EvalCase } from "./metrics";
+import { chunkRecall, factHit, markdownTable, summarize, type CaseResult, type EvalCase } from "./metrics";
 
 describe("eval metrics", () => {
   it("matches chunk ids by prefix, ignoring the content hash", () => {
@@ -34,5 +34,27 @@ describe("eval metrics", () => {
     expect(s.offerContact).toEqual({ hits: 2, total: 3 });
     expect(s.routerFallbacks).toEqual({ hits: 1, total: 3 });
     expect(s.noInfoCorrect).toEqual({ hits: 1, total: 1 });
+  });
+
+  it("labels each metric by eval mode so mocked or stubbed numbers are never shown as real", () => {
+    const cases: EvalCase[] = [
+      { id: "a", category: "hire", lang: "es", message: "¿tarifa?", expected: { route: "search", retrieve: true, answerable: null, offerContact: true } },
+    ];
+    const r = { caseId: "a", route: "search", routeVia: "llm", routerMs: 240, offerContact: true, searched: true, chunkIds: [], replyKind: "generated" as const, reply: "r", declined: null, faithful: null, latencyMs: 900, counters: { ...zeroCounters(), decisionTokensIn: 551, decisionTokensOut: 3 } };
+    const summaries = {
+      linear: summarize("linear", cases, [{ ...r, pipeline: "linear", route: null, routeVia: null, routerMs: null, offerContact: false }]),
+      adaptive: summarize("adaptive", cases, [{ ...r, pipeline: "adaptive" }]),
+    };
+    const row = (table: string, name: string) => table.split("\n").find((l) => l.startsWith(`| ${name}`));
+    const offline = markdownTable(summaries, { mode: "offline" });
+    expect(row(offline, "Ruta correcta")).toContain("mock (no mide el router)");
+    expect(row(offline, "Tokens decisión")).toContain("pending");
+    const decision = markdownTable(summaries, { mode: "decision" });
+    expect(row(decision, "Ruta correcta")).toContain("1/1 (100%)");
+    expect(row(decision, "Latencia del router")).toContain("240 / 240");
+    expect(row(decision, "Tokens decisión")).toContain("551 / 3");
+    expect(row(decision, "Recall")).toContain("pending");
+    expect(row(decision, "Latencia p50")).toContain("pending");
+    expect(row(markdownTable(summaries, { mode: "real" }), "Latencia p50")).toContain("900");
   });
 });

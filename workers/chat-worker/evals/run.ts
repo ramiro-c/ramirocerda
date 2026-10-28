@@ -2,7 +2,10 @@
  * Botardo eval runner: linear (main) vs adaptive RAG on the fixed case set.
  *
  *   pnpm eval              real backends (read-only), prints a markdown table
- *   pnpm eval:offline      stubs + MOCKED OpenRouter (oracle of the expected labels):
+ *   pnpm eval:decision     REAL decision model (Jev via OpenCode System One, anonymous
+ *                          for jev-1.13-free) + stubbed KB/generation: real router
+ *                          metrics with no Cloudflare or OpenCode Go credential
+ *   pnpm eval:offline      stubs + MOCKED decision model (oracle of the expected labels):
  *                          only plumbing and call counts mean anything, never router quality
  *
  * Options: --cases <path> (default evals/cases.json), --only <id-substring>,
@@ -11,10 +14,12 @@
  * Real mode needs, as env vars or in the gitignored files the worker already uses
  * (root .env for Cloudflare, workers/chat-worker/.dev.vars for the model keys):
  *   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN (Workers AI + Vectorize read),
- *   OPENCODE_GO_API_KEY, OPENROUTER_API_KEY, OPENROUTER_MODEL.
- * It only calls /ai/run, /vectorize/v2/indexes/<index>/query, OpenRouter chat
- * completions and the generation endpoint. It never writes to Vectorize and
- * never deploys anything.
+ *   OPENCODE_GO_API_KEY. DECISION_API_KEY is optional (only for paid Jev models).
+ * The decision model config (DECISION_ENDPOINT / DECISION_MODEL / ...) comes from
+ * wrangler.jsonc vars, overridable by env vars of the same name.
+ * It only calls /ai/run, /vectorize/v2/indexes/<index>/query, the System One
+ * decision endpoint and the generation endpoint. It never writes to Vectorize
+ * and never deploys anything.
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -25,7 +30,7 @@ import { runAdaptivePipeline, type PipelineEnv } from "../src/pipeline";
 import { instrument, offlineBindings, realBindings, zeroCounters, type MockRouterAnswer } from "./backends";
 import { judgeAnswer } from "./judge";
 import { runLinearPipeline } from "./linear-pipeline";
-import { markdownTable, summarize, type CaseResult, type EvalCase, type PipelineName } from "./metrics";
+import { markdownTable, summarize, type CaseResult, type EvalCase, type EvalMode, type PipelineName } from "./metrics";
 
 const EVAL_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKER_DIR = path.join(EVAL_DIR, "..");
@@ -56,14 +61,15 @@ function loadLocalSecrets(): void {
     }
   };
   if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID) tryLoad(path.join(ROOT_DIR, ".env"));
-  if (!process.env.OPENCODE_GO_API_KEY || !process.env.OPENROUTER_API_KEY || !process.env.OPENROUTER_MODEL) {
+  if (!process.env.OPENCODE_GO_API_KEY) {
     tryLoad(path.join(WORKER_DIR, ".dev.vars"));
   }
 }
 
 async function main(): Promise<void> {
-  const offline = flag("offline");
-  const useJudge = !offline && !flag("no-judge");
+  const mode: EvalMode = flag("offline") ? "offline" : flag("decision-only") ? "decision" : "real";
+  const offline = mode === "offline";
+  const useJudge = mode === "real" && !flag("no-judge");
   const casesPath = arg("cases") ?? path.join(EVAL_DIR, "cases.json");
   const only = arg("only");
   const pipelines = (arg("pipelines") ?? "linear,adaptive").split(",") as PipelineName[];
@@ -75,12 +81,18 @@ async function main(): Promise<void> {
 
   let bindings: Pick<PipelineEnv, "AI" | "VECTORIZE">;
   let apiKey = "offline";
-  let openRouter = { OPENROUTER_API_KEY: "offline-mock", OPENROUTER_MODEL: "offline/mock" };
-  if (offline) {
+  // Decision config: wrangler vars, overridable from the environment (key only from the environment).
+  const decisionVars: Record<string, string> = {};
+  for (const k of ["DECISION_ENDPOINT", "DECISION_MODEL", "DECISION_INTEGRATION_ID", "DECISION_TIMEOUT_MS", "DECISION_MIN_CONFIDENCE", "MAX_RETRIEVAL_ITERATIONS", "DECISION_API_KEY"]) {
+    const v = process.env[k];
+    if (v !== undefined) decisionVars[k] = v;
+  }
+  if (mode !== "real") {
     bindings = offlineBindings();
   } else {
     loadLocalSecrets();
-    const required = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OPENCODE_GO_API_KEY", "OPENROUTER_API_KEY", "OPENROUTER_MODEL"];
+    if (process.env.DECISION_API_KEY && decisionVars.DECISION_API_KEY === undefined) decisionVars.DECISION_API_KEY = process.env.DECISION_API_KEY;
+    const required = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OPENCODE_GO_API_KEY"];
     const missing = required.filter((k) => !process.env[k]?.trim());
     if (missing.length > 0) {
       console.error(`Missing ${missing.join(", ")}. Export them (or use the root .env / .dev.vars), or run with --offline.`);
@@ -92,10 +104,9 @@ async function main(): Promise<void> {
       indexName: process.env.VECTORIZE_INDEX ?? "botardo-kb",
     });
     apiKey = process.env.OPENCODE_GO_API_KEY!;
-    openRouter = { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY!, OPENROUTER_MODEL: process.env.OPENROUTER_MODEL!.trim() };
   }
 
-  const envVars = { ...vars, ...openRouter, OPENCODE_GO_API_KEY: apiKey } as unknown as Omit<PipelineEnv, "AI" | "VECTORIZE">;
+  const envVars = { ...vars, ...decisionVars, OPENCODE_GO_API_KEY: apiKey } as unknown as Omit<PipelineEnv, "AI" | "VECTORIZE">;
   const rawFetch = globalThis.fetch;
   const results: CaseResult[] = [];
 
@@ -107,10 +118,11 @@ async function main(): Promise<void> {
       try {
         const mockRouter: MockRouterAnswer = {
           route: c.expected.route ?? "search",
-          hire_intent: c.expected.offerContact ?? false,
-          query: c.message,
+          hireIntent: c.expected.offerContact ? 1 : 0,
+          needsHistory: c.category === "followup" ? 1 : 0,
         };
-        const { value, counters } = await instrument(envVars, bindings, offline ? { mockRouter } : null, async (env) =>
+        const backend = offline ? { kind: "offline" as const, mockRouter } : { kind: mode as "decision" | "real" };
+        const { value, counters } = await instrument(envVars, bindings, backend, async (env) =>
           pipeline === "linear"
             ? { kind: "linear" as const, run: await runLinearPipeline({ message: c.message, history: c.history, env, sessionId }) }
             : {
@@ -153,6 +165,7 @@ async function main(): Promise<void> {
           pipeline,
           route: value.kind === "adaptive" ? value.run.decision.route : null,
           routeVia: value.kind === "adaptive" ? value.run.decision.via : null,
+          routerMs: value.kind === "adaptive" && value.run.decision.via !== "not_configured" ? value.run.routerMs : null,
           offerContact: value.kind === "adaptive" ? value.run.offerContact : false,
           searched: counters.vectorizeQueries > 0,
           chunkIds: chunks.map((ch) => ch.id),
@@ -192,18 +205,22 @@ async function main(): Promise<void> {
     linear: summarize("linear", cases, results),
     adaptive: summarize("adaptive", cases, results),
   };
-  const mode = offline
-    ? "OFFLINE con OpenRouter MOCKEADO (oráculo: devuelve la ruta y el hire_intent esperados de cada caso; el juez de suficiencia siempre pide una re-búsqueda), Vectorize sin matches y generación stub. Solo son reales el conteo de llamadas bajo esos mocks; nada de esto mide la calidad del router."
-    : `REAL (router y juez: OpenRouter ${openRouter.OPENROUTER_MODEL}; Workers AI + Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"}; generación ${vars.GENERATION_MODEL}${useJudge ? "; juez de fidelidad LLM" : "; sin juez de fidelidad"})`;
-  const table = markdownTable(summaries, { offline });
-  const report = `### Evals Botardo: lineal vs adaptativo\n\nModo: ${mode}\nCasos: ${cases.length} (${new Date().toISOString()})\n\n${table}\n`;
+  const decisionModel = `${envVars.DECISION_MODEL ?? "jev-1.13-free"} vía ${envVars.DECISION_ENDPOINT ?? "OpenCode System One"}${envVars.DECISION_API_KEY ? " (con DECISION_API_KEY)" : " (sin key)"}`;
+  const modeText =
+    mode === "offline"
+      ? "OFFLINE con modelo de decisión MOCKEADO (oráculo: devuelve la ruta y el hire_intent esperados de cada caso; el juez de suficiencia siempre dice insuficiente), Vectorize sin matches y generación stub. Solo son reales el conteo de llamadas bajo esos mocks; nada de esto mide la calidad del router."
+      : mode === "decision"
+        ? `DECISIÓN REAL (router y juez: ${decisionModel}) con Vectorize sin matches y generación stub. Son reales la ruta, el offerContact, los fallbacks, la latencia y los tokens del router; recall, respuestas y latencia total quedan pendientes.`
+        : `REAL (router y juez: ${decisionModel}; Workers AI + Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"}; generación ${vars.GENERATION_MODEL}${useJudge ? "; juez de fidelidad LLM" : "; sin juez de fidelidad"})`;
+  const table = markdownTable(summaries, { mode });
+  const report = `### Evals Botardo: lineal vs adaptativo\n\nModo: ${modeText}\nCasos: ${cases.length} (${new Date().toISOString()})\n\n${table}\n`;
   console.log(report);
 
   mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const base = path.join(outDir, `${stamp}-${offline ? "offline" : "real"}`);
+  const base = path.join(outDir, `${stamp}-${mode}`);
   writeFileSync(`${base}.md`, report);
-  writeFileSync(`${base}.json`, JSON.stringify({ mode: offline ? "offline" : "real", summaries, results }, null, 2));
+  writeFileSync(`${base}.json`, JSON.stringify({ mode, summaries, results }, null, 2));
   console.error(`Wrote ${base}.md and ${base}.json`);
 }
 

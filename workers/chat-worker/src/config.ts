@@ -1,57 +1,60 @@
 /**
- * Adaptive RAG config: the OpenRouter control-flow model (router + sufficiency
- * judge) and the re-search cap.
+ * Adaptive RAG config: the decision model (router + sufficiency judge) and the
+ * re-search cap.
  *
- * OPENROUTER_MODEL has NO default on purpose: the model is Ramiro's choice. When
- * the model or the OPENROUTER_API_KEY secret is missing, `openRouter` is null and
- * the pipeline runs the pre-adaptive behaviour (search with the raw message,
- * similarity gate, generate), so the worker keeps answering.
+ * The decision model is Jev (TypeSafe's System One model) served by OpenCode at
+ * DECISION_ENDPOINT. It is NOT a chat/OpenAI-compatible API: requests carry a
+ * `state` plus typed `questions` (choice / noul) and answers come back typed
+ * (see src/decision.ts). jev-1.13-free answers without an API key; set the
+ * optional DECISION_API_KEY secret (an OpenCode Console key) for paid models.
  *
- * Every numeric knob has a safe code default; malformed values fall back to it.
+ * Setting DECISION_MODEL or DECISION_ENDPOINT to "" turns the decision model
+ * off: the pipeline then runs the pre-adaptive behaviour (search with the raw
+ * message, similarity gate, generate), so the worker keeps answering.
+ *
+ * Every knob has a safe code default; malformed values fall back to it.
  */
 
-export const DEFAULT_OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-export const DEFAULT_OPENROUTER_TIMEOUT_MS = 2500;
-export const DEFAULT_OPENROUTER_MAX_TOKENS = 256;
+export const DEFAULT_DECISION_ENDPOINT = "https://opencode.ai/inference/systemone/v1/systemone";
+export const DEFAULT_DECISION_MODEL = "jev-1.13-free";
+/**
+ * OpenCode's id for the credential integration the model belongs to (the
+ * OpenCode client stores Console and Go credentials under "opencode"). It is
+ * NOT part of the HTTP request: the endpoint only takes a Bearer key. Kept as
+ * config for traceability (logged on chat.route).
+ */
+export const DEFAULT_DECISION_INTEGRATION_ID = "opencode";
+export const DEFAULT_DECISION_TIMEOUT_MS = 2000;
+/** Below this choice confidence a non-search route is not trusted: search instead. */
+export const DEFAULT_DECISION_MIN_CONFIDENCE = 0.5;
 /** Hard ceiling: never more than 2 retrievals per message, whatever the env says. */
 export const MAX_RETRIEVAL_ITERATIONS_CEILING = 2;
 
-export type ResponseFormatMode = "json_schema" | "json_object" | "none";
-export type ReasoningEffort = "none" | "minimal" | "low" | "medium" | "high";
-
 export interface AdaptiveEnvVars {
-  /** Worker secret (wrangler secret put OPENROUTER_API_KEY). */
-  OPENROUTER_API_KEY?: string;
-  /** OpenRouter model slug. Empty means adaptive routing is off. */
-  OPENROUTER_MODEL?: string;
-  OPENROUTER_ENDPOINT?: string;
-  OPENROUTER_TIMEOUT_MS?: string;
-  OPENROUTER_MAX_TOKENS?: string;
-  /** json_schema (default) | json_object | none. */
-  OPENROUTER_RESPONSE_FORMAT?: string;
-  /** Optional reasoning effort for reasoning models; empty sends nothing. */
-  OPENROUTER_REASONING_EFFORT?: string;
+  /** Optional Worker secret (OpenCode Console key). Empty: anonymous call (free model). */
+  DECISION_API_KEY?: string;
+  DECISION_ENDPOINT?: string;
+  DECISION_MODEL?: string;
+  DECISION_INTEGRATION_ID?: string;
+  DECISION_TIMEOUT_MS?: string;
+  DECISION_MIN_CONFIDENCE?: string;
   MAX_RETRIEVAL_ITERATIONS?: string;
 }
 
-export interface OpenRouterConfig {
-  apiKey: string;
-  model: string;
+export interface DecisionConfig {
   endpoint: string;
+  model: string;
+  /** null: no Authorization header (jev-1.13-free accepts anonymous calls). */
+  apiKey: string | null;
+  integrationId: string;
   timeoutMs: number;
-  maxTokens: number;
-  responseFormat: ResponseFormatMode;
-  reasoningEffort: ReasoningEffort | null;
+  minConfidence: number;
 }
 
 export interface AdaptiveConfig {
-  /** null when OPENROUTER_MODEL or OPENROUTER_API_KEY is missing: no router, no judge. */
-  openRouter: OpenRouterConfig | null;
+  /** null when DECISION_MODEL or DECISION_ENDPOINT is set to "": no router, no judge. */
+  decision: DecisionConfig | null;
   maxRetrievalIterations: number;
-}
-
-function trimmed(raw: string | undefined): string {
-  return typeof raw === "string" ? raw.trim() : "";
 }
 
 function positiveInt(raw: string | undefined, fallback: number): number {
@@ -59,25 +62,30 @@ function positiveInt(raw: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-const RESPONSE_FORMATS: readonly ResponseFormatMode[] = ["json_schema", "json_object", "none"];
-const REASONING_EFFORTS: readonly ReasoningEffort[] = ["none", "minimal", "low", "medium", "high"];
+function unitInterval(raw: string | undefined, fallback: number): number {
+  const parsed = Number.parseFloat(raw ?? "");
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1 ? parsed : fallback;
+}
+
+/** undefined means "use the default"; an explicit "" (after trim) means "off". */
+function setting(raw: string | undefined, fallback: string): string {
+  return raw === undefined ? fallback : raw.trim();
+}
 
 export function readAdaptiveConfig(env: AdaptiveEnvVars): AdaptiveConfig {
-  const apiKey = trimmed(env.OPENROUTER_API_KEY);
-  const model = trimmed(env.OPENROUTER_MODEL);
-  const format = trimmed(env.OPENROUTER_RESPONSE_FORMAT).toLowerCase() as ResponseFormatMode;
-  const effort = trimmed(env.OPENROUTER_REASONING_EFFORT).toLowerCase() as ReasoningEffort;
+  const endpoint = setting(env.DECISION_ENDPOINT, DEFAULT_DECISION_ENDPOINT);
+  const model = setting(env.DECISION_MODEL, DEFAULT_DECISION_MODEL);
+  const apiKey = env.DECISION_API_KEY?.trim() || null;
   return {
-    openRouter:
-      apiKey && model
+    decision:
+      endpoint && model
         ? {
-            apiKey,
+            endpoint,
             model,
-            endpoint: trimmed(env.OPENROUTER_ENDPOINT) || DEFAULT_OPENROUTER_ENDPOINT,
-            timeoutMs: positiveInt(env.OPENROUTER_TIMEOUT_MS, DEFAULT_OPENROUTER_TIMEOUT_MS),
-            maxTokens: positiveInt(env.OPENROUTER_MAX_TOKENS, DEFAULT_OPENROUTER_MAX_TOKENS),
-            responseFormat: RESPONSE_FORMATS.includes(format) ? format : "json_schema",
-            reasoningEffort: REASONING_EFFORTS.includes(effort) ? effort : null,
+            apiKey,
+            integrationId: env.DECISION_INTEGRATION_ID?.trim() || DEFAULT_DECISION_INTEGRATION_ID,
+            timeoutMs: positiveInt(env.DECISION_TIMEOUT_MS, DEFAULT_DECISION_TIMEOUT_MS),
+            minConfidence: unitInterval(env.DECISION_MIN_CONFIDENCE, DEFAULT_DECISION_MIN_CONFIDENCE),
           }
         : null,
     maxRetrievalIterations: Math.min(

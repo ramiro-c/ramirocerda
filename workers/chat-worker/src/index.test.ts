@@ -34,6 +34,8 @@ function makeEnv(opts: {
     GENERATION_MODEL: "deepseek-v4-flash",
     OPENCODE_GO_ENDPOINT: "https://opencode.example/v1/chat/completions",
     EMBEDDING_MODEL: "@cf/baai/bge-m3",
+    // Decision model off: these tests cover the linear RAG plumbing (adaptive.test.ts covers routing).
+    DECISION_MODEL: "",
     CHAT_RATE_LIMITER: {
       limit: () => Promise.resolve({ success: true }),
     },

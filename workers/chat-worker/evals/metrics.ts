@@ -5,6 +5,8 @@
 import type { Counters } from "./backends";
 
 export type PipelineName = "linear" | "adaptive";
+/** offline: everything mocked; decision: real decision model + stubbed KB/generation; real: everything real. */
+export type EvalMode = "offline" | "decision" | "real";
 
 export interface EvalCase {
   id: string;
@@ -29,6 +31,8 @@ export interface CaseResult {
   /** Adaptive only. */
   route: string | null;
   routeVia: string | null;
+  /** Adaptive only: wall time of the router request (ms). */
+  routerMs?: number | null;
   /** AskResponse.offerContact. The linear pipeline has no router: always false. */
   offerContact: boolean;
   searched: boolean;
@@ -90,6 +94,8 @@ export interface PipelineSummary {
   faithfulness: Ratio;
   noInfoCorrect: Ratio;
   latency: { p50: number; p95: number; mean: number };
+  /** Adaptive: router request latency; null when no router call was timed. */
+  routerLatency: { p50: number; p95: number } | null;
   perQuery: Counters;
 }
 
@@ -118,6 +124,10 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     .filter(({ r, c }) => c.expected.answerable !== null && r.declined !== null)
     .map(({ r, c }) => r.declined === !c.expected.answerable);
   const lat = rs.map((r) => r.latencyMs).sort((a, b) => a - b);
+  const routerLat = rs
+    .map((r) => r.routerMs)
+    .filter((x): x is number => typeof x === "number")
+    .sort((a, b) => a - b);
 
   const perQuery = Object.fromEntries(
     Object.keys(rs[0]?.counters ?? {}).map((k) => [
@@ -142,6 +152,7 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
       p95: percentile(lat, 95),
       mean: lat.length ? lat.reduce((a, b) => a + b, 0) / lat.length : 0,
     },
+    routerLatency: routerLat.length ? { p50: percentile(routerLat, 50), p95: percentile(routerLat, 95) } : null,
     perQuery,
   };
 }
@@ -158,22 +169,30 @@ function fmtRatio(r: Ratio | null): string {
 const f1 = (n: number) => (Math.round(n * 100) / 100).toString();
 
 /**
- * Offline: quality metrics are pending, and every adaptive metric that depends on
- * the router's judgement is labeled as mocked (the offline router is an oracle
- * that echoes the expected labels). Call counts are real counts under the mocks.
+ * Labels by mode, so no number is passed off as something it is not:
+ * - offline: quality metrics are pending and every adaptive metric that depends
+ *   on the router's judgement is labeled as mocked (the offline router is an
+ *   oracle that echoes the expected labels). Call counts are real counts under the mocks.
+ * - decision: router-dependent metrics, router latency and decision tokens are
+ *   REAL (live Jev); KB retrieval, answers, end-to-end latency and generation are
+ *   stubbed, so those stay pending.
+ * - real: everything is real.
  */
-export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, opts: { offline: boolean }): string {
+export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, opts: { mode: EvalMode }): string {
   const { linear, adaptive } = summaries;
-  const real = (s: string) => (opts.offline ? PENDING : s);
-  const routerDependent = (s: string) => (opts.offline ? MOCKED : s);
+  const real = (s: string) => (opts.mode === "real" ? s : PENDING);
+  const routerDependent = (s: string) => (opts.mode === "offline" ? MOCKED : s);
+  const decisionReal = (s: string) => (opts.mode === "offline" ? PENDING : s);
   const pair = (a: number, b: number) => `${Math.round(a)} / ${Math.round(b)}`;
+  const rl = adaptive.routerLatency;
   const rows: Array<[string, string, string]> = [
     ["Casos", String(linear.cases), String(adaptive.cases)],
     ["Errores (excepción o 429/500)", String(linear.errors), String(adaptive.errors)],
     ["Decisión de buscar correcta", fmtRatio(linear.retrievalDecision), routerDependent(fmtRatio(adaptive.retrievalDecision))],
-    ["Ruta correcta (router LLM)", "n/a (sin router)", routerDependent(fmtRatio(adaptive.route))],
+    ["Ruta correcta (router Jev)", "n/a (sin router)", routerDependent(fmtRatio(adaptive.route))],
     ["offerContact (hire_intent) correcto", fmtRatio(linear.offerContact), routerDependent(fmtRatio(adaptive.offerContact))],
-    ["Fallbacks del router (error, timeout, JSON inválido)", "n/a", routerDependent(fmtRatio(adaptive.routerFallbacks))],
+    ["Fallbacks del router (error, timeout, respuesta inválida)", "n/a", routerDependent(fmtRatio(adaptive.routerFallbacks))],
+    ["Latencia del router p50 / p95 (ms)", "n/a", decisionReal(rl ? `${Math.round(rl.p50)} / ${Math.round(rl.p95)}` : "n/a")],
     [
       "Recall de chunks esperados (promedio)",
       real(`${f1(linear.recall.mean)} (n=${linear.recall.total})`),
@@ -187,15 +206,15 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
       real(`${Math.round(linear.latency.p50)} / ${Math.round(linear.latency.p95)} / ${Math.round(linear.latency.mean)}`),
       real(`${Math.round(adaptive.latency.p50)} / ${Math.round(adaptive.latency.p95)} / ${Math.round(adaptive.latency.mean)}`),
     ],
-    ["Llamadas al router (OpenRouter) por consulta", f1(linear.perQuery.routerCalls), f1(adaptive.perQuery.routerCalls)],
-    ["Llamadas al juez de suficiencia por consulta", f1(linear.perQuery.judgeCalls), f1(adaptive.perQuery.judgeCalls)],
+    ["Llamadas al router (Jev) por consulta", f1(linear.perQuery.routerCalls), f1(adaptive.perQuery.routerCalls)],
+    ["Llamadas al juez de suficiencia (Jev) por consulta", f1(linear.perQuery.judgeCalls), f1(adaptive.perQuery.judgeCalls)],
     ["Llamadas de generación por consulta", f1(linear.perQuery.generationCalls), f1(adaptive.perQuery.generationCalls)],
     ["Embeddings por consulta", f1(linear.perQuery.embeddingCalls), f1(adaptive.perQuery.embeddingCalls)],
     ["Queries a Vectorize por consulta", f1(linear.perQuery.vectorizeQueries), f1(adaptive.perQuery.vectorizeQueries)],
     [
-      "Tokens OpenRouter in / out por consulta",
-      real(pair(linear.perQuery.orTokensIn, linear.perQuery.orTokensOut)),
-      real(pair(adaptive.perQuery.orTokensIn, adaptive.perQuery.orTokensOut)),
+      "Tokens decisión (Jev) in / out por consulta",
+      decisionReal(pair(linear.perQuery.decisionTokensIn, linear.perQuery.decisionTokensOut)),
+      decisionReal(pair(adaptive.perQuery.decisionTokensIn, adaptive.perQuery.decisionTokensOut)),
     ],
     [
       "Tokens generación in / out por consulta",

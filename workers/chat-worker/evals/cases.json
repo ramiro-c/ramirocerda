@@ -1,5 +1,5 @@
 {
-  "$comment": "Fixed eval set for Botardo (linear vs adaptive RAG with the OpenRouter LLM router). expectedChunks are chunk-id PREFIXES (the -<hash> suffix changes when the content changes). expectedFacts are case- and accent-insensitive substrings any of which a good answer contains. route: search | smalltalk | off_topic | null (either is fine). retrieve: true = must search the KB, false = must not, null = either is fine. answerable: true = KB has the answer, false = the right reply is a decline (no info / off-topic), null = not graded. offerContact: expected router hire_intent (AskResponse.offerContact), null = not graded.",
+  "$comment": "Fixed eval set for Botardo (linear vs adaptive RAG with the Jev decision-model router). expectedChunks are chunk-id PREFIXES (the -<hash> suffix changes when the content changes). expectedFacts are case- and accent-insensitive substrings any of which a good answer contains. route: search | smalltalk | off_topic | null (either is fine). retrieve: true = must search the KB, false = must not, null = either is fine. answerable: true = KB has the answer, false = the right reply is a decline (no info / off-topic), null = not graded. offerContact: expected router hire_intent (AskResponse.offerContact), null = not graded.",
   "cases": [
     {
       "id": "st-es-hola",

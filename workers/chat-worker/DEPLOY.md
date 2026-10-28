@@ -92,61 +92,121 @@ Data is sampled/retained per AE policy (~90 days).
 ## Adaptive RAG
 
 Each message goes through a code-driven flow (no agent loop, no keyword
-heuristics). Routing, query rewrite and the sufficiency check are decided by an
-LLM through OpenRouter (`https://openrouter.ai/api/v1/chat/completions`,
-`src/openrouter.ts`); the code only validates its JSON and enforces the limits.
+heuristics). Routing and the sufficiency check are decided by **Jev**
+(TypeSafe's System One decision model) served by OpenCode at
+`https://opencode.ai/inference/systemone/v1/systemone` (`src/decision.ts`).
+The code validates every answer and enforces the limits.
 
-1. **Router** (`src/router.ts`): ONE OpenRouter call per message returns
-   `{"route": "search" | "smalltalk" | "off_topic", "hire_intent": boolean, "query": "standalone query"}`
-   (temperature 0, `response_format` json_schema, low `max_tokens`, timeout).
-   The output is validated strictly; any error (timeout, HTTP error, invalid
-   JSON, unknown label, wrong types) falls back to `search`, `hire_intent=false`
-   and the raw message as query.
+### Decision API (System One, not OpenAI-compatible)
+
+Request (`POST`, `Content-Type: application/json`):
+
+```json
+{
+  "model": "jev-1.13-free",
+  "state": { "conversation": [{ "role": "user", "content": "..." }], "latest_message": "..." },
+  "questions": {
+    "route": { "type": "choice", "instructions": "...", "criteria": { "search": "...", "smalltalk": "...", "off_topic": "..." } },
+    "hire_intent": { "type": "noul", "instructions": "..." }
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "model": "jev-1.13-free",
+  "answers": {
+    "route": { "type": "choice", "choice": "search", "confidence": 0.82, "probabilities": { "search": 0.82 } },
+    "hire_intent": { "type": "noul", "noul": 0.98 }
+  },
+  "usage": { "input_tokens": 558, "output_tokens": 3 }
+}
+```
+
+- `choice` picks one of the `criteria` keys and returns a confidence; `noul`
+  returns a probability in 0..1. Jev does **not** generate text, so there is no
+  `messages`, `max_tokens`, `temperature` or `response_format`, and it cannot
+  write a rewritten query (see below).
+- Auth: `Authorization: Bearer <key>` only if `DECISION_API_KEY` is set.
+  `jev-1.13-free` answers anonymously (verified: no key returns 200 with
+  `usage.opencode.billing_source: "free"`; an invalid key returns 401). Paid
+  Jev models need an OpenCode **Console** key (OpenCode docs); whether an
+  OpenCode Go key works there is not verified, so the worker does NOT reuse
+  `OPENCODE_GO_API_KEY`.
+- `DECISION_INTEGRATION_ID` (`opencode`) is OpenCode's client-side credential
+  integration id. It is not a header or body field of the request; the worker
+  only logs it.
+- Errors: 400 `{"detail": ...}` for bad requests, 401 for an invalid key. Any
+  non-2xx, timeout, non-JSON body or answer that does not match its question
+  (unknown choice, out-of-range number, missing answer) is a failure and gets
+  the safe default.
+
+### Flow
+
+1. **Router** (`src/router.ts`): ONE request per message with `route`
+   (choice: search / smalltalk / off_topic), `hire_intent` (noul) and, only
+   when there is history, `needs_history` (noul). Any failure falls back to
+   `search`, `hire_intent=false` and the raw message as query. A
+   smalltalk/off_topic route with confidence below `DECISION_MIN_CONFIDENCE`
+   is searched instead (skipping the KB is the risky direction).
    - `off_topic`: fixed localized reply. No retrieval, no generation.
    - `smalltalk`: one short generation (identity prompt + a smalltalk
      instruction, no KB facts). No retrieval.
-   - `search`: retrieval with the router's standalone `query` (which already
-     resolves follow-ups with the history); the answer is generated for the
-     ORIGINAL message.
-2. **Retrieval with sufficiency judge** (`src/retrieval.ts`): after the first
-   search, one OpenRouter call returns `{"sufficient": boolean, "reformulated_query": string}`.
-   If insufficient, the worker searches once more with `reformulated_query` and
-   merges by chunk id keeping the best score. Hard cap of 2 retrievals, enforced
-   in code (`MAX_RETRIEVAL_ITERATIONS`, clamped to 2; `1` disables the judge).
-   A judge failure keeps the first results. The similarity gate still decides
-   the no-info reply.
-3. **`offerContact`**: the router's `hire_intent` is returned on EVERY 200 reply
-   as `AskResponse.offerContact` (false when unknown: not configured, router
+   - `search`: retrieval with the raw message, or, when `needs_history >= 0.5`,
+     with the previous user turn + the message (composed in code, max 300
+     chars). The answer is always generated for the ORIGINAL message + history.
+2. **Retrieval with sufficiency judge** (`src/retrieval.ts`): when there is an
+   alternate query (the other of raw / contextual), one request asks
+   `sufficient` (noul) over the question and the retrieved snippets. If it is
+   below 0.5, the worker searches once more with the alternate query and merges
+   by chunk id keeping the best score. Without an alternate query (first turn)
+   the judge is not called. Hard cap of 2 retrievals, enforced in code
+   (`MAX_RETRIEVAL_ITERATIONS`, clamped to 2; `1` disables the judge). A judge
+   failure keeps the first results. The similarity gate still decides the
+   no-info reply.
+3. **`offerContact`**: `hire_intent >= 0.5` is returned on EVERY 200 reply as
+   `AskResponse.offerContact` (false when unknown: decision model off, router
    error, or before the router ran) and logged. Contract with the widget in
    PR #21. 429/500 error bodies are unchanged.
 
-Without `OPENROUTER_API_KEY` or `OPENROUTER_MODEL` the router and the judge are
-skipped: the worker searches the raw message once and applies the score gate,
-exactly like the linear pipeline, and `offerContact` is always false.
+With `DECISION_MODEL=""` the router and the judge are skipped: the worker
+searches the raw message once and applies the score gate, exactly like the
+linear pipeline, and `offerContact` is always false.
 
-Max calls per message: `search` 1 router + 1 judge (OpenRouter) + up to 2
+Max calls per message: `search` 1 router + at most 1 judge (Jev) + up to 2
 embeddings + up to 2 Vectorize queries + up to 1 generation; `smalltalk` 1
 router + 1 generation; `off_topic` 1 router.
 
-Config:
+Config (vars in `wrangler.jsonc`, defaults in `src/config.ts`):
 
-- Secret `OPENROUTER_API_KEY`: `wrangler secret put OPENROUTER_API_KEY`
-  (local dev: `workers/chat-worker/.dev.vars`).
-- Var `OPENROUTER_MODEL`: OpenRouter model slug. Intentionally EMPTY in
-  `wrangler.jsonc` (no guessed default): adaptive routing is off until it is set.
-  The model must support `response_format` json_schema (or set
-  `OPENROUTER_RESPONSE_FORMAT`).
-- Optional vars (defaults in `src/config.ts`): `OPENROUTER_TIMEOUT_MS` (2500),
-  `OPENROUTER_MAX_TOKENS` (256), `OPENROUTER_RESPONSE_FORMAT` (`json_schema`,
-  `json_object` or `none`), `OPENROUTER_REASONING_EFFORT` (empty; for reasoning
-  models, e.g. `minimal`, so reasoning does not eat `max_tokens`),
-  `OPENROUTER_ENDPOINT`, `MAX_RETRIEVAL_ITERATIONS` (2).
-- Removed: `ROUTER_MODEL`, `REWRITE_MODEL`, `ROUTER_LLM_ENABLED`,
-  `ROUTER_TIMEOUT_MS`, `REWRITE_TIMEOUT_MS`, `SUFFICIENCY_MIN_TOP_SCORE`,
-  `SUFFICIENCY_MIN_CHUNKS` (and the llama-3.2-3b Workers AI fallback).
+| Name | Kind | Default | Notes |
+| --- | --- | --- | --- |
+| `DECISION_ENDPOINT` | var | `https://opencode.ai/inference/systemone/v1/systemone` | `""` turns adaptive off |
+| `DECISION_MODEL` | var | `jev-1.13-free` | `""` turns adaptive off |
+| `DECISION_INTEGRATION_ID` | var | `opencode` | not sent; logged on `chat.route` |
+| `DECISION_TIMEOUT_MS` | var | `2000` | per request |
+| `DECISION_MIN_CONFIDENCE` | var | `0.5` | min confidence to skip the KB |
+| `MAX_RETRIEVAL_ITERATIONS` | var | `2` | clamped to 1..2 |
+| `DECISION_API_KEY` | secret, optional | unset (anonymous) | `wrangler secret put DECISION_API_KEY`; only for paid Jev models |
 
-Log events: `chat.route` (route, via, hire_intent, offer_contact, rewritten),
-`chat.rag_judge`, `chat.rag_retrieved`, `chat.rag_no_context`, `chat.ai_done`.
+Removed: every `OPENROUTER_*` var and the `OPENROUTER_API_KEY` secret (if it
+was ever set: `wrangler secret delete OPENROUTER_API_KEY`), plus the older
+`ROUTER_MODEL`, `REWRITE_MODEL`, `ROUTER_LLM_ENABLED`, `ROUTER_TIMEOUT_MS`,
+`REWRITE_TIMEOUT_MS`, `SUFFICIENCY_MIN_TOP_SCORE`, `SUFFICIENCY_MIN_CHUNKS`.
+`max_tokens`, `response_format` and reasoning effort have no equivalent in
+System One, so they are gone rather than renamed.
+
+Risks: `jev-1.13-free` is a free, time-limited OpenCode model (it can be
+withdrawn or rate limited; the safe default keeps the worker answering), and
+free-tier traffic may be used by the provider, so only the visitor message,
+the last 4 turns and short KB snippets are sent.
+
+Log events: `chat.route` (route, via, model, integration, route_confidence,
+hire_intent_p, needs_history_p, hire_intent, offer_contact, rewritten),
+`chat.rag_judge` (verdict, p or reason), `chat.rag_retrieved`,
+`chat.rag_no_context`, `chat.ai_done`.
 
 ### Evals (linear vs adaptive)
 
@@ -158,19 +218,23 @@ the adaptive one and prints a markdown table, including routing accuracy,
 `offerContact` (hire_intent) accuracy and router fallback rate.
 
 ```bash
-OPENROUTER_MODEL=<slug> pnpm chat:eval                      # real backends, read-only
-pnpm --filter ramirocerda-chat-worker eval:offline          # MOCKED OpenRouter, call counts only
+pnpm chat:eval                                              # real backends, read-only
+pnpm --filter ramirocerda-chat-worker eval:decision         # REAL Jev router, stubbed KB/generation, no credentials
+pnpm --filter ramirocerda-chat-worker eval:offline          # MOCKED decision model, call counts only
 pnpm --filter ramirocerda-chat-worker eval -- --no-judge    # skip the faithfulness judge
 ```
 
 Real mode needs `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (Workers AI +
-Vectorize read), `OPENCODE_GO_API_KEY`, `OPENROUTER_API_KEY` and
-`OPENROUTER_MODEL`, taken from the environment or the gitignored root `.env`
-and `.dev.vars`. It only calls `ai/run`, the Vectorize `query` endpoint (no
-writes), OpenRouter and the generation endpoint. Offline mode replaces
-OpenRouter with an oracle mock that echoes the expected labels: its routing
-numbers say nothing about router quality, only call counts are meaningful.
-Results are written to `evals/results/` (gitignored).
+Vectorize read) and `OPENCODE_GO_API_KEY` (generation and the faithfulness
+judge), taken from the environment or the gitignored root `.env` and
+`.dev.vars`; `DECISION_API_KEY` is optional. `DECISION_*` env vars override the
+`wrangler.jsonc` values. It only calls `ai/run`, the Vectorize `query` endpoint
+(no writes), the System One endpoint and the generation endpoint. Decision mode
+calls the real Jev endpoint (anonymous) with no-match Vectorize and stubbed
+generation: route, `offerContact`, fallbacks, router latency and decision
+tokens are real; retrieval and answer quality stay pending. Offline mode
+replaces Jev with an oracle mock that echoes the expected labels: only call
+counts are meaningful. Results are written to `evals/results/` (gitignored).
 
 ## Secret (step 2.6 — requires the real OpenCode Go key, run manually)
 

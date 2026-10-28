@@ -35,22 +35,21 @@
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
     "EMBEDDING_MODEL": "@cf/baai/bge-m3",
     "SITE_ORIGIN": "https://ramirocerda.com.ar",
-    // Adaptive RAG (src/pipeline.ts): LLM router + sufficiency judge via OpenRouter.
-    // The API key is a SECRET (wrangler secret put OPENROUTER_API_KEY), never a var.
-    // OPENROUTER_MODEL is intentionally empty: set the OpenRouter model slug Ramiro picks.
-    // While the model or the key is missing, the worker runs the linear pipeline
-    // (search the raw message, similarity gate, generate) and offerContact is false.
-    "OPENROUTER_MODEL": "",
-    // Per-call timeout for the router and the judge (ms).
-    "OPENROUTER_TIMEOUT_MS": "2500",
-    // Output budget per control call. Raise it if the model reasons before answering.
-    "OPENROUTER_MAX_TOKENS": "256",
-    // json_schema (strict schema) | json_object | none (prompt-only JSON). Use the
-    // strongest mode the chosen model supports on OpenRouter.
-    "OPENROUTER_RESPONSE_FORMAT": "json_schema",
-    // Optional reasoning effort for reasoning models (none|minimal|low|medium|high); empty sends nothing.
-    "OPENROUTER_REASONING_EFFORT": "",
-    // Searches per message, clamped to 1..2 in code. "1" disables the judge and the re-search.
+    // Adaptive RAG (src/pipeline.ts): router + sufficiency judge with Jev (TypeSafe
+    // System One) served by OpenCode. Not OpenAI-compatible: typed questions in,
+    // typed answers out (src/decision.ts). jev-1.13-free answers WITHOUT a key; for a
+    // paid model set the optional SECRET DECISION_API_KEY (OpenCode Console key):
+    // wrangler secret put DECISION_API_KEY. Set DECISION_MODEL to "" to turn the
+    // decision model off (linear pipeline, offerContact false).
+    "DECISION_ENDPOINT": "https://opencode.ai/inference/systemone/v1/systemone",
+    "DECISION_MODEL": "jev-1.13-free",
+    // OpenCode credential integration id. Not sent on the wire (the endpoint only
+    // takes a Bearer key); logged on chat.route for traceability.
+    "DECISION_INTEGRATION_ID": "opencode",
+    // Per-request timeout for the router and the judge (ms). Measured p95 is well under 1 s.
+    "DECISION_TIMEOUT_MS": "2000",
+    // Below this route confidence, smalltalk/off_topic is not trusted and the message is searched.
+    "DECISION_MIN_CONFIDENCE": "0.5",
     "MAX_RETRIEVAL_ITERATIONS": "2"
   },
   "observability": {
