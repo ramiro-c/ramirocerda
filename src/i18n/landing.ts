@@ -2,15 +2,20 @@
  * Copy slots for the conversion layer (home landing, CTAs, contact form,
  * storage notice). Kept apart from ui.ts so the landing kit can rewrite copy
  * in one place. Rules (landing kit): sentence case, no hyphens inside copy,
- * benefit first CTAs, calm system messages. Every claim below comes from data
- * already in the repo (projects, about); nothing invented.
+ * benefit first CTAs, calm system messages.
+ *
+ * Positioning: full profile (Tech Lead at Libro de Pases, end to end product
+ * work, cofounder of Kano Studio), applied AI as one capability among others.
+ * Every claim comes from the site (about, projects) or Ramiro's CV note in his
+ * vault (Kano Studio landing); nothing invented. Gaps stay as TODOs.
  */
 import type { Lang } from "./ui";
 
 export interface CaseStudy {
-  /** Project slug under /work/, or null for a non project case. */
-  slug: string | null;
-  href: string;
+  /** Stable id, used as the cta_click position for the case link. */
+  id: string;
+  /** Where "read the case" points; null hides the link (no public page yet). */
+  href: string | null;
   label: string;
   title: string;
   result: string;
@@ -74,11 +79,13 @@ export interface LandingCopy {
   dock: { label: string };
 }
 
-// TODO(Ramiro): confirm Kano and Avellana can be named publicly. Unconfirmed
-// names only render in `astro dev` (marked as placeholders), never in the build.
+// Kano Studio: Ramiro is a cofounder (his own PR #21 feedback). Avellana is
+// not mentioned anywhere in the site or notes yet.
+// TODO(Ramiro): confirm Avellana can be named publicly. Unconfirmed names only
+// render in `astro dev` (marked as placeholders), never in the build.
 const LOGOS = [
   { name: "LDP (Libro de Pases)", confirmed: true },
-  { name: "Kano", confirmed: false },
+  { name: "Kano Studio", confirmed: true },
   { name: "Avellana", confirmed: false },
 ];
 
@@ -89,10 +96,10 @@ const TESTIMONIALS: Testimonial[] = [];
 export const landing: Record<Lang, LandingCopy> = {
   es: {
     hero: {
-      eyebrow: "Ramiro Cerdá · AI & Full Stack Engineer",
-      headline: "Agentes de IA para tu negocio,",
-      headlineAccent: "con respuestas que podés verificar.",
-      sub: "Diseño y pongo en producción agentes y sistemas RAG conectados a tus datos: citan la fuente, respetan los permisos de cada usuario y pasan tests antes de cada deploy.",
+      eyebrow: "Ramiro Cerdá · Tech Lead y Full Stack Engineer",
+      headline: "Construyo productos web y mobile de punta a punta,",
+      headlineAccent: "con IA donde suma.",
+      sub: "Tech Lead en Libro de Pases y cofundador de Kano Studio. Me encargo del producto completo: frontend, mobile, backend, performance y calidad, y sumo agentes de IA cuando resuelven un problema real.",
       returningNote: "Qué bueno verte de nuevo.",
       proof: "Tech Lead en LDP: mejoras de latencia de más del 75% en búsqueda.",
     },
@@ -107,35 +114,57 @@ export const landing: Record<Lang, LandingCopy> = {
     proof: { workedWith: "Trabajé con", logos: LOGOS },
     demo: {
       label: "Demo en vivo",
-      title: "Probá lo que puedo construir para vos",
-      body: "Botardo es un agente RAG que armé para esta web: busca en una base de conocimiento curada, responde en tu idioma y, si no tiene el dato, lo dice en vez de inventar.",
-      prompts: ["¿Qué agentes de IA construyó Ramiro?", "¿Cómo evalúa sus agentes?"],
+      title: "Probá un agente que construí",
+      body: "La IA es una de las cosas que hago. Botardo es un agente RAG que armé para esta web: busca en una base de conocimiento curada, responde en tu idioma y, si no tiene el dato, lo dice en vez de inventar.",
+      prompts: ["¿Qué hace Ramiro en Libro de Pases?", "¿Qué productos construyó?"],
     },
     cases: {
       label: "Casos",
-      title: "Lo que ya está funcionando",
+      title: "Productos que ya están en uso",
       more: "Ver el caso",
       items: [
         {
-          slug: "agent-general",
+          id: "ldp",
+          href: "/about/",
+          label: "Tech Lead · plataforma",
+          title: "Libro de Pases (LDP), plataforma futbolística",
+          result: "Entré en la app mobile y hoy lidero el desarrollo full stack: refactors de búsqueda, observabilidad con Sentry y New Relic, testing y CI, con mejoras de latencia de más del 75%.",
+        },
+        {
+          id: "kano",
+          // TODO(Ramiro): link to the live landing or a case page when there is one.
+          href: null,
+          label: "Cofundador · web",
+          title: "Kano Studio, landing y diagnóstico interactivo",
+          result: "Design system, i18n, SEO y remediación de accesibilidad WCAG 2.2 AA a partir de una auditoría.",
+        },
+        {
+          id: "lactaria",
+          href: "/work/lactaria/",
+          label: "Freelance · app mobile",
+          title: "LactarIA, apoyo en lactancia materna",
+          result: "App móvil de salud con un chatbot de IA apoyado en un banco de preguntas curado, validada en un piloto cerrado con 50 madres.",
+        },
+        {
+          id: "mundial-2026",
+          href: "/work/mundial-2026/",
+          label: "Producto · full stack",
+          title: "Mundial 2026, la app para seguir el torneo",
+          result: "Grupos, fixture con huso local, bracket, mapa de sedes y guía de TV por país, con datos históricos cruzados. Está online.",
+        },
+        {
+          id: "agent-general",
           href: "/work/agent-general/",
-          label: "Multiagente en producción",
-          title: "Asistente de producto para una plataforma de fútbol",
+          label: "IA en producción",
+          title: "Agent General, asistente de producto",
           result: "Un agente raíz delega en 14 subagentes de dominio, usa el JWT de cada usuario y se evalúa con casos reales, sin LLM juez.",
         },
         {
-          slug: "botardo",
-          href: "/work/botardo/",
-          label: "RAG en Cloudflare",
-          title: "Botardo, el chat de esta web",
-          result: "Responde con hechos de una base curada; sin contexto, contesta sin llamar al modelo: costo cero en preguntas fuera de tema.",
-        },
-        {
-          slug: null,
+          id: "freelance",
           href: "/about/",
-          label: "Performance",
-          title: "Tech Lead en LDP (Libro de Pases)",
-          result: "Lideré refactors de búsqueda, observabilidad con Sentry y New Relic, testing y CI, con mejoras de latencia de más del 75%.",
+          label: "Freelance · sistemas de gestión",
+          title: "Software de gestión para negocios",
+          result: "Sistemas de gestión multi rubro en DevGAM (PHP, JS, MySQL) y trámites administrativos para la UTN FRLP (Laravel, Vue).",
         },
       ],
     },
@@ -146,42 +175,42 @@ export const landing: Record<Lang, LandingCopy> = {
       items: [
         {
           title: "Charlamos 20 minutos",
-          body: "Entiendo el problema, qué datos tenés y si un agente es la herramienta correcta. Si no lo es, te lo digo.",
+          body: "Entiendo el problema, quién lo va a usar y qué hace falta construir. Si la solución no necesita software nuevo, o no necesita IA, te lo digo.",
         },
         {
-          title: "Prototipo con tus datos",
-          body: "Una primera versión acotada, con evals que miden si responde bien antes de sumar alcance.",
+          title: "Una primera versión usable",
+          body: "Un alcance acotado que se puede probar con usuarios reales antes de sumar funcionalidades.",
         },
         {
-          title: "Producción y medición",
-          body: "Deploy, observabilidad y tests en CI para que el agente siga respondiendo bien cuando cambian los datos.",
+          title: "Producción y mantenimiento",
+          body: "Deploy, observabilidad y tests en CI para que el producto siga andando bien cuando crece.",
         },
       ],
     },
-    tagline: "No es magia. Es un agente que cita la fuente, sabe cuándo no sabe y pasa los tests.",
+    tagline: "De la primera pantalla al último deploy, con alguien que se hace cargo del producto completo.",
     faq: {
       label: "Preguntas frecuentes",
       title: "Antes de escribirme",
       items: [
         {
-          q: "¿Qué es un sistema RAG y cuándo conviene?",
-          a: "Es un agente que antes de responder busca en tus documentos o datos y arma la respuesta con eso. Conviene cuando la información cambia seguido o es propia de tu negocio y no querés que el modelo la invente.",
+          q: "¿Qué tipo de proyectos hacés?",
+          a: "Apps web y mobile, plataformas con backend propio, sitios y landings, y agentes de IA. Algunos ejemplos: la plataforma de Libro de Pases, la landing de Kano Studio, LactarIA y Mundial 2026.",
         },
         {
-          q: "¿Qué pasa si el agente no sabe la respuesta?",
-          a: "Lo diseño para que lo diga. Botardo, por ejemplo, contesta que no tiene el dato cuando la búsqueda no encuentra contexto, sin llamar al modelo.",
+          q: "¿Podés mejorar algo que ya existe?",
+          a: "Sí. En Libro de Pases buena parte del trabajo fue mejorar lo que ya estaba: refactors de búsqueda con mejoras de latencia de más del 75%, observabilidad con Sentry y New Relic, testing y CI.",
         },
         {
-          q: "¿Cómo sé si responde bien?",
-          a: "Con evals determinísticos: casos de prueba que verifican qué herramientas usa, que los números salgan de los datos y el idioma de la respuesta. Corren en CI y cortan el deploy si algo se rompe.",
+          q: "¿Necesito IA en mi producto?",
+          a: "No siempre. Si una regla, un formulario o una buena búsqueda resuelven el problema, es mejor. Cuando la IA suma, como responder sobre tus documentos o automatizar consultas, la diseño para que cite la fuente y diga cuando no sabe.",
         },
         {
-          q: "¿Qué pasa con los permisos y los datos privados?",
-          a: "El agente ve lo mismo que ve el usuario que pregunta. En Agent General cada llamada usa el JWT de ese usuario y las sesiones quedan aisladas.",
+          q: "¿Qué pasa después del lanzamiento?",
+          a: "El producto sale con monitoreo de errores y performance y con tests que corren en cada cambio, para detectar problemas antes que tus usuarios.",
         },
         {
           q: "¿Con qué stack trabajás?",
-          a: "TypeScript y Python; Cloudflare Workers, Vectorize y Workers AI; GCP con Vertex AI; Google ADK y LangGraph para orquestar agentes.",
+          a: "React, React Native y TypeScript en el frontend; Node.js, NestJS, Python, PostgreSQL y MySQL en el backend; GCP y Cloudflare Workers para infraestructura; Google ADK y LangGraph para agentes de IA.",
         },
         {
           q: "¿Cuánto cuesta?",
@@ -190,7 +219,7 @@ export const landing: Record<Lang, LandingCopy> = {
       ],
     },
     final: {
-      title: "¿Tenés una idea para un agente?",
+      title: "¿Tenés una idea o un producto para mejorar?",
       body: "Contame qué querés resolver. En 20 minutos vemos si tiene sentido y cuál sería el primer paso.",
     },
     form: {
@@ -228,10 +257,10 @@ export const landing: Record<Lang, LandingCopy> = {
   },
   en: {
     hero: {
-      eyebrow: "Ramiro Cerdá · AI & Full Stack Engineer",
-      headline: "AI agents for your business,",
-      headlineAccent: "with answers you can verify.",
-      sub: "I design and ship AI agents and RAG systems wired to your data: they cite their sources, respect each user's permissions, and pass tests before every deploy.",
+      eyebrow: "Ramiro Cerdá · Tech Lead and Full Stack Engineer",
+      headline: "I build web and mobile products end to end,",
+      headlineAccent: "with AI where it pays off.",
+      sub: "Tech Lead at Libro de Pases and cofounder of Kano Studio. I own the whole product: frontend, mobile, backend, performance, and quality, and I add AI agents when they solve a real problem.",
       returningNote: "Good to see you again.",
       proof: "Tech Lead at LDP: search latency improvements of more than 75%.",
     },
@@ -246,35 +275,57 @@ export const landing: Record<Lang, LandingCopy> = {
     proof: { workedWith: "Worked with", logos: LOGOS },
     demo: {
       label: "Live demo",
-      title: "Try what I can build for you",
-      body: "Botardo is a RAG agent I built for this site: it searches a curated knowledge base, answers in your language and, when it lacks the data, says so instead of making it up.",
-      prompts: ["What AI agents has Ramiro built?", "How does he evaluate his agents?"],
+      title: "Try an agent I built",
+      body: "AI is one of the things I do. Botardo is a RAG agent I built for this site: it searches a curated knowledge base, answers in your language and, when it lacks the data, says so instead of making it up.",
+      prompts: ["What does Ramiro do at Libro de Pases?", "What products has he built?"],
     },
     cases: {
       label: "Cases",
-      title: "What is already running",
+      title: "Products already in use",
       more: "Read the case",
       items: [
         {
-          slug: "agent-general",
+          id: "ldp",
+          href: "/en/about/",
+          label: "Tech Lead · platform",
+          title: "Libro de Pases (LDP), football platform",
+          result: "I joined on the mobile app and now lead full stack development: search refactors, observability with Sentry and New Relic, testing and CI, with latency improvements of more than 75%.",
+        },
+        {
+          id: "kano",
+          // TODO(Ramiro): link to the live landing or a case page when there is one.
+          href: null,
+          label: "Cofounder · web",
+          title: "Kano Studio, landing and interactive diagnostic",
+          result: "Design system, i18n, SEO, and WCAG 2.2 AA accessibility remediation driven by an audit.",
+        },
+        {
+          id: "lactaria",
+          href: "/en/work/lactaria/",
+          label: "Freelance · mobile app",
+          title: "LactarIA, breastfeeding support",
+          result: "A mobile health app with an AI chatbot grounded in a curated Q&A bank, validated in a closed pilot with 50 mothers.",
+        },
+        {
+          id: "mundial-2026",
+          href: "/en/work/mundial-2026/",
+          label: "Product · full stack",
+          title: "Mundial 2026, the app to follow the tournament",
+          result: "Groups, fixtures in local time, bracket, venue map, and TV guide by country, with cross referenced historical data. It is live.",
+        },
+        {
+          id: "agent-general",
           href: "/en/work/agent-general/",
-          label: "Multi agent in production",
-          title: "Product assistant for a football platform",
+          label: "AI in production",
+          title: "Agent General, product assistant",
           result: "A root agent delegates to 14 domain sub agents, uses each user's JWT, and is evaluated on real cases with no LLM judge.",
         },
         {
-          slug: "botardo",
-          href: "/en/work/botardo/",
-          label: "RAG on Cloudflare",
-          title: "Botardo, this site's chat",
-          result: "Answers with facts from a curated base; with no context it replies without calling the model: zero cost on off topic questions.",
-        },
-        {
-          slug: null,
+          id: "freelance",
           href: "/en/about/",
-          label: "Performance",
-          title: "Tech Lead at LDP (Libro de Pases)",
-          result: "Led search refactors, observability with Sentry and New Relic, testing and CI, with latency improvements of more than 75%.",
+          label: "Freelance · business software",
+          title: "Management software for businesses",
+          result: "Multi industry management systems at DevGAM (PHP, JS, MySQL) and administrative workflows for UTN FRLP (Laravel, Vue).",
         },
       ],
     },
@@ -285,42 +336,42 @@ export const landing: Record<Lang, LandingCopy> = {
       items: [
         {
           title: "A 20 minute call",
-          body: "I learn the problem, what data you have, and whether an agent is the right tool. If it is not, I tell you.",
+          body: "I learn the problem, who will use it, and what needs to be built. If the answer does not need new software, or does not need AI, I tell you.",
         },
         {
-          title: "A prototype on your data",
-          body: "A first scoped version, with evals that measure whether it answers well before adding scope.",
+          title: "A first usable version",
+          body: "A tight scope you can test with real users before adding features.",
         },
         {
-          title: "Production and measurement",
-          body: "Deploy, observability, and CI tests so the agent keeps answering well when your data changes.",
+          title: "Production and maintenance",
+          body: "Deploy, observability, and CI tests so the product keeps working well as it grows.",
         },
       ],
     },
-    tagline: "Not magic. An agent that cites its sources, knows when it does not know, and passes the tests.",
+    tagline: "From the first screen to the last deploy, with someone who owns the whole product.",
     faq: {
       label: "FAQ",
       title: "Before you write",
       items: [
         {
-          q: "What is a RAG system and when does it make sense?",
-          a: "An agent that searches your documents or data before answering and builds the reply from them. It makes sense when the information changes often or is specific to your business and you do not want the model to make it up.",
+          q: "What kind of projects do you take on?",
+          a: "Web and mobile apps, platforms with their own backend, sites and landing pages, and AI agents. Some examples: the Libro de Pases platform, the Kano Studio landing, LactarIA, and Mundial 2026.",
         },
         {
-          q: "What happens when the agent does not know the answer?",
-          a: "I design it to say so. Botardo, for example, replies that it lacks the data when retrieval finds no context, without calling the model.",
+          q: "Can you improve something that already exists?",
+          a: "Yes. At Libro de Pases much of the work was improving what was there: search refactors with latency improvements of more than 75%, observability with Sentry and New Relic, testing and CI.",
         },
         {
-          q: "How do I know it answers well?",
-          a: "Deterministic evals: test cases that check which tools it calls, that numbers come from the data, and the reply language. They run in CI and block the deploy when something breaks.",
+          q: "Do I need AI in my product?",
+          a: "Not always. If a rule, a form, or good search solves the problem, that is better. When AI helps, like answering from your documents or automating questions, I design it to cite its sources and say when it does not know.",
         },
         {
-          q: "What about permissions and private data?",
-          a: "The agent sees what the asking user sees. In Agent General every call uses that user's JWT and sessions stay isolated.",
+          q: "What happens after launch?",
+          a: "The product ships with error and performance monitoring and with tests that run on every change, so problems show up before your users find them.",
         },
         {
           q: "What is your stack?",
-          a: "TypeScript and Python; Cloudflare Workers, Vectorize, and Workers AI; GCP with Vertex AI; Google ADK and LangGraph to orchestrate agents.",
+          a: "React, React Native, and TypeScript on the frontend; Node.js, NestJS, Python, PostgreSQL, and MySQL on the backend; GCP and Cloudflare Workers for infrastructure; Google ADK and LangGraph for AI agents.",
         },
         {
           q: "How much does it cost?",
@@ -329,7 +380,7 @@ export const landing: Record<Lang, LandingCopy> = {
       ],
     },
     final: {
-      title: "Got an idea for an agent?",
+      title: "Got an idea or a product to improve?",
       body: "Tell me what you want to solve. In 20 minutes we see whether it makes sense and what the first step would be.",
     },
     form: {

@@ -100,9 +100,11 @@ const faqSchema = {
           <p class="case-label mono">{item.label}</p>
           <h3 class="case-title">{item.title}</h3>
           <p class="case-result">{item.result}</p>
-          <a class="cta-link case-link" href={item.href} data-cta-id="case" data-cta-position={item.slug ?? "about"}>
-            {c.cases.more}
-          </a>
+          {item.href && (
+            <a class="cta-link case-link" href={item.href} data-cta-id="case" data-cta-position={item.id}>
+              {c.cases.more}
+            </a>
+          )}
         </li>
       ))
     }
