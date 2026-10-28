@@ -101,9 +101,15 @@ const faqSchema = {
           <h3 class="case-title">{item.title}</h3>
           <p class="case-result">{item.result}</p>
           {item.href && (
-            <a class="cta-link case-link" href={item.href} data-cta-id="case" data-cta-position={item.id}>
-              {c.cases.more}
-            </a>
+            /^https?:\/\//.test(item.href) ? (
+              <a class="cta-link case-link" href={item.href} target="_blank" rel="noreferrer" data-cta-id="case_site" data-cta-position={item.id}>
+                {c.cases.visit}
+              </a>
+            ) : (
+              <a class="cta-link case-link" href={item.href} data-cta-id="case" data-cta-position={item.id}>
+                {c.cases.more}
+              </a>
+            )
           )}
         </li>
       ))

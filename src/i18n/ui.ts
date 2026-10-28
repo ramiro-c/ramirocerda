@@ -87,7 +87,7 @@ export const ui = {
     "kind.freelance": "Freelance",
     "kind.oss-fork": "Open source",
     "status.live": "En vivo",
-    "notfound.title": "404 — Esta página no existe",
+    "notfound.title": "Esta página no existe",
     "notfound.support": "El link puede estar roto o la página fue movida.",
     "notfound.cta": "Volver al inicio",
   },
@@ -117,7 +117,7 @@ export const ui = {
     "botardo.welcome":
       "Hi! I’m Botardo, an AI assistant with info about Ramiro. Ask me about his experience, projects, skills, or anything professional.",
     "botardo.welcomeReturning":
-      "Welcome back. If you already saw what Ramiro does, tell me what you want to build or ask me whatever is still missing.",
+      "Welcome back. If you already saw what Ramiro does, tell me what you want to build or ask me what you still want to know.",
     "botardo.open": "Open Botardo",
     "botardo.close": "Close chat",
     "botardo.placeholder": "Type your question…",
@@ -170,7 +170,7 @@ export const ui = {
     "kind.freelance": "Freelance",
     "kind.oss-fork": "Open source",
     "status.live": "Live",
-    "notfound.title": "404 — This page doesn’t exist",
+    "notfound.title": "This page does not exist",
     "notfound.support": "The link may be broken or the page was moved.",
     "notfound.cta": "Back home",
   },

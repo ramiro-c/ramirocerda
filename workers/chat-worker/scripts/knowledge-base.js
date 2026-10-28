@@ -50,7 +50,7 @@ Agente de chat de análisis y predicción de fútbol sobre ~49k partidos interna
 Aplicación full-stack de análisis de fútbol para el Mundial 2026 (México, USA, Canadá). Incluye tabla de grupos con lógica de mejores terceros, fixture completo con hora local, cuadro eliminatorio de 16avos hasta la Final, mapa interactivo de las 16 sedes, histórico de enfrentamientos en Mundiales desde 1930 con estadísticas por selección y guía de TV por país.
 * **Fuentes de datos:** wheniskickoff API (fixture, grupos, sedes, TV), OpenFootball (histórico CC0), StatsBomb (eventos históricos).
 * **Stack:** FastAPI, React 19, TypeScript, Vite, Tailwind CSS v4, Leaflet, Cloudflare Workers.
-* **Links:** Demo: https://worldcup-2026.rami992009.workers.dev | GitHub: https://github.com/rami992009/mundial-2026
+* **Links:** Demo: https://worldcup-2026.rami992009.workers.dev | GitHub: https://github.com/ramiro-c/worldcup-2026
 
 ### linkedin-markdownificator
 Herramienta para exportar perfiles de LinkedIn a Markdown, facilitando la sincronización con sitios web personales e interacción con agentes de IA. Para lograrlo, diseñé un extractor tolerante a cambios en el DOM adaptado al layout React post-2025, externalicé los selectores en JSON para evitar rupturas de scraping y aseguré la estabilidad con 26 pruebas de integración.

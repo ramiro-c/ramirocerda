@@ -8,13 +8,21 @@
  * work, collaboration with Kano Studio), applied AI as one capability among others.
  * Every claim comes from the site (about, projects) or Ramiro's CV note in his
  * vault (Kano Studio landing); nothing invented. Gaps stay as TODOs.
+ * Public product URLs (checked with curl when added):
+ *   Libro de Pases: https://www.ldptech.ai/ (librodepases.com redirects there)
+ *   Kano Studio: https://kano.studio/ (site of the kano-landing repo)
+ *   Avellana: https://avellana.store/ (Kano Studio product; copy from its public site)
  */
 import type { Lang } from "./ui";
 
 export interface CaseStudy {
   /** Stable id, used as the cta_click position for the case link. */
   id: string;
-  /** Where "read the case" points; null hides the link (no public page yet). */
+  /**
+   * Where the case link points. A path opens the case page on this site, an
+   * absolute URL opens the product's public site in a new tab, and null hides
+   * the link (no public page yet).
+   */
   href: string | null;
   label: string;
   title: string;
@@ -46,7 +54,7 @@ export interface LandingCopy {
   };
   proof: { workedWith: string; logos: Array<{ name: string; confirmed: boolean }> };
   demo: { label: string; title: string; body: string; prompts: string[] };
-  cases: { label: string; title: string; items: CaseStudy[]; more: string };
+  cases: { label: string; title: string; items: CaseStudy[]; more: string; visit: string };
   testimonials: { label: string; items: Testimonial[] };
   steps: { label: string; title: string; items: Array<{ title: string; body: string }> };
   tagline: string;
@@ -79,14 +87,13 @@ export interface LandingCopy {
   dock: { label: string };
 }
 
-// Kano Studio: presented as a collaboration (confirmed by Ramiro). Avellana is
-// not mentioned anywhere in the site or notes yet.
-// TODO(Ramiro): confirm Avellana can be named publicly. Unconfirmed names only
-// render in `astro dev` (marked as placeholders), never in the build.
+// Kano Studio and Avellana (a Kano Studio product) are presented as a
+// collaboration, confirmed by Ramiro. Unconfirmed names only render in
+// `astro dev` (marked as placeholders), never in the build.
 const LOGOS = [
   { name: "LDP (Libro de Pases)", confirmed: true },
   { name: "Kano Studio", confirmed: true },
-  { name: "Avellana", confirmed: false },
+  { name: "Avellana", confirmed: true },
 ];
 
 // TODO(Ramiro): add real testimonials (quote + full name + role, with consent).
@@ -100,8 +107,8 @@ export const landing: Record<Lang, LandingCopy> = {
       headline: "De la idea",
       headlineAccent: "al producto en producción.",
       sub: "Tech Lead en Libro de Pases y colaboro con Kano Studio. Desarrollo apps web y mobile, plataformas y agentes de IA, y me quedo hasta que funcionan bien con usuarios reales.",
-      returningNote: "Qué bueno verte de nuevo.",
-      proof: "Tech Lead en LDP: mejoras de latencia de más del 75% en búsqueda.",
+      returningNote: "Hola de nuevo.",
+      proof: "En LDP lideré refactors de búsqueda que mejoraron la latencia más del 75%.",
     },
     cta: {
       primary: "Agendá 20 min para charlar tu idea",
@@ -115,56 +122,63 @@ export const landing: Record<Lang, LandingCopy> = {
     demo: {
       label: "Demo en vivo",
       title: "Probá un agente que construí",
-      body: "La IA es una de las cosas que hago. Botardo es un agente RAG que armé para esta web: busca en una base de conocimiento curada, responde en tu idioma y, si no tiene el dato, lo dice en vez de inventar.",
+      body: "La IA es una de las cosas que hago. Botardo es un agente RAG que armé para esta web. Busca en una base de conocimiento curada y responde en tu idioma. Si no tiene un dato, lo dice en vez de inventarlo.",
       prompts: ["¿Qué hace Ramiro en Libro de Pases?", "¿Qué productos construyó?"],
     },
     cases: {
       label: "Casos",
       title: "Productos que ya están en uso",
       more: "Ver el caso",
+      visit: "Ver el sitio",
       items: [
         {
           id: "ldp",
-          href: "/about/",
+          href: "https://www.ldptech.ai/",
           label: "Tech Lead · plataforma",
-          title: "Libro de Pases (LDP), plataforma futbolística",
-          result: "Entré en la app mobile y hoy lidero el desarrollo full stack: refactors de búsqueda, observabilidad con Sentry y New Relic, testing y CI, con mejoras de latencia de más del 75%.",
+          title: "Libro de Pases (LDP), plataforma de fútbol",
+          result: "Entré por la app mobile y hoy lidero el desarrollo full stack. Hice refactors de búsqueda que mejoraron la latencia más del 75%, y sumé observabilidad con Sentry y New Relic, tests y CI.",
         },
         {
           id: "kano",
-          // TODO(Ramiro): link to the live landing or a case page when there is one.
-          href: null,
+          href: "https://kano.studio/",
           label: "Colaboración · web",
           title: "Kano Studio, landing y diagnóstico interactivo",
-          result: "Design system, i18n, SEO y remediación de accesibilidad WCAG 2.2 AA a partir de una auditoría.",
+          result: "Con el equipo de Kano hice el design system, la i18n y el SEO. También corregí los problemas de accesibilidad WCAG 2.2 AA que marcó una auditoría.",
+        },
+        {
+          id: "avellana",
+          href: "https://avellana.store/",
+          label: "Colaboración con Kano Studio · app mobile",
+          title: "Avellana, app para comprar ropa en Av. Avellaneda",
+          result: "App gratuita para Android e iOS. Compara precios de ropa de mujer entre los locales de Av. Avellaneda, guarda favoritos y arma el recorrido más corto.",
         },
         {
           id: "lactaria",
           href: "/work/lactaria/",
           label: "Freelance · app mobile",
           title: "LactarIA, apoyo en lactancia materna",
-          result: "App móvil de salud con un chatbot de IA apoyado en un banco de preguntas curado, validada en un piloto cerrado con 50 madres.",
+          result: "App de salud con un chatbot de IA que responde desde un banco de preguntas curado. Tuvo un piloto cerrado con 50 madres.",
         },
         {
           id: "mundial-2026",
           href: "/work/mundial-2026/",
           label: "Producto · full stack",
           title: "Mundial 2026, la app para seguir el torneo",
-          result: "Grupos, fixture con huso local, bracket, mapa de sedes y guía de TV por país, con datos históricos cruzados. Está online.",
+          result: "Muestra grupos, fixture en tu huso horario, cuadro eliminatorio, mapa de sedes y guía de TV por país. Cruza datos históricos entre selecciones. Está online.",
         },
         {
           id: "agent-general",
           href: "/work/agent-general/",
           label: "IA en producción",
           title: "Agent General, asistente de producto",
-          result: "Un agente raíz delega en 14 subagentes de dominio, usa el JWT de cada usuario y se evalúa con casos reales, sin LLM juez.",
+          result: "Un agente raíz delega en 14 subagentes de dominio y usa el JWT de cada usuario. Lo evalúo con casos reales, sin LLM juez.",
         },
         {
           id: "freelance",
           href: "/about/",
           label: "Freelance · sistemas de gestión",
           title: "Software de gestión para negocios",
-          result: "Sistemas de gestión multi rubro en DevGAM (PHP, JS, MySQL) y trámites administrativos para la UTN FRLP (Laravel, Vue).",
+          result: "Hice sistemas de gestión multi rubro en DevGAM (PHP, JS, MySQL) y un sistema de trámites administrativos para la UTN FRLP (Laravel, Vue).",
         },
       ],
     },
@@ -179,22 +193,22 @@ export const landing: Record<Lang, LandingCopy> = {
         },
         {
           title: "Una primera versión usable",
-          body: "Un alcance acotado que se puede probar con usuarios reales antes de sumar funcionalidades.",
+          body: "Armamos un alcance chico que se puede probar con usuarios reales antes de sumar funcionalidades.",
         },
         {
           title: "Producción y mantenimiento",
-          body: "Deploy, observabilidad y tests en CI para que el producto siga andando bien cuando crece.",
+          body: "Hago el deploy, configuro el monitoreo de errores y dejo tests que corren en CI. Después sigo con el mantenimiento.",
         },
       ],
     },
-    tagline: "De la primera pantalla al último deploy, con alguien que se hace cargo del producto completo.",
+    tagline: "Me hago cargo del producto completo, desde la primera pantalla hasta el deploy.",
     faq: {
       label: "Preguntas frecuentes",
       title: "Antes de escribirme",
       items: [
         {
           q: "¿Qué tipo de proyectos hacés?",
-          a: "Apps web y mobile, plataformas con backend propio, sitios y landings, y agentes de IA. Algunos ejemplos: la plataforma de Libro de Pases, la landing de Kano Studio, LactarIA y Mundial 2026.",
+          a: "Apps web y mobile, plataformas con backend propio, sitios y landings, y agentes de IA. Algunos ejemplos: la plataforma de Libro de Pases, la landing de Kano Studio, la app Avellana, LactarIA y Mundial 2026.",
         },
         {
           q: "¿Podés mejorar algo que ya existe?",
@@ -202,11 +216,11 @@ export const landing: Record<Lang, LandingCopy> = {
         },
         {
           q: "¿Necesito IA en mi producto?",
-          a: "No siempre. Si una regla, un formulario o una buena búsqueda resuelven el problema, es mejor. Cuando la IA suma, como responder sobre tus documentos o automatizar consultas, la diseño para que cite la fuente y diga cuando no sabe.",
+          a: "No siempre. Si una regla, un formulario o una buena búsqueda resuelven el problema, conviene eso. Cuando la IA sirve, por ejemplo para responder sobre tus documentos, la diseño para que cite la fuente y diga cuando no sabe.",
         },
         {
           q: "¿Qué pasa después del lanzamiento?",
-          a: "El producto sale con monitoreo de errores y performance y con tests que corren en cada cambio, para detectar problemas antes que tus usuarios.",
+          a: "El producto sale con monitoreo de errores y de performance, y con tests que corren en cada cambio. Así veo los problemas antes que tus usuarios.",
         },
         {
           q: "¿Con qué stack trabajás?",
@@ -235,8 +249,8 @@ export const landing: Record<Lang, LandingCopy> = {
       success: "Recibí tu mensaje. Te respondo a {email}.",
       errors: {
         name: "Escribí tu nombre.",
-        email: "Revisá el email: tiene que tener la forma nombre@dominio.com.",
-        message: "Contame un poco más: el mensaje necesita al menos 10 caracteres.",
+        email: "Revisá el email. Tiene que tener la forma nombre@dominio.com.",
+        message: "El mensaje necesita al menos 10 caracteres.",
         turnstile: "No pudimos verificar que sos una persona. Esperá a que cargue la verificación y probá de nuevo.",
         rateLimited: "Llegaron varios envíos seguidos. Esperá un minuto y probá de nuevo.",
         unavailable: "El formulario no está disponible ahora. Escribime a {email}.",
@@ -245,7 +259,7 @@ export const landing: Record<Lang, LandingCopy> = {
       privacy: "Uso tus datos solo para responderte.",
     },
     botardoOffer: {
-      text: "Si querés, dejame tus datos y Ramiro te escribe para charlar tu proyecto.",
+      text: "Dejame tus datos y Ramiro te escribe para charlar tu proyecto.",
       button: "Dejar mis datos",
     },
     notice: {
@@ -261,13 +275,13 @@ export const landing: Record<Lang, LandingCopy> = {
       headline: "From idea",
       headlineAccent: "to a product in production.",
       sub: "Tech Lead at Libro de Pases, collaborating with Kano Studio. I build web and mobile apps, platforms, and AI agents, and I stay until they work well with real users.",
-      returningNote: "Good to see you again.",
-      proof: "Tech Lead at LDP: search latency improvements of more than 75%.",
+      returningNote: "Welcome back.",
+      proof: "At LDP I led search refactors that improved latency by more than 75%.",
     },
     cta: {
       primary: "Book 20 minutes to talk through your idea",
       primaryReturning: "Tell me about your project",
-      reassurance: "Free, no strings attached. I reply by email.",
+      reassurance: "Free and with no commitment. I reply by email.",
       cases: "See cases",
       botardo: "Talk to Botardo",
       whatsapp: "WhatsApp",
@@ -276,56 +290,63 @@ export const landing: Record<Lang, LandingCopy> = {
     demo: {
       label: "Live demo",
       title: "Try an agent I built",
-      body: "AI is one of the things I do. Botardo is a RAG agent I built for this site: it searches a curated knowledge base, answers in your language and, when it lacks the data, says so instead of making it up.",
+      body: "AI is one of the things I do. Botardo is a RAG agent I built for this site. It searches a curated knowledge base and answers in your language. When it lacks a fact, it says so instead of making it up.",
       prompts: ["What does Ramiro do at Libro de Pases?", "What products has he built?"],
     },
     cases: {
       label: "Cases",
       title: "Products already in use",
       more: "Read the case",
+      visit: "Visit the site",
       items: [
         {
           id: "ldp",
-          href: "/en/about/",
+          href: "https://www.ldptech.ai/",
           label: "Tech Lead · platform",
           title: "Libro de Pases (LDP), football platform",
-          result: "I joined on the mobile app and now lead full stack development: search refactors, observability with Sentry and New Relic, testing and CI, with latency improvements of more than 75%.",
+          result: "I joined on the mobile app and now lead full stack development. I did search refactors that improved latency by more than 75%, and added observability with Sentry and New Relic, tests, and CI.",
         },
         {
           id: "kano",
-          // TODO(Ramiro): link to the live landing or a case page when there is one.
-          href: null,
+          href: "https://kano.studio/",
           label: "Collaboration · web",
           title: "Kano Studio, landing and interactive diagnostic",
-          result: "Design system, i18n, SEO, and WCAG 2.2 AA accessibility remediation driven by an audit.",
+          result: "With the Kano team I built the design system, i18n, and SEO. I also fixed the WCAG 2.2 AA accessibility issues an audit flagged.",
+        },
+        {
+          id: "avellana",
+          href: "https://avellana.store/",
+          label: "Collaboration with Kano Studio · mobile app",
+          title: "Avellana, an app to shop for clothes on Av. Avellaneda",
+          result: "A free app for Android and iOS. It compares women's clothing prices across the shops on Av. Avellaneda in Buenos Aires, saves favorites, and plans the shortest route.",
         },
         {
           id: "lactaria",
           href: "/en/work/lactaria/",
           label: "Freelance · mobile app",
           title: "LactarIA, breastfeeding support",
-          result: "A mobile health app with an AI chatbot grounded in a curated Q&A bank, validated in a closed pilot with 50 mothers.",
+          result: "A health app with an AI chatbot that answers from a curated question bank. It ran a closed pilot with 50 mothers.",
         },
         {
           id: "mundial-2026",
           href: "/en/work/mundial-2026/",
           label: "Product · full stack",
           title: "Mundial 2026, the app to follow the tournament",
-          result: "Groups, fixtures in local time, bracket, venue map, and TV guide by country, with cross referenced historical data. It is live.",
+          result: "It shows groups, fixtures in your time zone, the knockout bracket, a venue map, and a TV guide by country. It cross references historical data between teams. It is live.",
         },
         {
           id: "agent-general",
           href: "/en/work/agent-general/",
           label: "AI in production",
           title: "Agent General, product assistant",
-          result: "A root agent delegates to 14 domain sub agents, uses each user's JWT, and is evaluated on real cases with no LLM judge.",
+          result: "A root agent delegates to 14 domain sub agents and uses each user's JWT. I evaluate it on real cases, with no LLM judge.",
         },
         {
           id: "freelance",
           href: "/en/about/",
           label: "Freelance · business software",
           title: "Management software for businesses",
-          result: "Multi industry management systems at DevGAM (PHP, JS, MySQL) and administrative workflows for UTN FRLP (Laravel, Vue).",
+          result: "I built multi industry management systems at DevGAM (PHP, JS, MySQL) and an administrative workflow system for UTN FRLP (Laravel, Vue).",
         },
       ],
     },
@@ -340,22 +361,22 @@ export const landing: Record<Lang, LandingCopy> = {
         },
         {
           title: "A first usable version",
-          body: "A tight scope you can test with real users before adding features.",
+          body: "We set a small scope you can test with real users before adding features.",
         },
         {
           title: "Production and maintenance",
-          body: "Deploy, observability, and CI tests so the product keeps working well as it grows.",
+          body: "I deploy it, set up error monitoring, and leave tests running in CI. Then I keep maintaining it.",
         },
       ],
     },
-    tagline: "From the first screen to the last deploy, with someone who owns the whole product.",
+    tagline: "I own the whole product, from the first screen to the deploy.",
     faq: {
       label: "FAQ",
       title: "Before you write",
       items: [
         {
           q: "What kind of projects do you take on?",
-          a: "Web and mobile apps, platforms with their own backend, sites and landing pages, and AI agents. Some examples: the Libro de Pases platform, the Kano Studio landing, LactarIA, and Mundial 2026.",
+          a: "Web and mobile apps, platforms with their own backend, sites and landing pages, and AI agents. Some examples: the Libro de Pases platform, the Kano Studio landing, the Avellana app, LactarIA, and Mundial 2026.",
         },
         {
           q: "Can you improve something that already exists?",
@@ -363,11 +384,11 @@ export const landing: Record<Lang, LandingCopy> = {
         },
         {
           q: "Do I need AI in my product?",
-          a: "Not always. If a rule, a form, or good search solves the problem, that is better. When AI helps, like answering from your documents or automating questions, I design it to cite its sources and say when it does not know.",
+          a: "Not always. If a rule, a form, or good search solves the problem, use that. When AI helps, for example to answer from your documents, I design it to cite its sources and say when it does not know.",
         },
         {
           q: "What happens after launch?",
-          a: "The product ships with error and performance monitoring and with tests that run on every change, so problems show up before your users find them.",
+          a: "The product ships with error and performance monitoring, and with tests that run on every change. That way I see problems before your users do.",
         },
         {
           q: "What is your stack?",
@@ -396,8 +417,8 @@ export const landing: Record<Lang, LandingCopy> = {
       success: "Got your message. I will reply to {email}.",
       errors: {
         name: "Enter your name.",
-        email: "Check the email: it should look like name@domain.com.",
-        message: "Tell me a bit more: the message needs at least 10 characters.",
+        email: "Check the email. It should look like name@domain.com.",
+        message: "The message needs at least 10 characters.",
         turnstile: "We could not verify you are human. Wait for the check to load and try again.",
         rateLimited: "Several messages arrived in a row. Wait a minute and try again.",
         unavailable: "The form is not available right now. Email me at {email}.",
@@ -406,7 +427,7 @@ export const landing: Record<Lang, LandingCopy> = {
       privacy: "I only use your details to reply to you.",
     },
     botardoOffer: {
-      text: "If you like, leave your details and Ramiro will write to you about your project.",
+      text: "Leave your details and Ramiro will write to you about your project.",
       button: "Leave my details",
     },
     notice: {

@@ -4,7 +4,7 @@ import Botardo from "../components/Botardo.astro";
 import BottomDock from "../components/BottomDock.astro";
 import ContactDialog from "../components/ContactDialog.astro";
 import { STORAGE_KEYS } from "../config/site";
-import { switchLangPath } from "../i18n/utils";
+import { isNotFoundPath, switchLangPath } from "../i18n/utils";
 
 interface Props {
   title: string;
@@ -13,6 +13,7 @@ interface Props {
 }
 
 const { title, description, lang } = Astro.props;
+const isNotFound = isNotFoundPath(Astro.url.pathname);
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogLocale = lang === "es" ? "es_AR" : "en_US";
 const ogLocaleAlternate = lang === "es" ? "en_US" : "es_AR";
@@ -68,10 +69,18 @@ const structuredData = {
     <meta name="theme-color" content="#F7F5F1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/rc.png" />
-    <link rel="canonical" href={canonicalURL} />
-    <link rel="alternate" hreflang="es" href={esURL} />
-    <link rel="alternate" hreflang="en" href={enURL} />
-    <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
+    {
+      isNotFound ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <>
+          <link rel="canonical" href={canonicalURL} />
+          <link rel="alternate" hreflang="es" href={esURL} />
+          <link rel="alternate" hreflang="en" href={enURL} />
+          <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
+        </>
+      )
+    }
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ramiro Cerdá" />
@@ -79,7 +88,7 @@ const structuredData = {
     <meta property="og:locale:alternate" content={ogLocaleAlternate} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonicalURL} />
+    {!isNotFound && <meta property="og:url" content={canonicalURL} />}
     <meta property="og:image" content={new URL("/og.png", Astro.site)} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />

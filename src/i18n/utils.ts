@@ -19,7 +19,14 @@ export function getLocalizedPath(lang: Lang, path: string): string {
   return `/${lang}${clean}`;
 }
 
+/** True for the built 404 page, which exists once (dist/404.html) for every language. */
+export function isNotFoundPath(path: string): boolean {
+  return /^\/(?:en\/)?404(?:\.html|\/)?$/.test(path);
+}
+
 export function switchLangPath(currentPath: string, nextLang: Lang): string {
+  // There is no /404/ or /en/404/ page to switch to, so send the reader home.
+  if (isNotFoundPath(currentPath)) return nextLang === defaultLang ? "/" : `/${nextLang}/`;
   const parts = currentPath.split("/").filter(Boolean);
   const currentLang = parts.length > 0 && parts[0] in languages;
   if (currentLang) parts.shift();
