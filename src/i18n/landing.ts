@@ -5,7 +5,7 @@
  * benefit first CTAs, calm system messages.
  *
  * Positioning: full profile (Tech Lead at Libro de Pases, end to end product
- * work, cofounder of Kano Studio), applied AI as one capability among others.
+ * work, collaboration with Kano Studio), applied AI as one capability among others.
  * Every claim comes from the site (about, projects) or Ramiro's CV note in his
  * vault (Kano Studio landing); nothing invented. Gaps stay as TODOs.
  */
@@ -79,7 +79,7 @@ export interface LandingCopy {
   dock: { label: string };
 }
 
-// Kano Studio: Ramiro is a cofounder (his own PR #21 feedback). Avellana is
+// Kano Studio: presented as a collaboration (confirmed by Ramiro). Avellana is
 // not mentioned anywhere in the site or notes yet.
 // TODO(Ramiro): confirm Avellana can be named publicly. Unconfirmed names only
 // render in `astro dev` (marked as placeholders), never in the build.
@@ -97,9 +97,9 @@ export const landing: Record<Lang, LandingCopy> = {
   es: {
     hero: {
       eyebrow: "Ramiro Cerdá · Tech Lead y Full Stack Engineer",
-      headline: "Construyo productos web y mobile de punta a punta,",
-      headlineAccent: "con IA donde suma.",
-      sub: "Tech Lead en Libro de Pases y cofundador de Kano Studio. Me encargo del producto completo: frontend, mobile, backend, performance y calidad, y sumo agentes de IA cuando resuelven un problema real.",
+      headline: "De la idea",
+      headlineAccent: "al producto en producción.",
+      sub: "Tech Lead en Libro de Pases y colaboro con Kano Studio. Desarrollo apps web y mobile, plataformas y agentes de IA, y me quedo hasta que funcionan bien con usuarios reales.",
       returningNote: "Qué bueno verte de nuevo.",
       proof: "Tech Lead en LDP: mejoras de latencia de más del 75% en búsqueda.",
     },
@@ -134,7 +134,7 @@ export const landing: Record<Lang, LandingCopy> = {
           id: "kano",
           // TODO(Ramiro): link to the live landing or a case page when there is one.
           href: null,
-          label: "Cofundador · web",
+          label: "Colaboración · web",
           title: "Kano Studio, landing y diagnóstico interactivo",
           result: "Design system, i18n, SEO y remediación de accesibilidad WCAG 2.2 AA a partir de una auditoría.",
         },
@@ -258,9 +258,9 @@ export const landing: Record<Lang, LandingCopy> = {
   en: {
     hero: {
       eyebrow: "Ramiro Cerdá · Tech Lead and Full Stack Engineer",
-      headline: "I build web and mobile products end to end,",
-      headlineAccent: "with AI where it pays off.",
-      sub: "Tech Lead at Libro de Pases and cofounder of Kano Studio. I own the whole product: frontend, mobile, backend, performance, and quality, and I add AI agents when they solve a real problem.",
+      headline: "From idea",
+      headlineAccent: "to a product in production.",
+      sub: "Tech Lead at Libro de Pases, collaborating with Kano Studio. I build web and mobile apps, platforms, and AI agents, and I stay until they work well with real users.",
       returningNote: "Good to see you again.",
       proof: "Tech Lead at LDP: search latency improvements of more than 75%.",
     },
@@ -295,7 +295,7 @@ export const landing: Record<Lang, LandingCopy> = {
           id: "kano",
           // TODO(Ramiro): link to the live landing or a case page when there is one.
           href: null,
-          label: "Cofounder · web",
+          label: "Collaboration · web",
           title: "Kano Studio, landing and interactive diagnostic",
           result: "Design system, i18n, SEO, and WCAG 2.2 AA accessibility remediation driven by an audit.",
         },
