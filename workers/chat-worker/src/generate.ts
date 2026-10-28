@@ -18,7 +18,8 @@ import type { ChatMessage } from "./rag";
 export type GenerateResult =
   | { status: 200; content: string; truncated?: true }
   | { status: 429; code: "RATE_LIMITED" }
-  | { status: 500; code: "MODEL_ERROR" };
+  /** `upstream` is the raw HTTP status from OpenCode Go when one was received. */
+  | { status: 500; code: "MODEL_ERROR"; upstream?: number };
 
 export interface GenerateOptions {
   endpoint: string;
@@ -42,7 +43,7 @@ const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
 
 type AttemptOutcome =
   | { kind: "done"; result: GenerateResult }
-  | { kind: "retry" };
+  | { kind: "retry"; upstream?: number };
 
 async function attemptOnce(
   endpoint: string,
@@ -75,8 +76,8 @@ async function attemptOnce(
     }
     if (!response.ok) {
       return RETRYABLE_STATUS.has(response.status)
-        ? { kind: "retry" }
-        : { kind: "done", result: { status: 500, code: "MODEL_ERROR" } };
+        ? { kind: "retry", upstream: response.status }
+        : { kind: "done", result: { status: 500, code: "MODEL_ERROR", upstream: response.status } };
     }
 
     const data = (await response.json()) as {
@@ -126,6 +127,7 @@ export async function generateReply(options: GenerateOptions): Promise<GenerateR
 
   let budget = maxTokens;
   let budgetBumps = 0;
+  let lastUpstream: number | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const outcome = await attemptOnce(
@@ -155,11 +157,12 @@ export async function generateReply(options: GenerateOptions): Promise<GenerateR
       }
       return outcome.result;
     }
+    if (outcome.upstream !== undefined) lastUpstream = outcome.upstream;
     if (attempt < maxAttempts) {
       // Exponential backoff: 250ms, 500ms, ... per retry.
       await sleep(backoffMs * 2 ** (attempt - 1));
     }
   }
   // All attempts exhausted with retryable outcomes.
-  return { status: 500, code: "MODEL_ERROR" };
+  return { status: 500, code: "MODEL_ERROR", ...(lastUpstream === undefined ? {} : { upstream: lastUpstream }) };
 }

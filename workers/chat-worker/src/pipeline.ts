@@ -162,6 +162,10 @@ export async function runAdaptivePipeline(opts: {
     const generationMs = Date.now() - tGen;
     log("chat.ai_done", {
       latency_ms: generationMs,
+      // The HTTP status of the generation call: reply_length is 0 for every
+      // non-200, so without this a 401 (expired key) looks like a 429 or a 500.
+      status: result.status,
+      ...(result.status === 500 && result.upstream !== undefined ? { upstream_status: result.upstream } : {}),
       reply_length: result.status === 200 ? result.content.length : 0,
       // True only when the upstream ran out of output budget even after the
       // doubled-budget retry: the visitor got an answer cut mid-sentence.

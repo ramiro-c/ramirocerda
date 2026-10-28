@@ -75,7 +75,9 @@ describe("generateReply (D8/D9, R5/R7)", () => {
     for (const status of [401, 403, 500, 502, 503]) {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(status, {})));
       const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 1 });
-      expect(result, `status ${status}`).toEqual({ status: 500, code: "MODEL_ERROR" });
+      // The upstream status rides along so the caller can tell an expired key
+      // (401) from a rate limit or an outage without a second probe.
+      expect(result, `status ${status}`).toEqual({ status: 500, code: "MODEL_ERROR", upstream: status });
     }
   });
 
@@ -116,7 +118,7 @@ describe("generateReply (D8/D9, R5/R7)", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 2, backoffMs: 5 });
-    expect(result).toEqual({ status: 500, code: "MODEL_ERROR" });
+    expect(result).toEqual({ status: 500, code: "MODEL_ERROR", upstream: 503 });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 

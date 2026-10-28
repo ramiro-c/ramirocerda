@@ -192,6 +192,30 @@ describe("adaptive RAG through handleRag", () => {
     expect(base.datapoints[0]?.blobs?.[3]).toBe("none");
   });
 
+  it("logs the generation HTTP status so an expired key is not mistaken for a rate limit", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { env } = makeEnv({ rounds: [[strong]] });
+    const script = { router: [routerAnswer("search")], judge: [judgeAnswer(0.9)] };
+
+    const ok = await ask(env, "¿Qué proyectos hizo Ramiro?", script);
+    expect(ok.res.status).toBe(200);
+
+    const expired = await ask(env, "¿Qué proyectos hizo Ramiro?", { ...script, generationStatus: 401 });
+    expect(expired.res.status).toBe(500);
+    expect(expired.body).toMatchObject({ code: "MODEL_ERROR" });
+
+    const events = logSpy.mock.calls
+      .map(([line]) => JSON.parse(String(line)))
+      .filter((e) => e.event === "chat.ai_done")
+      .map(({ ts, event, latency_ms, ...rest }) => rest);
+    // reply_length is 0 for every failure, so the upstream status is the only
+    // signal that tells an expired key (401) from a rate limit or an outage.
+    expect(events).toEqual([
+      { status: 200, reply_length: "Respuesta".length, truncated: false },
+      { status: 500, reply_length: 0, truncated: false, upstream_status: 401 },
+    ]);
+  });
+
   it("paid retry reuses the generation key OPENCODE_GO_API_KEY as Bearer; the free call never carries it; never logged", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});

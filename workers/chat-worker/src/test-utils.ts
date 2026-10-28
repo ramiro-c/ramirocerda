@@ -28,6 +28,8 @@ export interface FetchScript {
   router?: ScriptedAnswer[];
   judge?: ScriptedAnswer[];
   generation?: string;
+  /** HTTP status for the generation call (default 200). Non-retryable ones are not retried. */
+  generationStatus?: number;
 }
 
 /** System One choice answer for the router's `route` question (+ hire_intent / needs_history nouls). */
@@ -100,7 +102,7 @@ export function stubFetch(script: FetchScript = {}) {
       calls.generation.push(body);
       return Promise.resolve(
         new Response(JSON.stringify({ choices: [{ message: { content: script.generation ?? "Respuesta" } }] }), {
-          status: 200,
+          status: script.generationStatus ?? 200,
         }),
       );
     }
