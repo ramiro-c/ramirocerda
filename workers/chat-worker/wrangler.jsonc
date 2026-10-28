@@ -34,7 +34,20 @@
     "GENERATION_MODEL": "deepseek-v4.1-flash",
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
     "EMBEDDING_MODEL": "@cf/baai/bge-m3",
-    "SITE_ORIGIN": "https://ramirocerda.com.ar"
+    "SITE_ORIGIN": "https://ramirocerda.com.ar",
+    // Adaptive RAG (src/pipeline.ts). All optional: code defaults match these values.
+    // Small Workers AI model for the router fallback and the query rewrite/reformulation.
+    "ROUTER_MODEL": "@cf/meta/llama-3.2-3b-instruct",
+    "REWRITE_MODEL": "@cf/meta/llama-3.2-3b-instruct",
+    // "false" = heuristics only; ambiguous messages go straight to retrieval.
+    "ROUTER_LLM_ENABLED": "true",
+    "ROUTER_TIMEOUT_MS": "1500",
+    "REWRITE_TIMEOUT_MS": "1500",
+    // Searches per message, clamped to 1..2 in code. "1" disables the re-search.
+    "MAX_RETRIEVAL_ITERATIONS": "2",
+    // Retrieval is enough when the top chunk score >= MIN_TOP_SCORE or >= MIN_CHUNKS chunks pass SIMILARITY_THRESHOLD.
+    "SUFFICIENCY_MIN_TOP_SCORE": "0.45",
+    "SUFFICIENCY_MIN_CHUNKS": "2"
   },
   "observability": {
     "enabled": true

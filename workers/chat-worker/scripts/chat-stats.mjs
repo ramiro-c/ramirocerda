@@ -10,7 +10,9 @@
  *
  * Data point schema (written by workers/chat-worker/src/index.ts writeUsage):
  *   blobs:   blob1 = language ("es"|"en"), blob2 = status ("ok"|"rate_limited"|"model_error"), blob3 = question preview (80 chars)
- *   doubles: double1 = chunk_count, double2 = top similarity score, double3 = retrieval ms, double4 = generation ms
+ *   doubles: double1 = chunk_count, double2 = top similarity score, double3 = retrieval ms, double4 = generation ms,
+ *            double5 = route (0 about_ramiro, 1 smalltalk, 2 off_topic), double6 = retrieval iterations,
+ *            double7 = query rewritten (0/1), double8 = router + rewrite ms (5..8 appended by adaptive RAG; 0 on older rows)
  *   indexes: index1 = conversation session id
  *
  * Endpoint note: queries go to the unified Analytics SQL API
@@ -119,8 +121,12 @@ function defaultQueries(days) {
       sql: `SELECT blob1 AS lang, blob2 AS status, COUNT(*) AS n, avg(double1) AS avg_chunks, avg(double2) AS avg_score, avg(double3) AS avg_retrieval_ms, avg(double4) AS avg_gen_ms FROM ${TABLE} WHERE timestamp >= ${since} GROUP BY blob1, blob2 ORDER BY n DESC`,
     },
     {
-      title: "No-info rate (questions whose retrieval found 0 KB chunks)",
-      sql: `SELECT COUNT(*) AS total, sum(CASE WHEN double1 = 0 THEN 1 ELSE 0 END) AS no_info, round(sum(CASE WHEN double1 = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS no_info_pct FROM ${TABLE} WHERE timestamp >= ${since}`,
+      title: "No-info rate (KB questions whose retrieval found 0 chunks; smalltalk/off-topic excluded)",
+      sql: `SELECT COUNT(*) AS total, sum(CASE WHEN double1 = 0 THEN 1 ELSE 0 END) AS no_info, round(sum(CASE WHEN double1 = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS no_info_pct FROM ${TABLE} WHERE timestamp >= ${since} AND double5 = 0`,
+    },
+    {
+      title: "By route (0 about_ramiro, 1 smalltalk, 2 off_topic)",
+      sql: `SELECT double5 AS route, COUNT(*) AS n, avg(double6) AS avg_iterations, avg(double7) AS rewritten_rate, avg(double8) AS avg_pre_retrieval_ms FROM ${TABLE} WHERE timestamp >= ${since} GROUP BY double5 ORDER BY n DESC`,
     },
     {
       title: "Conversations (distinct session ids)",

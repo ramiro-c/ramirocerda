@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "chat:populate": "node workers/chat-worker/scripts/populate-index.mjs",
     "chat:stats": "node workers/chat-worker/scripts/chat-stats.mjs",
-    "site:stats": "node scripts/site-stats.mjs"
+    "site:stats": "node scripts/site-stats.mjs",
+    "chat:eval": "pnpm --filter ramirocerda-chat-worker eval"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

@@ -4,9 +4,15 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "populate": "node scripts/populate-index.mjs"
+    "typecheck": "tsc -p tsconfig.json",
+    "populate": "node scripts/populate-index.mjs",
+    "eval": "tsx evals/run.ts",
+    "eval:offline": "tsx evals/run.ts --offline"
   },
   "devDependencies": {
+    "@types/node": "24.13.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   }
 }

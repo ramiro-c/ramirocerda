@@ -55,6 +55,10 @@ The worker writes one Analytics Engine data point per question (binding
   `blob3` first 80 chars of the question.
 - `double1` chunk count, `double2` top similarity score, `double3` retrieval ms,
   `double4` generation ms; `index1` conversation session id.
+- Appended by adaptive RAG (older rows read them as 0): `double5` route code
+  (0 `about_ramiro`, 1 `smalltalk`, 2 `off_topic`), `double6` retrieval
+  iterations (0 to 2), `double7` query rewritten (0/1), `double8` router plus
+  rewrite ms.
 
 Inspect with (credentials auto-loaded from the root `.env`):
 
@@ -82,6 +86,48 @@ Three quirks of that API worth knowing before writing your own `--sql`:
   use `sum(CASE WHEN x = 0 THEN 1 ELSE 0 END)`.
 
 Data is sampled/retained per AE policy (~90 days).
+
+## Adaptive RAG
+
+Each message goes through a code-driven flow (no agent loop):
+
+1. **Router** (`src/router.ts`): heuristics classify `smalltalk` / `about_ramiro`;
+   only ambiguous messages call the small Workers AI model (`ROUTER_MODEL`).
+   Any error or unknown label falls back to `about_ramiro`. `smalltalk` and
+   `off_topic` answer with a fixed reply: no embedding, no Vectorize, no generation.
+2. **Query rewrite** (`src/query.ts`): only when there is history; turns a
+   follow-up into a standalone search query. Falls back to the raw message.
+3. **Retrieval with sufficiency check** (`src/retrieval.ts`): if the first
+   search is insufficient (no chunk with score >= `SUFFICIENCY_MIN_TOP_SCORE`
+   and fewer than `SUFFICIENCY_MIN_CHUNKS` chunks) the small model reformulates
+   the query and searches once more. Hard cap: `MAX_RETRIEVAL_ITERATIONS` (max 2).
+   Results are merged by chunk id keeping the best score. Nothing left means
+   the same no-info reply as before.
+
+Config lives in `wrangler.jsonc` `vars` (defaults are also in `src/config.ts`):
+`ROUTER_MODEL`, `REWRITE_MODEL`, `ROUTER_LLM_ENABLED`, `ROUTER_TIMEOUT_MS`,
+`REWRITE_TIMEOUT_MS`, `MAX_RETRIEVAL_ITERATIONS`, `SUFFICIENCY_MIN_TOP_SCORE`,
+`SUFFICIENCY_MIN_CHUNKS`. Log events: `chat.route`, `chat.query_rewrite`,
+`chat.rag_iteration`, `chat.rag_retrieved`, `chat.rag_no_context`.
+
+### Evals (linear vs adaptive)
+
+`evals/cases.json` holds ~40 fixed cases (ES/EN: smalltalk, KB questions,
+follow-ups with history, off-topic, unanswerable). The runner compares the
+frozen linear pipeline (`evals/linear-pipeline.ts`, main before adaptive RAG)
+against the adaptive one and prints a markdown table.
+
+```bash
+pnpm chat:eval                                              # real backends, read-only
+pnpm --filter ramirocerda-chat-worker eval:offline          # stubs, deterministic metrics only
+pnpm --filter ramirocerda-chat-worker eval -- --no-judge    # skip the LLM judge
+```
+
+Real mode needs `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (Workers AI +
+Vectorize read) and `OPENCODE_GO_API_KEY`, taken from the environment or the
+gitignored root `.env` and `.dev.vars`. It only calls `ai/run` and the Vectorize
+`query` endpoint (no writes) plus the generation endpoint. Results are written to
+`evals/results/` (gitignored).
 
 ## Secret (step 2.6 — requires the real OpenCode Go key, run manually)
 
