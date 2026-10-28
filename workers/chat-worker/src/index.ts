@@ -2,7 +2,6 @@ import { detectLanguage, type Language } from "./language";
 import { buildRagPrompt, retrieveChunks, type ChatMessage } from "./rag";
 import { generateReply } from "./generate";
 import { validateAskBody } from "./validate";
-import { detectServicesIntent } from "./intent";
 import { handleLead, type LeadEnv, type WaitUntil } from "./lead";
 import { handleEvent } from "./events";
 
@@ -18,8 +17,7 @@ interface AskRequest {
 
 interface AskResponse {
   reply: string;
-  /** Set when the visitor shows hiring/services intent: the widget offers the contact form. */
-  offerContact?: true;
+  offerContact?: boolean;
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -305,14 +303,6 @@ async function handleRag(
   });
 }
 
-/** Adds `offerContact: true` to a successful /ask reply; other statuses pass through. */
-async function withContactOffer(response: Response, origin: string | null): Promise<Response> {
-  if (response.status !== 200) return response;
-  const body = (await response.json()) as AskResponse;
-  log("chat.contact_offer");
-  return jsonResponse(200, { ...body, offerContact: true }, origin);
-}
-
 export default {
   async fetch(request: Request, env: Env, ctx?: WaitUntil): Promise<Response> {
     const origin = request.headers.get("Origin");
@@ -395,15 +385,13 @@ export default {
       // (cleanup is a documented follow-up); the flag stays "true" in config.
       // sessionId: prefer the frontend's stable per-conversation ID; fall back
       // to a fresh UUID so the Go session header is always present.
-      const response = await handleRag(
+      return await handleRag(
         message,
         history,
         env,
         sessionId ?? crypto.randomUUID(),
         origin,
       );
-      // TODO(adaptive-rag): move into the query router as a "services" intent.
-      return detectServicesIntent(message) ? withContactOffer(response, origin) : response;
     } catch (err) {
       // Check for rate limit errors
       const errorMessage = err instanceof Error ? err.message : String(err);

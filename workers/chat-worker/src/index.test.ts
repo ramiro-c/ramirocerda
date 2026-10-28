@@ -239,12 +239,15 @@ describe("IDENTITY_PROMPT answer rules", () => {
   });
 });
 
-describe("services intent contact offer", () => {
+describe("offerContact contract", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("flags offerContact when the visitor shows hiring intent", async () => {
+  // Hire intent comes from the LLM query router (PR #20), which sets
+  // AskResponse.offerContact. This worker adds no keyword heuristics of its
+  // own, so a hiring question alone never sets the flag here.
+  it("does not set offerContact from keyword heuristics", async () => {
     const { env } = makeEnv({ matches: [{ id: "kb-a", score: 0.5, metadata: { text: "t" } }] });
     vi.stubGlobal(
       "fetch",
@@ -256,25 +259,8 @@ describe("services intent contact offer", () => {
     );
     const res = await worker.fetch(makeRequest("Quiero contratar a Ramiro para un proyecto"), env as never);
     expect(res.status).toBe(200);
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("https://ramirocerda.com.ar");
     const body = await res.json();
     expect(body.reply).toBe("Sí, toma proyectos.");
-    expect(body.offerContact).toBe(true);
-  });
-
-  it("also offers contact on the no-info short-circuit", async () => {
-    const { env } = makeEnv({ matches: [] });
-    vi.stubGlobal("fetch", vi.fn());
-    const res = await worker.fetch(makeRequest("Can I hire him?"), env as never);
-    const body = await res.json();
-    expect(body.offerContact).toBe(true);
-  });
-
-  it("does not flag regular questions", async () => {
-    const { env } = makeEnv({ matches: [] });
-    vi.stubGlobal("fetch", vi.fn());
-    const res = await worker.fetch(makeRequest("¿Qué proyectos hizo Ramiro?"), env as never);
-    const body = await res.json();
     expect(body.offerContact).toBeUndefined();
   });
 });
