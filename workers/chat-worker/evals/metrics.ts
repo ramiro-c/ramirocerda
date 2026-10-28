@@ -3,6 +3,7 @@
  */
 
 import type { Counters } from "./backends";
+import type { ClaimCheck } from "./stage-judges";
 
 export type PipelineName = "linear" | "adaptive";
 /** offline: everything mocked; decision: real decision model + stubbed KB/generation; real: everything real. */
@@ -22,6 +23,11 @@ export interface EvalCase {
     expectedFacts?: string[];
     /** Expected AskResponse.offerContact (router hire_intent); null = not graded. */
     offerContact: boolean | null;
+    /**
+     * Only for answerable=false: near_miss = the KB has relevant docs on the topic
+     * (listed in expectedChunks) but not the fact asked; out_of_kb = nothing in the KB.
+     */
+    unanswerableKind?: "near_miss" | "out_of_kb";
   };
 }
 
@@ -39,10 +45,16 @@ export interface CaseResult {
   chunkIds: string[];
   replyKind: "off_topic" | "no_info" | "generated" | "error";
   reply: string | null;
-  /** true/false when known (canned decline, or judge verdict); null when not judged. */
-  declined: boolean | null;
-  /** Judge verdict on generated answers; null otherwise. */
+  /** Adaptive only: sufficiency judge verdict (skipped | sufficient | insufficient | error). */
+  verdict?: string | null;
+  /** true/false when known (canned decline, or the Jev abstention judge); null when not judged. */
+  abstained: boolean | null;
+  abstentionVia?: "canned" | "judge" | "error" | null;
+  /** false = at least one unsupported claim, true = all claims supported, null = not graded (no claims, judge off or failed). */
   faithful: boolean | null;
+  /** Per-claim detail of the faithfulness eval; null when not run. */
+  claims?: ClaimCheck[] | null;
+  claimError?: string;
   latencyMs: number;
   counters: Counters;
   error?: string;
@@ -81,6 +93,18 @@ function percentile(sorted: number[], p: number): number {
   return sorted[idx];
 }
 
+export interface SufficiencySummary {
+  /** Searches where the judge actually ran (verdict not skipped). */
+  judged: number;
+  sufficient: number;
+  insufficient: number;
+  errors: number;
+  /** verdict sufficient iff the case is answerable, over judged cases with an answerable label. */
+  agreement: Ratio;
+  /** Searched cases that ran a second search. */
+  researches: Ratio;
+}
+
 export interface PipelineSummary {
   cases: number;
   errors: number;
@@ -89,10 +113,22 @@ export interface PipelineSummary {
   offerContact: Ratio;
   /** Router answers that were NOT a valid LLM decision (error, timeout, invalid JSON). */
   routerFallbacks: Ratio | null;
+  /** Stage 1, retrieval: mean share of expected chunks retrieved, and cases with at least one. */
   recall: { mean: number; total: number };
+  hit: Ratio;
   facts: Ratio;
-  faithfulness: Ratio;
-  noInfoCorrect: Ratio;
+  /** Stage 2, sufficiency (adaptive only): Jev judge verdicts, agreement with the answerable label, re-search rate. */
+  sufficiency: SufficiencySummary | null;
+  /** Stage 3, faithfulness: answers with at least one unsupported claim, over graded answers. */
+  unsupportedAnswers: Ratio;
+  claims: { total: number; unsupported: number; ungraded: number };
+  /** Generated answers with no faithfulness verdict (no claims, judge off or failed). */
+  faithfulnessUngraded: number;
+  /** Stage 4, abstention: on answerable=false (all, near_miss, out_of_kb) and answerable=true cases. */
+  correctAbstention: Ratio;
+  nearMissAbstention: Ratio;
+  outOfKbAbstention: Ratio;
+  falseAbstention: Ratio;
   latency: { p50: number; p95: number; mean: number };
   /** Adaptive: router request latency; null when no router call was timed. */
   routerLatency: { p50: number; p95: number } | null;
@@ -119,10 +155,35 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
   const facts = withCase
     .filter(({ c }) => (c.expected.expectedFacts?.length ?? 0) > 0)
     .map(({ r, c }) => factHit(c.expected.expectedFacts!, r.reply));
-  const faithful = rs.filter((r) => r.faithful !== null).map((r) => r.faithful === true);
-  const noInfo = withCase
-    .filter(({ r, c }) => c.expected.answerable !== null && r.declined !== null)
-    .map(({ r, c }) => r.declined === !c.expected.answerable);
+  const hits = withCase
+    .filter(({ c }) => (c.expected.expectedChunks?.length ?? 0) > 0)
+    .map(({ r, c }) => chunkRecall(c.expected.expectedChunks!, r.chunkIds) > 0);
+
+  const judged = rs.filter((r) => r.verdict && r.verdict !== "skipped");
+  const searchedRs = rs.filter((r) => r.searched);
+  const sufficiency: SufficiencySummary | null =
+    pipeline === "adaptive"
+      ? {
+          judged: judged.length,
+          sufficient: judged.filter((r) => r.verdict === "sufficient").length,
+          insufficient: judged.filter((r) => r.verdict === "insufficient").length,
+          errors: judged.filter((r) => r.verdict === "error").length,
+          agreement: ratio(
+            withCase
+              .filter(({ r, c }) => (r.verdict === "sufficient" || r.verdict === "insufficient") && c.expected.answerable !== null)
+              .map(({ r, c }) => (r.verdict === "sufficient") === c.expected.answerable),
+          ),
+          researches: ratio(searchedRs.map((r) => r.counters.vectorizeQueries >= 2)),
+        }
+      : null;
+
+  const generated = rs.filter((r) => r.replyKind === "generated");
+  const graded = generated.filter((r) => r.faithful !== null);
+  const allClaims = rs.flatMap((r) => r.claims ?? []);
+
+  const abstention = (pred: (c: EvalCase) => boolean) =>
+    ratio(withCase.filter(({ r, c }) => pred(c) && r.abstained !== null).map(({ r }) => r.abstained === true));
+  const unanswerable = (c: EvalCase) => c.expected.answerable === false;
   const lat = rs.map((r) => r.latencyMs).sort((a, b) => a - b);
   const routerLat = rs
     .map((r) => r.routerMs)
@@ -145,8 +206,19 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     routerFallbacks: fallbacks,
     recall: { mean: recalls.length ? recalls.reduce((a, b) => a + b, 0) / recalls.length : 0, total: recalls.length },
     facts: ratio(facts),
-    faithfulness: ratio(faithful),
-    noInfoCorrect: ratio(noInfo),
+    hit: ratio(hits),
+    sufficiency,
+    unsupportedAnswers: ratio(graded.map((r) => r.faithful === false)),
+    claims: {
+      total: allClaims.length,
+      unsupported: allClaims.filter((c) => c.supported === false).length,
+      ungraded: allClaims.filter((c) => c.supported === null).length,
+    },
+    faithfulnessUngraded: generated.length - graded.length,
+    correctAbstention: abstention(unanswerable),
+    nearMissAbstention: abstention((c) => unanswerable(c) && c.expected.unanswerableKind === "near_miss"),
+    outOfKbAbstention: abstention((c) => unanswerable(c) && c.expected.unanswerableKind !== "near_miss"),
+    falseAbstention: abstention((c) => c.expected.answerable === true),
     latency: {
       p50: percentile(lat, 50),
       p95: percentile(lat, 95),
@@ -185,7 +257,11 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
   const decisionReal = (s: string) => (opts.mode === "offline" ? PENDING : s);
   const pair = (a: number, b: number) => `${Math.round(a)} / ${Math.round(b)}`;
   const rl = adaptive.routerLatency;
+  const suff = adaptive.sufficiency;
+  const section = (name: string): [string, string, string] => [`**${name}**`, "", ""];
+  const claimText = (x: PipelineSummary) => `${x.claims.unsupported}/${x.claims.total} (${x.claims.ungraded})`;
   const rows: Array<[string, string, string]> = [
+    section("Router"),
     ["Casos", String(linear.cases), String(adaptive.cases)],
     ["Errores (excepción o 429/500)", String(linear.errors), String(adaptive.errors)],
     ["Decisión de buscar correcta", fmtRatio(linear.retrievalDecision), routerDependent(fmtRatio(adaptive.retrievalDecision))],
@@ -193,14 +269,31 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
     ["offerContact (hire_intent) correcto", fmtRatio(linear.offerContact), routerDependent(fmtRatio(adaptive.offerContact))],
     ["Fallbacks del router (error, timeout, respuesta inválida)", "n/a", routerDependent(fmtRatio(adaptive.routerFallbacks))],
     ["Latencia del router p50 / p95 (ms)", "n/a", decisionReal(rl ? `${Math.round(rl.p50)} / ${Math.round(rl.p95)}` : "n/a")],
+    section("1. Retrieval"),
     [
       "Recall de chunks esperados (promedio)",
       real(`${f1(linear.recall.mean)} (n=${linear.recall.total})`),
       real(`${f1(adaptive.recall.mean)} (n=${adaptive.recall.total})`),
     ],
+    ["Hit (al menos un chunk esperado)", real(fmtRatio(linear.hit)), real(fmtRatio(adaptive.hit))],
     ["Respuesta con el dato esperado", real(fmtRatio(linear.facts)), real(fmtRatio(adaptive.facts))],
-    ["Fidelidad al contexto (juez LLM)", real(fmtRatio(linear.faithfulness)), real(fmtRatio(adaptive.faithfulness))],
-    ["\"No tengo info\" correcto", real(fmtRatio(linear.noInfoCorrect)), real(fmtRatio(adaptive.noInfoCorrect))],
+    section("2. Suficiencia (juez Jev)"),
+    ["Veredictos suficiente / insuficiente / error", "n/a (sin juez)", real(suff ? `${suff.sufficient} / ${suff.insufficient} / ${suff.errors} (n=${suff.judged})` : "n/a")],
+    ["Acuerdo del juez con la etiqueta answerable", "n/a (sin juez)", real(fmtRatio(suff?.agreement ?? null))],
+    ["Re-búsquedas (2 searches)", "n/a (sin juez)", real(fmtRatio(suff?.researches ?? null))],
+    section("3. Fidelidad (claims vs chunks)"),
+    [
+      "Respuestas con al menos un claim sin soporte",
+      real(`${fmtRatio(linear.unsupportedAnswers)}, sin evaluar ${linear.faithfulnessUngraded}`),
+      real(`${fmtRatio(adaptive.unsupportedAnswers)}, sin evaluar ${adaptive.faithfulnessUngraded}`),
+    ],
+    ["Claims sin soporte / total (sin veredicto)", real(claimText(linear)), real(claimText(adaptive))],
+    section("4. Abstención"),
+    ["Abstención correcta (answerable=false)", real(fmtRatio(linear.correctAbstention)), real(fmtRatio(adaptive.correctAbstention))],
+    ["Abstención correcta, near_miss (docs relevantes sin el dato)", real(fmtRatio(linear.nearMissAbstention)), real(fmtRatio(adaptive.nearMissAbstention))],
+    ["Abstención correcta, fuera del KB (out_of_kb y off-topic)", real(fmtRatio(linear.outOfKbAbstention)), real(fmtRatio(adaptive.outOfKbAbstention))],
+    ["Falsa abstención (answerable=true)", real(fmtRatio(linear.falseAbstention)), real(fmtRatio(adaptive.falseAbstention))],
+    section("Costo y latencia"),
     [
       "Latencia p50 / p95 / media (ms)",
       real(`${Math.round(linear.latency.p50)} / ${Math.round(linear.latency.p95)} / ${Math.round(linear.latency.mean)}`),

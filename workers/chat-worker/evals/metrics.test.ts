@@ -24,23 +24,23 @@ describe("eval metrics", () => {
     ];
     const base = { chunkIds: [], reply: "r", faithful: null, latencyMs: 10, counters: zeroCounters() };
     const results: CaseResult[] = [
-      { ...base, caseId: "a", pipeline: "adaptive", route: "smalltalk", routeVia: "llm", offerContact: false, searched: false, replyKind: "generated", declined: null },
-      { ...base, caseId: "b", pipeline: "adaptive", route: "search", routeVia: "timeout", offerContact: false, searched: true, replyKind: "no_info", declined: true },
-      { ...base, caseId: "c", pipeline: "adaptive", route: "search", routeVia: "llm", offerContact: false, searched: true, replyKind: "generated", declined: null },
+      { ...base, caseId: "a", pipeline: "adaptive", route: "smalltalk", routeVia: "llm", offerContact: false, searched: false, replyKind: "generated", abstained: null },
+      { ...base, caseId: "b", pipeline: "adaptive", route: "search", routeVia: "timeout", offerContact: false, searched: true, replyKind: "no_info", abstained: true },
+      { ...base, caseId: "c", pipeline: "adaptive", route: "search", routeVia: "llm", offerContact: false, searched: true, replyKind: "generated", abstained: null },
     ];
     const s = summarize("adaptive", cases, results);
     expect(s.retrievalDecision).toEqual({ hits: 1, total: 2 });
     expect(s.route).toEqual({ hits: 2, total: 3 });
     expect(s.offerContact).toEqual({ hits: 2, total: 3 });
     expect(s.routerFallbacks).toEqual({ hits: 1, total: 3 });
-    expect(s.noInfoCorrect).toEqual({ hits: 1, total: 1 });
+    expect(s.correctAbstention).toEqual({ hits: 1, total: 1 });
   });
 
   it("labels each metric by eval mode so mocked or stubbed numbers are never shown as real", () => {
     const cases: EvalCase[] = [
       { id: "a", category: "hire", lang: "es", message: "¿tarifa?", expected: { route: "search", retrieve: true, answerable: null, offerContact: true } },
     ];
-    const r = { caseId: "a", route: "search", routeVia: "llm", routerMs: 240, offerContact: true, searched: true, chunkIds: [], replyKind: "generated" as const, reply: "r", declined: null, faithful: null, latencyMs: 900, counters: { ...zeroCounters(), decisionTokensIn: 551, decisionTokensOut: 3 } };
+    const r = { caseId: "a", route: "search", routeVia: "llm", routerMs: 240, offerContact: true, searched: true, chunkIds: [], replyKind: "generated" as const, reply: "r", abstained: null, faithful: null, latencyMs: 900, counters: { ...zeroCounters(), decisionTokensIn: 551, decisionTokensOut: 3 } };
     const summaries = {
       linear: summarize("linear", cases, [{ ...r, pipeline: "linear", route: null, routeVia: null, routerMs: null, offerContact: false }]),
       adaptive: summarize("adaptive", cases, [{ ...r, pipeline: "adaptive" }]),
@@ -56,5 +56,42 @@ describe("eval metrics", () => {
     expect(row(decision, "Recall")).toContain("pending");
     expect(row(decision, "Latencia p50")).toContain("pending");
     expect(row(markdownTable(summaries, { mode: "real" }), "Latencia p50")).toContain("900");
+  });
+
+  it("reports each stage separately: retrieval hit, sufficiency, faithfulness, abstention", () => {
+    const cases: EvalCase[] = [
+      { id: "kb", category: "kb", lang: "es", message: "stack", expected: { route: "search", retrieve: true, answerable: true, expectedChunks: ["kb-stack-tecnico"], offerContact: false } },
+      { id: "nm", category: "unanswerable", lang: "es", message: "equipo", expected: { route: "search", retrieve: true, answerable: false, expectedChunks: ["kb-full-stack"], offerContact: false, unanswerableKind: "near_miss" } },
+      { id: "oo", category: "unanswerable", lang: "en", message: "movie", expected: { route: null, retrieve: null, answerable: false, offerContact: false, unanswerableKind: "out_of_kb" } },
+    ];
+    const base = { pipeline: "adaptive" as const, route: "search", routeVia: "llm", offerContact: false, searched: true, latencyMs: 10 };
+    const supported = { claim: "a", p: 0.9, supported: true, tier: "free" as const };
+    const unsupported = { claim: "b", p: 0.1, supported: false, tier: "free" as const };
+    const results: CaseResult[] = [
+      { ...base, caseId: "kb", chunkIds: ["kb-stack-tecnico-39dd7493"], replyKind: "generated", reply: "React", verdict: "sufficient", abstained: false, faithful: true, claims: [supported], counters: { ...zeroCounters(), vectorizeQueries: 1 } },
+      { ...base, caseId: "nm", chunkIds: ["kb-full-stack-x"], replyKind: "generated", reply: "8 personas", verdict: "insufficient", abstained: false, faithful: false, claims: [supported, unsupported], counters: { ...zeroCounters(), vectorizeQueries: 2 } },
+      { ...base, caseId: "oo", chunkIds: [], replyKind: "no_info", reply: "No tengo ese dato.", verdict: "skipped", abstained: true, faithful: null, counters: { ...zeroCounters(), vectorizeQueries: 1 } },
+    ];
+    const s = summarize("adaptive", cases, results);
+    expect(s.hit).toEqual({ hits: 2, total: 2 });
+    expect(s.sufficiency).toMatchObject({ judged: 2, sufficient: 1, insufficient: 1, errors: 0, agreement: { hits: 2, total: 2 }, researches: { hits: 1, total: 3 } });
+    expect(s.unsupportedAnswers).toEqual({ hits: 1, total: 2 });
+    expect(s.claims).toEqual({ total: 3, unsupported: 1, ungraded: 0 });
+    expect(s.correctAbstention).toEqual({ hits: 1, total: 2 });
+    expect(s.nearMissAbstention).toEqual({ hits: 0, total: 1 });
+    expect(s.outOfKbAbstention).toEqual({ hits: 1, total: 1 });
+    expect(s.falseAbstention).toEqual({ hits: 0, total: 1 });
+    expect(summarize("linear", cases, results.map((r) => ({ ...r, pipeline: "linear" as const }))).sufficiency).toBeNull();
+
+    const summaries = { linear: summarize("linear", cases, []), adaptive: s };
+    const row = (table: string, name: string) => table.split("\n").find((l) => l.startsWith(`| ${name}`));
+    const real = markdownTable(summaries, { mode: "real" });
+    expect(row(real, "Respuestas con al menos un claim sin soporte")).toContain("1/2 (50%)");
+    expect(row(real, "Abstención correcta, near_miss")).toContain("0/1 (0%)");
+    expect(row(real, "Falsa abstención")).toContain("0/1 (0%)");
+    expect(row(real, "Acuerdo del juez")).toContain("2/2 (100%)");
+    for (const name of ["Respuestas con al menos un claim", "Abstención correcta (", "Falsa abstención", "Acuerdo del juez", "Hit"]) {
+      expect(row(markdownTable(summaries, { mode: "decision" }), name)).toContain("pending");
+    }
   });
 });

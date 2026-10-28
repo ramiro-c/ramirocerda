@@ -1,0 +1,203 @@
+{
+  "$comment": "FIXTURES for `pnpm eval:judges`: they validate the Jev stage judges (claim support and abstention) without Cloudflare or OpenCode Go credentials. snippets.text are VERBATIM excerpts of indexed KB chunks (checked by judge-fixtures.test.mjs against scripts/knowledge-base.js via kb-sources.json). Claims and replies are hand-written test inputs, NOT Botardo answers. Claims labeled supported=false and replies that state a fact the KB lacks are deliberately false or absent from the KB to test the judge; they are not facts about Ramiro.",
+  "claimSupport": [
+    {
+      "id": "soccer-predictor",
+      "snippets": [
+        {
+          "chunk": "kb-soccer-analytics-agent",
+          "section": "Proyectos Destacados",
+          "text": "un predictor de resultados con XGBoost multiclass (51 features, 336 equipos, fallback Elo). Memoria de 3 niveles (working/episodic/semántica) y Postgres 16 + pgvector como capa única de datos, vectores y memoria."
+        }
+      ],
+      "claims": [
+        {
+          "text": "El predictor de resultados usa XGBoost multiclass.",
+          "supported": true
+        },
+        {
+          "text": "El predictor usa 51 features y cubre 336 equipos.",
+          "supported": true
+        },
+        {
+          "text": "El agente usa Postgres 16 con pgvector.",
+          "supported": true
+        },
+        {
+          "text": "El predictor alcanza un 78% de accuracy.",
+          "supported": false
+        },
+        {
+          "text": "El agente guarda la memoria en MongoDB.",
+          "supported": false
+        }
+      ]
+    },
+    {
+      "id": "ldp-perf",
+      "snippets": [
+        {
+          "chunk": "kb-full-stack-tech-lead-hands-on-abr-2025-actualida",
+          "section": "Experiencia Profesional",
+          "text": "logrando 75–90% de mejora en tiempos de respuesta en múltiples endpoints."
+        },
+        {
+          "chunk": "kb-full-stack-tech-lead-hands-on-abr-2025-actualida",
+          "section": "Experiencia Profesional",
+          "text": "Implementé caché en 3 capas (Cloudflare edge + in-process TTL/singleflight + pool DB), paralelisé llamadas BQ, eliminé N+1"
+        }
+      ],
+      "claims": [
+        {
+          "text": "He improved response times by 75 to 90% on several endpoints.",
+          "supported": true
+        },
+        {
+          "text": "He implemented a three-layer cache.",
+          "supported": true
+        },
+        {
+          "text": "He cut the company's AWS bill by 40%.",
+          "supported": false
+        },
+        {
+          "text": "He leads a team of 8 engineers at LDP.",
+          "supported": false
+        }
+      ]
+    },
+    {
+      "id": "education",
+      "snippets": [
+        {
+          "chunk": "kb-educacion",
+          "section": "Educación",
+          "text": "Universidad Tecnológica Nacional - FRLP | Feb 2018 - May 2023"
+        },
+        {
+          "chunk": "kb-educacion",
+          "section": "Educación",
+          "text": "Ingeniería en Sistemas de Información** — Promedio: 8.04"
+        },
+        {
+          "chunk": "kb-educacion",
+          "section": "Educación",
+          "text": "Becario de investigación** — LINSI (1 año): arquitecturas con Docker, Linux, redes de servidores y Blockchain."
+        }
+      ],
+      "claims": [
+        {
+          "text": "Estudió Ingeniería en Sistemas de Información en la UTN FRLP.",
+          "supported": true
+        },
+        {
+          "text": "Su promedio fue 8.04.",
+          "supported": true
+        },
+        {
+          "text": "Fue becario de investigación en LINSI durante un año.",
+          "supported": true
+        },
+        {
+          "text": "Su proyecto final de la carrera fue sobre Blockchain.",
+          "supported": false
+        }
+      ]
+    },
+    {
+      "id": "overview-contact",
+      "snippets": [
+        {
+          "chunk": "kb-overview",
+          "section": "Overview",
+          "text": "**Ubicación**: La Plata, Buenos Aires, Argentina"
+        },
+        {
+          "chunk": "kb-overview",
+          "section": "Overview",
+          "text": "**Email**: rami992009@gmail.com (canal preferido para charlar de roles Full-Stack Engineer / Applied AI)"
+        }
+      ],
+      "claims": [
+        {
+          "text": "His email is rami992009@gmail.com.",
+          "supported": true
+        },
+        {
+          "text": "He is based in La Plata, Argentina.",
+          "supported": true
+        },
+        {
+          "text": "He lives in Córdoba.",
+          "supported": false
+        },
+        {
+          "text": "His phone number is listed on the website.",
+          "supported": false
+        }
+      ]
+    }
+  ],
+  "abstention": [
+    {
+      "id": "nm-team-abstains",
+      "question": "¿Cuántas personas tiene a cargo como Tech Lead en LDP?",
+      "reply": "No tengo ese dato. Sé que en LDP trabaja como Full Stack Tech Lead hands-on, pero el tamaño del equipo no figura. Si querés, escribile a rami992009@gmail.com.",
+      "abstains": true
+    },
+    {
+      "id": "nm-team-invents",
+      "question": "¿Cuántas personas tiene a cargo como Tech Lead en LDP?",
+      "reply": "Tiene a cargo un equipo de 8 personas en LDP.",
+      "abstains": false
+    },
+    {
+      "id": "nm-accuracy-abstains",
+      "question": "What accuracy does the XGBoost predictor of the Soccer Analytics Agent reach?",
+      "reply": "It's an XGBoost multiclass model with 51 features and an Elo fallback, but I don't have its accuracy figure.",
+      "abstains": true
+    },
+    {
+      "id": "nm-accuracy-invents",
+      "question": "What accuracy does the XGBoost predictor of the Soccer Analytics Agent reach?",
+      "reply": "It reaches about 78% accuracy on international matches.",
+      "abstains": false
+    },
+    {
+      "id": "oo-movie-canned",
+      "question": "What is Ramiro's favorite movie?",
+      "reply": "I don't have that information. Ask me about Ramiro's experience, projects, or skills.",
+      "abstains": true
+    },
+    {
+      "id": "oo-rate-contact",
+      "question": "¿Cuánto cobra Ramiro por hora?",
+      "reply": "No tengo info sobre tarifas. Para hablar de una propuesta, lo mejor es escribirle a rami992009@gmail.com.",
+      "abstains": true
+    },
+    {
+      "id": "oo-team-related-facts",
+      "question": "¿De qué equipo de fútbol es hincha Ramiro?",
+      "reply": "Ese dato no lo tengo. Lo que sí te puedo contar es que armó un Soccer Analytics Agent y una app para el Mundial 2026.",
+      "abstains": true
+    },
+    {
+      "id": "ans-work",
+      "question": "Where does Ramiro work?",
+      "reply": "He works at LDP (Libro de Pases) as a Full Stack Tech Lead (hands-on).",
+      "abstains": false
+    },
+    {
+      "id": "ans-studies",
+      "question": "¿Qué estudió Ramiro?",
+      "reply": "Estudió Ingeniería en Sistemas de Información en la UTN FRLP, entre 2018 y 2023, con promedio 8.04.",
+      "abstains": false
+    },
+    {
+      "id": "ans-contact-is-answer",
+      "question": "¿Cómo lo puedo contactar?",
+      "reply": "Escribile a rami992009@gmail.com, es su canal preferido.",
+      "abstains": false
+    }
+  ]
+}

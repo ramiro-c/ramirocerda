@@ -1,5 +1,5 @@
 {
-  "$comment": "Fixed eval set for Botardo (linear vs adaptive RAG with the Jev decision-model router). expectedChunks are chunk-id PREFIXES (the -<hash> suffix changes when the content changes). expectedFacts are case- and accent-insensitive substrings any of which a good answer contains. route: search | smalltalk | off_topic | null (either is fine). retrieve: true = must search the KB, false = must not, null = either is fine. answerable: true = KB has the answer, false = the right reply is a decline (no info / off-topic), null = not graded. offerContact: expected router hire_intent (AskResponse.offerContact), null = not graded.",
+  "$comment": "Fixed eval set for Botardo (linear vs adaptive RAG with the Jev decision-model router). expectedChunks are chunk-id PREFIXES (the -<hash> suffix changes when the content changes). expectedFacts are case- and accent-insensitive substrings any of which a good answer contains. route: search | smalltalk | off_topic | null (either is fine). retrieve: true = must search the KB, false = must not, null = either is fine. answerable: true = KB has the answer, false = the right reply is a decline (no info / off-topic), null = not graded. offerContact: expected router hire_intent (AskResponse.offerContact), null = not graded. unanswerableKind (answerable=false only): near_miss = the KB has relevant docs on the topic (expectedChunks, which retrieval should still find) but NOT the fact asked; out_of_kb = nothing in the KB. Every near_miss label was checked against the indexed KB text (scripts/knowledge-base.js + notes via kb-sources.json): the relevant chunk exists and the asked fact does not appear in any chunk.",
   "cases": [
     {
       "id": "st-es-hola",
@@ -706,7 +706,8 @@
         "route": null,
         "retrieve": null,
         "answerable": false,
-        "offerContact": true
+        "offerContact": true,
+        "unanswerableKind": "out_of_kb"
       }
     },
     {
@@ -718,7 +719,8 @@
         "route": null,
         "retrieve": null,
         "answerable": false,
-        "offerContact": false
+        "offerContact": false,
+        "unanswerableKind": "out_of_kb"
       }
     },
     {
@@ -730,7 +732,8 @@
         "route": null,
         "retrieve": null,
         "answerable": false,
-        "offerContact": false
+        "offerContact": false,
+        "unanswerableKind": "out_of_kb"
       }
     },
     {
@@ -742,7 +745,98 @@
         "route": null,
         "retrieve": null,
         "answerable": false,
-        "offerContact": false
+        "offerContact": false,
+        "unanswerableKind": "out_of_kb"
+      }
+    },
+    {
+      "id": "nm-es-equipo-ldp",
+      "category": "unanswerable",
+      "lang": "es",
+      "message": "¿Cuántas personas tiene a cargo como Tech Lead en LDP?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": false,
+        "expectedChunks": [
+          "kb-full-stack-tech-lead-hands-on-abr-2025-actualida"
+        ],
+        "offerContact": false,
+        "unanswerableKind": "near_miss"
+      }
+    },
+    {
+      "id": "nm-en-predictor-accuracy",
+      "category": "unanswerable",
+      "lang": "en",
+      "message": "What accuracy does the XGBoost predictor of the Soccer Analytics Agent reach?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": false,
+        "expectedChunks": [
+          "kb-soccer-analytics-agent"
+        ],
+        "offerContact": false,
+        "unanswerableKind": "near_miss"
+      }
+    },
+    {
+      "id": "nm-en-worldcup-users",
+      "category": "unanswerable",
+      "lang": "en",
+      "message": "How many users does his World Cup 2026 app have?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": false,
+        "expectedChunks": [
+          "kb-mundial-2026-soccer-analytics-world-cup-companio"
+        ],
+        "offerContact": false,
+        "unanswerableKind": "near_miss"
+      }
+    },
+    {
+      "id": "nm-es-tesis",
+      "category": "unanswerable",
+      "lang": "es",
+      "message": "¿De qué trató su proyecto final de Ingeniería en Sistemas?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": false,
+        "expectedChunks": [
+          "kb-educacion"
+        ],
+        "offerContact": false,
+        "unanswerableKind": "near_miss"
+      }
+    },
+    {
+      "id": "oo-es-hincha",
+      "category": "unanswerable",
+      "lang": "es",
+      "message": "¿De qué equipo de fútbol es hincha Ramiro?",
+      "expected": {
+        "route": null,
+        "retrieve": null,
+        "answerable": false,
+        "offerContact": false,
+        "unanswerableKind": "out_of_kb"
+      }
+    },
+    {
+      "id": "oo-en-phone",
+      "category": "unanswerable",
+      "lang": "en",
+      "message": "What's Ramiro's phone number?",
+      "expected": {
+        "route": null,
+        "retrieve": null,
+        "answerable": false,
+        "offerContact": null,
+        "unanswerableKind": "out_of_kb"
       }
     },
     {

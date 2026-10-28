@@ -264,34 +264,76 @@ offer_contact, rewritten), `chat.rag_judge` (verdict, p or reason,
 `model_tier`, `primary_error`, `fallback`), `chat.rag_retrieved`,
 `chat.rag_no_context`, `chat.ai_done`.
 
-### Evals (linear vs adaptive)
+### Evals (linear vs adaptive, by stage)
 
-`evals/cases.json` holds 48 fixed cases (ES/EN: smalltalk, KB questions,
-follow-ups with history, off-topic, unanswerable, hire intent), each with the
-expected route and expected `offerContact`. The runner compares the frozen
-linear pipeline (`evals/linear-pipeline.ts`, main before adaptive RAG) against
-the adaptive one and prints a markdown table, including routing accuracy,
-`offerContact` (hire_intent) accuracy and router fallback rate.
+`evals/cases.json` holds 54 fixed cases (ES/EN: smalltalk, KB questions,
+follow-ups with history, off-topic, hire intent and 10 unanswerable ones), each
+with the expected route and expected `offerContact`. Unanswerable cases carry
+`unanswerableKind`: `near_miss` (the KB has the relevant doc, listed in
+`expectedChunks`, but not the fact asked: team size at LDP, predictor accuracy,
+World Cup app users, final degree project) or `out_of_kb` (rate, kids, movie,
+age, football team, phone). Those labels were checked against the indexed KB
+(`scripts/knowledge-base.js` + notes via `kb-sources.json`), and
+`evals/judge-fixtures.test.mjs` asserts every `expectedChunks` prefix exists in
+it. The runner compares the frozen linear pipeline (`evals/linear-pipeline.ts`,
+main before adaptive RAG, same behaviour as the adaptive pipeline with
+`DECISION_MODEL=""`) against the adaptive one in the same report, split by stage:
+
+| Stage | What it measures | How |
+| --- | --- | --- |
+| Router | route, `offerContact`, fallbacks, latency | Jev router answers vs case labels |
+| 1. Retrieval | recall of expected chunks, hit (at least one), expected fact in the reply | chunk-id prefixes, substring facts |
+| 2. Sufficiency (adaptive) | judge verdicts, agreement with `answerable`, re-search rate | the existing Jev sufficiency judge (`src/retrieval.ts`) |
+| 3. Faithfulness | % of generated answers with at least one unsupported claim, plus per-claim detail in the JSON | claims extracted by the generation model, each judged by Jev `noul` against the chunks actually passed to generation |
+| 4. Abstention | correct abstention on `answerable=false` (all, `near_miss`, out of KB), false abstention on `answerable=true` | canned `no_info` / `off_topic` replies count as abstentions; generated replies are judged by Jev `choice` (`abstains` / `answers`) |
+
+Judges (`evals/stage-judges.ts`), no regex or keyword routing:
+
+- Claim extraction needs a text model (Jev only answers typed questions): it
+  goes through Botardo's own generation client (`OPENCODE_GO_ENDPOINT`,
+  `OPENCODE_GO_API_KEY`, model `EVAL_JUDGE_MODEL` or `GENERATION_MODEL`,
+  temperature 0) and returns atomic claims about Ramiro. Greetings, offers,
+  statements about Botardo and "I don't have that" are not claims.
+- Claim support: one Jev `noul` per claim, state `{ snippets, claim }` with the
+  full text of the chunks passed to generation; `p >= 0.5` is supported. With no
+  chunks (smalltalk) nothing can support a claim, so any claim fails without a
+  call. Facts that only come from `IDENTITY_PROMPT` count as unsupported on purpose.
+- Abstention: Jev `choice` over `{ question, reply }`.
+- Jev runs as `jev-1.13-free` without a key, then one paid `jev-1.13` retry with
+  `OPENCODE_GO_API_KEY` when there is one. The judge config is independent of
+  `DECISION_MODEL` (override with `EVAL_JEV_MODEL`, `EVAL_JEV_ENDPOINT`,
+  `EVAL_JEV_FALLBACK_MODEL`, `EVAL_JEV_TIMEOUT_MS`, default 10000 ms), so the
+  "before" and "after" runs are graded by the same judges. Judge calls are not
+  counted as pipeline cost.
 
 ```bash
-pnpm chat:eval                                              # real backends, read-only
-pnpm --filter ramirocerda-chat-worker eval:decision         # REAL Jev router, stubbed KB/generation, no credentials
-pnpm --filter ramirocerda-chat-worker eval:offline          # MOCKED decision model, call counts only
-pnpm --filter ramirocerda-chat-worker eval -- --no-judge    # skip the faithfulness judge
+# Full before/after with every stage (needs CF + OpenCode Go credentials, read-only):
+CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... OPENCODE_GO_API_KEY=... pnpm chat:eval
+# Optional cross-check: the adaptive pipeline with the decision model off must match the linear column
+DECISION_MODEL= pnpm --filter ramirocerda-chat-worker eval -- --pipelines adaptive
+pnpm --filter ramirocerda-chat-worker eval -- --no-judge     # skip faithfulness (the only judge that spends generation tokens)
+
+# No credentials:
+pnpm --filter ramirocerda-chat-worker eval:judges            # REAL Jev judges on FIXTURES (judge-fixtures.json), validates the judges
+pnpm --filter ramirocerda-chat-worker eval:decision          # REAL Jev router, stubbed KB/generation
+pnpm --filter ramirocerda-chat-worker eval:offline           # MOCKED decision model, call counts only
 ```
 
 Real mode needs `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (Workers AI +
-Vectorize read) and `OPENCODE_GO_API_KEY` (generation and the faithfulness
-judge), taken from the environment or the gitignored root `.env` and
-`.dev.vars`; real mode also enables the paid Jev fallback with that key
-(decision and offline modes turn it off). `DECISION_*` env vars override the
-`wrangler.jsonc` values. It only calls `ai/run`, the Vectorize `query` endpoint
-(no writes), the System One endpoint and the generation endpoint. Decision mode
-calls the real Jev endpoint (anonymous) with no-match Vectorize and stubbed
-generation: route, `offerContact`, fallbacks, router latency and decision
-tokens are real; retrieval and answer quality stay pending. Offline mode
-replaces Jev with an oracle mock that echoes the expected labels: only call
-counts are meaningful. Results are written to `evals/results/` (gitignored).
+Vectorize read) and `OPENCODE_GO_API_KEY` (generation, claim extraction and the
+paid Jev fallback), taken from the environment or the gitignored root `.env` and
+`.dev.vars`. `DECISION_*` env vars override the `wrangler.jsonc` values. It only
+calls `ai/run`, the Vectorize `query` endpoint (no writes), the System One
+endpoint and the generation endpoint. The stage judges only run in real mode:
+in decision and offline modes the replies are stubs, so retrieval, sufficiency,
+faithfulness and abstention rows read `pending`. Decision mode calls the real Jev
+endpoint (anonymous) with no-match Vectorize and stubbed generation: route,
+`offerContact`, fallbacks, router latency and decision tokens are real. Offline
+mode replaces Jev with an oracle mock: only call counts are meaningful.
+`eval:judges` needs no credential at all (the paid retry only if
+`OPENCODE_GO_API_KEY` is already exported): its numbers are judge agreement on
+hand-written fixtures over verbatim KB excerpts, labeled FIXTURE, never Botardo
+quality. Results are written to `evals/results/` (gitignored).
 
 ## Secret (step 2.6 — requires the real OpenCode Go key, run manually)
 

@@ -7,15 +7,26 @@
  *                          metrics with no Cloudflare or OpenCode Go credential
  *   pnpm eval:offline      stubs + MOCKED decision model (oracle of the expected labels):
  *                          only plumbing and call counts mean anything, never router quality
+ *   pnpm eval:judges       (evals/judge-check.ts) REAL Jev stage judges on FIXTURES, no credentials
  *
  * Options: --cases <path> (default evals/cases.json), --only <id-substring>,
- *          --pipelines linear,adaptive, --no-judge, --out <dir> (default evals/results).
+ *          --pipelines linear,adaptive, --no-judge (skip the faithfulness eval, the
+ *          only judge that spends generation tokens), --out <dir> (default evals/results).
+ *
+ * The report is split by stage so a failure can be located: router, 1. retrieval
+ * (recall / hit), 2. sufficiency (the adaptive Jev judge), 3. faithfulness (claims
+ * extracted by the generation model, each checked by Jev against the chunks that
+ * were passed to generation) and 4. abstention (Jev judge on generated replies,
+ * canned declines count as abstentions). See evals/stage-judges.ts. The stage
+ * judges only run in real mode; `pnpm eval:judges` validates them on fixtures.
+ * Linear and adaptive run in the same report; "linear" is main's frozen pipeline,
+ * the same behaviour as the adaptive one with DECISION_MODEL="".
  *
  * Real mode needs, as env vars or in the gitignored files the worker already uses
  * (root .env for Cloudflare, workers/chat-worker/.dev.vars for the model keys):
  *   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN (Workers AI + Vectorize read),
- *   OPENCODE_GO_API_KEY (generation, the faithfulness judge and the paid Jev fallback
- *   jev-1.13). Decision and offline modes have no real key, so they turn the paid
+ *   OPENCODE_GO_API_KEY (generation, claim extraction for the faithfulness eval and
+ *   the paid Jev fallback jev-1.13). Decision and offline modes have no real key, so they turn the paid
  *   fallback off (DECISION_FALLBACK_MODEL=""). Router / judge call
  *   counts include paid retries.
  * The decision model config (DECISION_ENDPOINT / DECISION_MODEL / ...) comes from
@@ -31,9 +42,18 @@ import { fileURLToPath } from "node:url";
 
 import { runAdaptivePipeline, type PipelineEnv } from "../src/pipeline";
 import { instrument, offlineBindings, realBindings, zeroCounters, type MockRouterAnswer } from "./backends";
-import { judgeAnswer } from "./judge";
 import { runLinearPipeline } from "./linear-pipeline";
 import { markdownTable, summarize, type CaseResult, type EvalCase, type EvalMode, type PipelineName } from "./metrics";
+import {
+  answerFaithful,
+  claimSnippets,
+  evalJudgeConfig,
+  extractClaims,
+  judgeAbstention,
+  judgeClaims,
+  type AbstentionCheck,
+  type ClaimCheck,
+} from "./stage-judges";
 
 const EVAL_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKER_DIR = path.join(EVAL_DIR, "..");
@@ -72,7 +92,9 @@ function loadLocalSecrets(): void {
 async function main(): Promise<void> {
   const mode: EvalMode = flag("offline") ? "offline" : flag("decision-only") ? "decision" : "real";
   const offline = mode === "offline";
-  const useJudge = mode === "real" && !flag("no-judge");
+  // Stage judges only grade real answers: decision/offline replies are stubs.
+  const useClaims = mode === "real" && !flag("no-judge");
+  const useAbstention = mode === "real";
   const casesPath = arg("cases") ?? path.join(EVAL_DIR, "cases.json");
   const only = arg("only");
   const pipelines = (arg("pipelines") ?? "linear,adaptive").split(",") as PipelineName[];
@@ -111,7 +133,8 @@ async function main(): Promise<void> {
   }
 
   const envVars = { ...vars, ...decisionVars, OPENCODE_GO_API_KEY: apiKey } as unknown as Omit<PipelineEnv, "AI" | "VECTORIZE">;
-  const rawFetch = globalThis.fetch;
+  // Same Jev judge config for every pipeline and run, independent of DECISION_MODEL (see evalJudgeConfig).
+  const jev = evalJudgeConfig({ ...process.env, apiKey: mode === "real" ? apiKey : null });
   const results: CaseResult[] = [];
 
   for (const c of cases) {
@@ -139,30 +162,32 @@ async function main(): Promise<void> {
         const chunks = value.run.chunks;
         let reply: string | null = null;
         let replyKind: CaseResult["replyKind"];
-        let declined: boolean | null = null;
+        let abstention: AbstentionCheck | null = null;
         if (outcome.kind === "generated") {
           replyKind = outcome.result.status === 200 ? "generated" : "error";
           reply = outcome.result.status === 200 ? outcome.result.content.trim() : null;
         } else {
           replyKind = outcome.kind;
           reply = outcome.reply;
-          declined = true;
+          // The pipeline's own canned decline: an abstention by construction, no judge call.
+          abstention = { abstained: true, confidence: null, via: "canned" };
         }
-        let faithful: boolean | null = null;
-        if (replyKind === "generated" && reply && useJudge) {
-          const verdict = await judgeAnswer({
-            fetchImpl: rawFetch,
+        // Judges run after `instrument` returned, so they are never counted as pipeline cost.
+        if (replyKind === "generated" && reply && useAbstention) {
+          abstention = await judgeAbstention(jev, c.message, reply);
+        }
+        let claims: ClaimCheck[] | null = null;
+        let claimError: string | undefined;
+        if (replyKind === "generated" && reply && useClaims) {
+          const extracted = await extractClaims({
             endpoint: vars.OPENCODE_GO_ENDPOINT,
             apiKey,
             model: process.env.EVAL_JUDGE_MODEL ?? vars.GENERATION_MODEL,
             question: c.message,
             answer: reply,
-            chunks,
           });
-          if (verdict) {
-            faithful = verdict.faithful;
-            declined = verdict.declined;
-          }
+          if (extracted.ok) claims = await judgeClaims(jev, extracted.claims, claimSnippets(chunks));
+          else claimError = extracted.reason;
         }
         result = {
           caseId: c.id,
@@ -175,8 +200,12 @@ async function main(): Promise<void> {
           chunkIds: chunks.map((ch) => ch.id),
           replyKind,
           reply,
-          declined,
-          faithful,
+          verdict: value.kind === "adaptive" ? value.run.verdict.kind : null,
+          abstained: mode === "real" ? (abstention?.abstained ?? null) : null,
+          abstentionVia: mode === "real" ? (abstention?.via ?? null) : null,
+          faithful: claims ? answerFaithful(claims) : null,
+          claims,
+          ...(claimError ? { claimError } : {}),
           latencyMs,
           counters,
         };
@@ -191,7 +220,7 @@ async function main(): Promise<void> {
           chunkIds: [],
           replyKind: "error",
           reply: null,
-          declined: null,
+          abstained: null,
           faithful: null,
           latencyMs: Date.now() - t0,
           counters: zeroCounters(),
@@ -215,9 +244,9 @@ async function main(): Promise<void> {
       ? "OFFLINE con modelo de decisión MOCKEADO (oráculo: devuelve la ruta y el hire_intent esperados de cada caso; el juez de suficiencia siempre dice insuficiente), Vectorize sin matches y generación stub. Solo son reales el conteo de llamadas bajo esos mocks; nada de esto mide la calidad del router."
       : mode === "decision"
         ? `DECISIÓN REAL (router y juez: ${decisionModel}) con Vectorize sin matches y generación stub. Son reales la ruta, el offerContact, los fallbacks, la latencia y los tokens del router; recall, respuestas y latencia total quedan pendientes.`
-        : `REAL (router y juez: ${decisionModel}; Workers AI + Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"}; generación ${vars.GENERATION_MODEL}${useJudge ? "; juez de fidelidad LLM" : "; sin juez de fidelidad"})`;
+        : `REAL (router y juez: ${decisionModel}; Workers AI + Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"}; generación ${vars.GENERATION_MODEL}; jueces de etapa: abstención Jev ${jev.model}${useClaims ? `, fidelidad = claims con ${process.env.EVAL_JUDGE_MODEL ?? vars.GENERATION_MODEL} + soporte Jev ${jev.model}` : ", fidelidad apagada (--no-judge)"}${jev.fallbackModel ? ` (fallback pago ${jev.fallbackModel})` : ""})`;
   const table = markdownTable(summaries, { mode });
-  const report = `### Evals Botardo: lineal vs adaptativo\n\nModo: ${modeText}\nCasos: ${cases.length} (${new Date().toISOString()})\n\n${table}\n`;
+  const report = `### Evals Botardo: lineal vs adaptativo, por etapa\n\nModo: ${modeText}\nCasos: ${cases.length} (${new Date().toISOString()})\n\n${table}\n`;
   console.log(report);
 
   mkdirSync(outDir, { recursive: true });
