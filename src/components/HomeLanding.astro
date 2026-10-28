@@ -1,9 +1,9 @@
 ---
 /**
  * Home as a conversion page (landing kit structure): hero with one primary CTA
- * and proof beside it, live demo, cases, repeated CTA, how it works, tagline
- * reveal, FAQ (with FAQPage schema), the existing projects/notes hub and a
- * final CTA identical to the hero one. Copy lives in i18n/landing.ts.
+ * and proof beside it, live demo, cases, repeated CTA, tagline reveal, FAQ
+ * (with FAQPage schema), the existing projects/notes hub and a final CTA
+ * identical to the hero one. Copy lives in i18n/landing.ts.
  */
 import { landing } from "../i18n/landing";
 import type { Lang } from "../i18n/ui";
@@ -143,22 +143,6 @@ const faqSchema = {
     </section>
   )
 }
-
-<section class="band steps reveal" aria-labelledby="stepsTitle">
-  <p class="label mono">{c.steps.label}</p>
-  <h2 class="display section-title" id="stepsTitle">{c.steps.title}</h2>
-  <ol class="step-list">
-    {
-      c.steps.items.map((step, i) => (
-        <li class="step">
-          <span class="step-n mono" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-          <h3 class="step-title">{step.title}</h3>
-          <p>{step.body}</p>
-        </li>
-      ))
-    }
-  </ol>
-</section>
 
 <section class="tagline" aria-label={c.tagline}>
   <p class="display tagline-text" data-tagline aria-hidden="true">
@@ -430,31 +414,6 @@ const faqSchema = {
     border: 1.5px dashed var(--border);
     color: var(--muted);
     font-size: 0.8125rem;
-  }
-
-  .step-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: var(--space-8);
-    margin: var(--space-8) 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .step-n {
-    display: block;
-    margin-bottom: var(--space-3);
-    color: var(--accent);
-    font-size: 0.875rem;
-  }
-  .step-title {
-    margin: 0 0 var(--space-2);
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-  }
-  .step p {
-    margin: 0;
-    color: var(--muted);
-    text-wrap: pretty;
   }
 
   .tagline {

@@ -56,7 +56,6 @@ export interface LandingCopy {
   demo: { label: string; title: string; body: string; prompts: string[] };
   cases: { label: string; title: string; items: CaseStudy[]; more: string; visit: string };
   testimonials: { label: string; items: Testimonial[] };
-  steps: { label: string; title: string; items: Array<{ title: string; body: string }> };
   tagline: string;
   faq: { label: string; title: string; items: Array<{ q: string; a: string }> };
   final: { title: string; body: string };
@@ -183,24 +182,6 @@ export const landing: Record<Lang, LandingCopy> = {
       ],
     },
     testimonials: { label: "Lo que dicen", items: TESTIMONIALS },
-    steps: {
-      label: "Cómo trabajamos",
-      title: "Tres pasos, sin humo",
-      items: [
-        {
-          title: "Charlamos 20 minutos",
-          body: "Entiendo el problema, quién lo va a usar y qué hace falta construir. Si la solución no necesita software nuevo, o no necesita IA, te lo digo.",
-        },
-        {
-          title: "Una primera versión usable",
-          body: "Armamos un alcance chico que se puede probar con usuarios reales antes de sumar funcionalidades.",
-        },
-        {
-          title: "Producción y mantenimiento",
-          body: "Hago el deploy, configuro el monitoreo de errores y dejo tests que corren en CI. Después sigo con el mantenimiento.",
-        },
-      ],
-    },
     tagline: "Me hago cargo del producto completo, desde la primera pantalla hasta el deploy.",
     faq: {
       label: "Preguntas frecuentes",
@@ -351,24 +332,6 @@ export const landing: Record<Lang, LandingCopy> = {
       ],
     },
     testimonials: { label: "What people say", items: TESTIMONIALS },
-    steps: {
-      label: "How we work",
-      title: "Three steps, no fluff",
-      items: [
-        {
-          title: "A 20 minute call",
-          body: "I learn the problem, who will use it, and what needs to be built. If the answer does not need new software, or does not need AI, I tell you.",
-        },
-        {
-          title: "A first usable version",
-          body: "We set a small scope you can test with real users before adding features.",
-        },
-        {
-          title: "Production and maintenance",
-          body: "I deploy it, set up error monitoring, and leave tests running in CI. Then I keep maintaining it.",
-        },
-      ],
-    },
     tagline: "I own the whole product, from the first screen to the deploy.",
     faq: {
       label: "FAQ",
