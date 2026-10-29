@@ -42,7 +42,7 @@ import { fileURLToPath } from "node:url";
 
 import { runAdaptivePipeline, type PipelineEnv } from "../src/pipeline";
 import { instrument, offlineBindings, realBindings, zeroCounters, type MockRouterAnswer } from "./backends";
-import { loadLocalSecrets } from "./env";
+import { evalDecisionAuth, loadLocalSecrets } from "./env";
 import { runLinearPipeline } from "./linear-pipeline";
 import { markdownTable, summarize, type CaseResult, type EvalCase, type EvalMode, type PipelineName } from "./metrics";
 import {
@@ -96,19 +96,16 @@ async function main(): Promise<void> {
   const vars = readWranglerVars();
 
   let bindings: Pick<PipelineEnv, "AI" | "VECTORIZE">;
-  let apiKey = "offline";
   // Decision config: wrangler vars, overridable from the environment (key only from the environment).
   const decisionVars: Record<string, string> = {};
   for (const k of ["DECISION_ENDPOINT", "DECISION_MODEL", "DECISION_FALLBACK_MODEL", "DECISION_INTEGRATION_ID", "DECISION_TIMEOUT_MS", "DECISION_MIN_CONFIDENCE", "MAX_RETRIEVAL_ITERATIONS"]) {
     const v = process.env[k];
     if (v !== undefined) decisionVars[k] = v;
   }
+  loadCredentials();
   if (mode !== "real") {
     bindings = offlineBindings();
-    // No real OPENCODE_GO_API_KEY here: never send the "offline" placeholder as a Bearer key.
-    decisionVars.DECISION_FALLBACK_MODEL = "";
   } else {
-    loadCredentials();
     const required = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OPENCODE_GO_API_KEY"];
     const missing = required.filter((k) => !process.env[k]?.trim());
     if (missing.length > 0) {
@@ -120,8 +117,14 @@ async function main(): Promise<void> {
       apiToken: process.env.CLOUDFLARE_API_TOKEN!,
       indexName: process.env.VECTORIZE_INDEX ?? "botardo-kb",
     });
-    apiKey = process.env.OPENCODE_GO_API_KEY!;
   }
+
+  // Decision mode calls the real router, so it keeps the paid path: without it the
+  // anonymous tier's 429 drops every case to the keyword heuristic and the report
+  // would claim to measure a router it never called.
+  const auth = evalDecisionAuth(mode, process.env.OPENCODE_GO_API_KEY);
+  if (!auth.paidFallback) decisionVars.DECISION_FALLBACK_MODEL = "";
+  const apiKey = auth.apiKey ?? "offline";
 
   const envVars = { ...vars, ...decisionVars, OPENCODE_GO_API_KEY: apiKey } as unknown as Omit<PipelineEnv, "AI" | "VECTORIZE">;
   // Same Jev judge config for every pipeline and run, independent of DECISION_MODEL (see evalJudgeConfig).
@@ -229,7 +232,7 @@ async function main(): Promise<void> {
     linear: summarize("linear", cases, results),
     adaptive: summarize("adaptive", cases, results),
   };
-  const decisionModel = `${envVars.DECISION_MODEL ?? "jev-1.13-free"} vía ${envVars.DECISION_ENDPOINT ?? "OpenCode System One"}${mode === "real" && envVars.DECISION_FALLBACK_MODEL !== "" ? ` (fallback pago ${envVars.DECISION_FALLBACK_MODEL ?? "jev-1.13"} con OPENCODE_GO_API_KEY)` : " (sin key, sin fallback pago)"}`;
+  const decisionModel = `${envVars.DECISION_MODEL ?? "jev-1.13-free"} vía ${envVars.DECISION_ENDPOINT ?? "OpenCode System One"}${auth.paidFallback && envVars.DECISION_FALLBACK_MODEL !== "" ? ` (fallback pago ${envVars.DECISION_FALLBACK_MODEL ?? "jev-1.13"} con OPENCODE_GO_API_KEY)` : " (sin key, sin fallback pago)"}`;
   const modeText =
     mode === "offline"
       ? "OFFLINE con modelo de decisión MOCKEADO (oráculo: devuelve la ruta y el hire_intent esperados de cada caso; el juez de suficiencia siempre dice insuficiente), Vectorize sin matches y generación stub. Solo son reales el conteo de llamadas bajo esos mocks; nada de esto mide la calidad del router."

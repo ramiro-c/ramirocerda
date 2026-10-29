@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { loadLocalSecrets } from "./env";
+import { evalDecisionAuth, loadLocalSecrets } from "./env";
 
 const TOUCHED = ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID", "OPENCODE_GO_API_KEY"] as const;
 const saved = new Map(TOUCHED.map((key) => [key, process.env[key]]));
@@ -56,5 +56,22 @@ describe("loadLocalSecrets", () => {
 
     expect(() => loadLocalSecrets({ rootDir, workerDir: rootDir })).not.toThrow();
     expect(process.env.OPENCODE_GO_API_KEY).toBeUndefined();
+  });
+});
+
+describe("evalDecisionAuth", () => {
+  it("keeps the paid fallback in decision mode so the router is not replaced by the heuristic", () => {
+    expect(evalDecisionAuth("decision", "key-from-file")).toEqual({
+      apiKey: "key-from-file",
+      paidFallback: true,
+    });
+  });
+
+  it("drops the paid fallback when the key is only whitespace", () => {
+    expect(evalDecisionAuth("decision", "   ")).toEqual({ apiKey: null, paidFallback: false });
+  });
+
+  it("never signs an offline run with a real key", () => {
+    expect(evalDecisionAuth("offline", "key-from-file")).toEqual({ apiKey: null, paidFallback: false });
   });
 });
