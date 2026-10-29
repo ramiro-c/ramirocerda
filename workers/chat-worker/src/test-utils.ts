@@ -6,6 +6,7 @@
  */
 import { vi } from "vitest";
 
+import { resetFreeTierBreaker } from "./breaker";
 import { DEFAULT_DECISION_ENDPOINT } from "./config";
 
 export const GENERATION_ENDPOINT = "https://opencode.example/v1/chat/completions";
@@ -73,7 +74,10 @@ function respond(answer: ScriptedAnswer, signal: AbortSignal | undefined, model:
   return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
 }
 
-export function stubFetch(script: FetchScript = {}) {
+export function stubFetch(script: FetchScript = {}, opts: { resetBreaker?: boolean } = {}) {
+  // The free-tier breaker is module scope, so a suite would inherit it from the previous
+  // test. Every stubbed fetch starts closed unless a test explicitly drives two requests.
+  if (opts.resetBreaker !== false) resetFreeTierBreaker();
   const router = [...(script.router ?? [])];
   const judge = [...(script.judge ?? [])];
   const calls = {

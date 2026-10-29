@@ -201,7 +201,15 @@ export async function runAdaptivePipeline(opts: {
       latency_ms: retrieval.judgeMs,
     });
   }
-  log("chat.rag_retrieved", { chunk_count: chunks.length, latency_ms: retrievalMs, iterations: retrieval.iterations });
+  log("chat.rag_retrieved", {
+    chunk_count: chunks.length,
+    latency_ms: retrievalMs,
+    iterations: retrieval.iterations,
+    // The literal queries searched, in order: the rewritten/contextual one first, then the
+    // alternate only when the judge asked for it. Without them a retrieval miss cannot be
+    // told apart from a bad rewrite, and the eval artifact cannot either.
+    queries: retrieval.queries,
+  });
 
   const retrieved = {
     ...base,

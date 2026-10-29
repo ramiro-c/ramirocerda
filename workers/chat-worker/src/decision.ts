@@ -25,8 +25,9 @@
  */
 
 import type { DecisionConfig } from "./config";
+import { isFreeTierExhausted, noteFreeTierExhausted } from "./breaker";
 
-export type DecisionFailure = "timeout" | "network" | `http_${number}` | "invalid_json" | "invalid_shape";
+export type DecisionFailure = "timeout" | "network" | `http_${number}` | "invalid_json" | "invalid_shape" | "free_skipped";
 
 export interface ChoiceQuestion {
   type: "choice";
@@ -53,8 +54,12 @@ export interface DecisionUsage {
 /** Which model answered: the free primary, the paid fallback, or none (all attempts failed / not run). */
 export type ModelTier = "free" | "paid" | "none";
 
-/** What happened with the paid retry. */
-export type FallbackOutcome = "not_needed" | "used" | "failed" | "skipped_no_key" | "skipped_no_model";
+/**
+ * What happened with the paid retry. `free_skipped` means the anonymous tier was not
+ * attempted at all: it answered 429 recently (isolate breaker) or the operator turned it
+ * off with DECISION_FREE_DISABLED.
+ */
+export type FallbackOutcome = "not_needed" | "used" | "failed" | "skipped_no_key" | "skipped_no_model" | "free_skipped";
 
 export interface DecisionTrace {
   tier: ModelTier;
@@ -142,17 +147,28 @@ async function attempt(
   }
 }
 
-/** Free attempt (anonymous), then at most ONE paid retry. Never throws. */
+/**
+ * Free attempt (anonymous), then at most ONE paid retry. Never throws.
+ *
+ * The anonymous tier is skipped when a paid path exists and either the isolate breaker
+ * remembers a recent 429 (see src/breaker.ts) or DECISION_FREE_DISABLED is set: paying
+ * twice for the same known-bad quota is pure latency.
+ */
 export async function askDecision(
   config: DecisionConfig,
   state: unknown,
   questions: Record<string, DecisionQuestion>,
 ): Promise<DecisionResult> {
-  const free = await attempt(config, config.model, null, state, questions);
-  if (free.ok) {
+  const now = Date.now();
+  const paidConfigured = Boolean(config.fallbackModel) && Boolean(config.apiKey);
+  const skipFree = paidConfigured && (config.freeDisabled || isFreeTierExhausted(now));
+  const free = skipFree ? null : await attempt(config, config.model, null, state, questions);
+  if (free?.ok) {
     return { ...free, trace: { tier: "free", model: config.model, primaryError: null, fallback: "not_needed" } };
   }
-  const primaryError = free.reason;
+  const primaryError: DecisionFailure = free ? free.reason : "free_skipped";
+  // Only an exhaustion signal opens the window; a 500/401/network stays a one-off failure.
+  if (free?.reason === "http_429") noteFreeTierExhausted(now, config.freeCooldownMs);
   if (!config.fallbackModel) {
     return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_model" } };
   }
@@ -161,7 +177,8 @@ export async function askDecision(
   }
   const paid = await attempt(config, config.fallbackModel, config.apiKey, state, questions);
   if (paid.ok) {
-    return { ...paid, trace: { tier: "paid", model: config.fallbackModel, primaryError, fallback: "used" } };
+    const fallback: FallbackOutcome = free ? "used" : "free_skipped";
+    return { ...paid, trace: { tier: "paid", model: config.fallbackModel, primaryError, fallback } };
   }
   return { ok: false, reason: paid.reason, trace: { tier: "none", model: null, primaryError, fallback: "failed" } };
 }

@@ -39,6 +39,13 @@ export const DEFAULT_DECISION_INTEGRATION_ID = "opencode";
 export const DEFAULT_DECISION_TIMEOUT_MS = 1500;
 /** Below this choice confidence a non-search route is not trusted: search instead. */
 export const DEFAULT_DECISION_MIN_CONFIDENCE = 0.5;
+/**
+ * How long the anonymous free tier is skipped after it answers 429. The free model's
+ * quota is a rolling usage limit, so the exact reset is unknown; 15 minutes keeps the
+ * paid path as the only wasted work in the common case without silencing the free tier
+ * for a whole day.
+ */
+export const DEFAULT_DECISION_FREE_COOLDOWN_MS = 15 * 60 * 1000;
 /** Hard ceiling: never more than 2 retrievals per message, whatever the env says. */
 export const MAX_RETRIEVAL_ITERATIONS_CEILING = 2;
 
@@ -51,6 +58,10 @@ export interface AdaptiveEnvVars {
   DECISION_INTEGRATION_ID?: string;
   DECISION_TIMEOUT_MS?: string;
   DECISION_MIN_CONFIDENCE?: string;
+  /** While > 0, skip the anonymous tier for this many ms after it answers 429. */
+  DECISION_FREE_COOLDOWN_MS?: string;
+  /** "1" or "true" skips the anonymous tier outright (the paid path must exist). */
+  DECISION_FREE_DISABLED?: string;
   MAX_RETRIEVAL_ITERATIONS?: string;
 }
 
@@ -65,6 +76,10 @@ export interface DecisionConfig {
   integrationId: string;
   timeoutMs: number;
   minConfidence: number;
+  /** Window, in ms, during which the anonymous tier is skipped after a 429. */
+  freeCooldownMs: number;
+  /** Operator kill switch: never call the anonymous tier (needs a paid path). */
+  freeDisabled: boolean;
 }
 
 export interface AdaptiveConfig {
@@ -88,6 +103,12 @@ function setting(raw: string | undefined, fallback: string): string {
   return raw === undefined ? fallback : raw.trim();
 }
 
+/** Accepts the same spellings a shell and wrangler both use; anything else is false. */
+function flag(raw: string | undefined): boolean {
+  const value = raw?.trim().toLowerCase();
+  return value === "1" || value === "true";
+}
+
 export function readAdaptiveConfig(env: AdaptiveEnvVars): AdaptiveConfig {
   const endpoint = setting(env.DECISION_ENDPOINT, DEFAULT_DECISION_ENDPOINT);
   const model = setting(env.DECISION_MODEL, DEFAULT_DECISION_MODEL);
@@ -103,6 +124,8 @@ export function readAdaptiveConfig(env: AdaptiveEnvVars): AdaptiveConfig {
             integrationId: env.DECISION_INTEGRATION_ID?.trim() || DEFAULT_DECISION_INTEGRATION_ID,
             timeoutMs: positiveInt(env.DECISION_TIMEOUT_MS, DEFAULT_DECISION_TIMEOUT_MS),
             minConfidence: unitInterval(env.DECISION_MIN_CONFIDENCE, DEFAULT_DECISION_MIN_CONFIDENCE),
+            freeCooldownMs: positiveInt(env.DECISION_FREE_COOLDOWN_MS, DEFAULT_DECISION_FREE_COOLDOWN_MS),
+            freeDisabled: flag(env.DECISION_FREE_DISABLED),
           }
         : null,
     maxRetrievalIterations: Math.min(

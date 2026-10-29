@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   DEFAULT_DECISION_ENDPOINT,
+  DEFAULT_DECISION_FREE_COOLDOWN_MS,
   DEFAULT_DECISION_INTEGRATION_ID,
   DEFAULT_DECISION_MIN_CONFIDENCE,
   DEFAULT_DECISION_MODEL,
@@ -192,12 +193,25 @@ describe("readAdaptiveConfig", () => {
         integrationId: DEFAULT_DECISION_INTEGRATION_ID,
         timeoutMs: DEFAULT_DECISION_TIMEOUT_MS,
         minConfidence: DEFAULT_DECISION_MIN_CONFIDENCE,
+        freeCooldownMs: DEFAULT_DECISION_FREE_COOLDOWN_MS,
+        freeDisabled: false,
       },
       maxRetrievalIterations: 2,
     });
     expect(DEFAULT_DECISION_ENDPOINT).toBe("https://opencode.ai/inference/systemone/v1/systemone");
     expect(DEFAULT_DECISION_MODEL).toBe("jev-1.13-free");
     expect(DEFAULT_DECISION_INTEGRATION_ID).toBe("opencode");
+  });
+
+  it("reads the free-tier breaker knobs", () => {
+    expect(readAdaptiveConfig({}).decision).toMatchObject({
+      freeCooldownMs: DEFAULT_DECISION_FREE_COOLDOWN_MS,
+      freeDisabled: false,
+    });
+    expect(readAdaptiveConfig({ DECISION_FREE_DISABLED: "true" }).decision?.freeDisabled).toBe(true);
+    expect(readAdaptiveConfig({ DECISION_FREE_DISABLED: "1" }).decision?.freeDisabled).toBe(true);
+    expect(readAdaptiveConfig({ DECISION_FREE_DISABLED: "0" }).decision?.freeDisabled).toBe(false);
+    expect(readAdaptiveConfig({ DECISION_FREE_COOLDOWN_MS: "60000" }).decision?.freeCooldownMs).toBe(60000);
   });
 
   it("turns off with an empty DECISION_MODEL or DECISION_ENDPOINT", () => {

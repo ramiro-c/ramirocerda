@@ -56,6 +56,10 @@ export function evalJudgeConfig(env: {
     integrationId: "opencode",
     timeoutMs: Number.isFinite(timeout) && timeout > 0 ? timeout : DEFAULT_EVAL_JEV_TIMEOUT_MS,
     minConfidence: 0.5,
+    // The eval counts attempts per case, so it must not inherit the worker's skipped-free
+    // window: a zero cooldown keeps every judge call anonymous-first, as measured.
+    freeCooldownMs: 0,
+    freeDisabled: false,
   };
 }
 

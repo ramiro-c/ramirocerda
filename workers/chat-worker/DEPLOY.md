@@ -239,6 +239,8 @@ Config (vars in `wrangler.jsonc`, defaults in `src/config.ts`):
 | `DECISION_INTEGRATION_ID` | var | `opencode` | not sent; logged on `chat.route` |
 | `DECISION_TIMEOUT_MS` | var | `1500` | per attempt (worst case 6 s total, see above) |
 | `DECISION_MIN_CONFIDENCE` | var | `0.5` | min confidence to skip the KB |
+| `DECISION_FREE_COOLDOWN_MS` | var | `900000` | after the free tier answers 429, skip it for this long (15 min); `0` never skips |
+| `DECISION_FREE_DISABLED` | var | unset | `1`/`true` never calls the anonymous tier (needs a paid path); per-isolate breaker |
 | `MAX_RETRIEVAL_ITERATIONS` | var | `2` | clamped to 1..2 |
 | `OPENCODE_GO_API_KEY` | secret (existing) | | generation key; also sent as Bearer on the paid Jev fallback only, never on the free call |
 
@@ -258,11 +260,19 @@ the last 4 turns and short KB snippets are sent.
 
 Log events: `chat.route` (route, via, `model_tier` free | paid | none, model
 that answered, `primary_error` when the free call failed, `fallback`
-not_needed | used | failed | skipped_no_key | skipped_no_model | off,
+not_needed | used | failed | skipped_no_key | skipped_no_model | free_skipped | off,
 integration, route_confidence, hire_intent_p, needs_history_p, hire_intent,
 offer_contact, rewritten), `chat.rag_judge` (verdict, p or reason,
-`model_tier`, `primary_error`, `fallback`), `chat.rag_retrieved`,
-`chat.rag_no_context`, `chat.ai_done`.
+`model_tier`, `primary_error`, `fallback`), `chat.rag_retrieved` (chunk_count,
+latency_ms, iterations, and `queries`: the literal search strings in order, so a
+miss can be told apart from a bad rewrite), `chat.rag_no_context`,
+`chat.ai_done`.
+
+Free-tier breaker: once the anonymous model answers 429, the isolate stops
+calling it for `DECISION_FREE_COOLDOWN_MS` and goes straight to the paid
+attempt, which is logged as `fallback: "free_skipped"`. Without it every router
+and judge call pays a wasted anonymous round trip. The state is per isolate and
+in memory: a cold start begins closed, which costs at most one wasted request.
 
 ### Evals (linear vs adaptive, by stage)
 

@@ -4,6 +4,8 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { resetFreeTierBreaker } from "./breaker";
+import { DEFAULT_DECISION_FREE_COOLDOWN_MS } from "./config";
 import worker from "./index";
 import { NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
 import {
@@ -337,5 +339,117 @@ describe("adaptive RAG through handleRag", () => {
       error: "Demasiadas consultas. Esperá un momento y volvé a intentar.",
       code: "RATE_LIMITED",
     });
+  });
+
+  it("logs the queries that were actually searched in chat.rag_retrieved", async () => {
+    const { env } = makeEnv({ rounds: [[strong], [strong]] });
+    const lines: Array<Record<string, any>> = [];
+    vi.spyOn(console, "log").mockImplementation((line: string) => {
+      lines.push(JSON.parse(line));
+    });
+
+    await ask(
+      env,
+      "¿Y sus estudios?",
+      { router: [routerAnswer("search", { needsHistory: 0.9 })], judge: [judgeAnswer(0.05)] },
+      history,
+    );
+
+    const retrieved = lines.find((l) => l.event === "chat.rag_retrieved");
+    expect(retrieved?.iterations).toBe(2);
+    // Both searches, in order: the history-merged query first, the raw message second.
+    expect(retrieved?.queries).toHaveLength(2);
+    expect(retrieved?.queries?.[1]).toBe("¿Y sus estudios?");
+  });
+});
+
+/**
+ * The free tier answers 429 once its usage limit is spent. Without memory of that,
+ * every router and judge call pays a wasted anonymous round trip before the paid
+ * retry. The breaker is isolate state, so each test starts from a closed breaker.
+ */
+describe("free-tier breaker", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    resetFreeTierBreaker();
+  });
+
+  it("after a 429 on the anonymous attempt the next message goes straight to the paid model", async () => {
+    const stub = stubFetch(
+      { router: [{ status: 429 }, routerAnswer("search"), routerAnswer("search")] },
+      { resetBreaker: false },
+    );
+    resetFreeTierBreaker();
+    const { env } = makeEnv({ rounds: [[strong], [strong]] });
+
+    const first = await worker.fetch(makeRequest("¿Dónde trabaja?"), env as never);
+    expect(first.status).toBe(200);
+    expect(stub.calls.router).toHaveLength(2);
+    expect(stub.calls.router[1].model).toBe("jev-1.13");
+    expect(stub.calls.decisionHeaders[1].Authorization).toBe("Bearer secret-key");
+
+    const second = await worker.fetch(makeRequest("¿Dónde trabaja?"), env as never);
+    expect(second.status).toBe(200);
+    // One call, already paid: the anonymous 429 is not paid again inside the window.
+    expect(stub.calls.router).toHaveLength(3);
+    expect(stub.calls.router[2].model).toBe("jev-1.13");
+    expect(stub.calls.decisionHeaders[2].Authorization).toBe("Bearer secret-key");
+  });
+
+  it("does not open the breaker on a failure that is not a 429", async () => {
+    const stub = stubFetch(
+      { router: [{ status: 500 }, routerAnswer("search"), routerAnswer("search")] },
+      { resetBreaker: false },
+    );
+    resetFreeTierBreaker();
+    const { env } = makeEnv({ rounds: [[strong], [strong]] });
+
+    await worker.fetch(makeRequest("¿Dónde trabaja?"), env as never);
+    expect(stub.calls.router).toHaveLength(2);
+
+    const second = await worker.fetch(makeRequest("¿Dónde trabaja?"), env as never);
+    expect(second.status).toBe(200);
+    // Still anonymous: a 500 is a transient upstream error, not an exhaustion signal.
+    expect(stub.calls.router).toHaveLength(3);
+    expect(stub.calls.router[2].model).toBe("jev-1.13-free");
+    expect(stub.calls.decisionHeaders[2].Authorization).toBeUndefined();
+  });
+
+  it("reopens the anonymous attempt once the cooldown elapses", async () => {
+    const stub = stubFetch(
+      { router: [{ status: 429 }, routerAnswer("search"), routerAnswer("search")] },
+      { resetBreaker: false },
+    );
+    resetFreeTierBreaker();
+    let clock = 1_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => clock);
+    const { env } = makeEnv({ rounds: [[strong], [strong]] });
+
+    await worker.fetch(makeRequest("¿Dónde trabaja?"), env as never);
+    expect(stub.calls.router).toHaveLength(2);
+
+    clock += DEFAULT_DECISION_FREE_COOLDOWN_MS + 1;
+    await worker.fetch(makeRequest("¿Dónde trabaja?"), env as never);
+    expect(stub.calls.router).toHaveLength(3);
+    expect(stub.calls.router[2].model).toBe("jev-1.13-free");
+  });
+
+  it("never skips the anonymous attempt when no paid key is configured", async () => {
+    const stub = stubFetch({ router: [{ status: 429 }, routerAnswer("search")] }, { resetBreaker: false });
+    resetFreeTierBreaker();
+    const { env } = makeEnv({ rounds: [[strong], [strong]] });
+    const { OPENCODE_GO_API_KEY: _omit, ...noKey } = env;
+
+    const first = await worker.fetch(makeRequest("¿Dónde trabaja?"), noKey as never);
+    expect(first.status).toBe(200);
+    expect(stub.calls.router).toHaveLength(1);
+
+    const second = await worker.fetch(makeRequest("¿Dónde trabaja?"), noKey as never);
+    expect(second.status).toBe(200);
+    // There is no paid path to fall back to, so the anonymous attempt is the only one.
+    expect(stub.calls.router).toHaveLength(2);
+    expect(stub.calls.router[1].model).toBe("jev-1.13-free");
+    expect(stub.calls.decisionHeaders[1].Authorization).toBeUndefined();
   });
 });
