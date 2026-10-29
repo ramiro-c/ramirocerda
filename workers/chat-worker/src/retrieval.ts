@@ -37,7 +37,15 @@ export type JudgeVerdict =
   | { kind: "insufficient"; probability: number }
   | { kind: "error"; reason: DecisionFailure };
 
-export const JUDGE_SNIPPET_CHARS = 350;
+// How much of each chunk the sufficiency judge sees. Measured over 31 real
+// retrievals: a 350-char window scores 74% against a 81% always-yes baseline and
+// hides facts that sit past the opening (kb-en-perf keeps "75-90% de mejora" at
+// char 913), so the judge calls a correct retrieval insufficient, the re-search
+// fires, and the max-4 merge can then evict the chunk that had the answer. Full
+// text scores 87% for about twice the input tokens and no measurable latency.
+// The current largest chunk is 2111 chars, so in practice the judge sees all of
+// it; the cap only bounds the request if the knowledge base grows.
+export const JUDGE_SNIPPET_CHARS = 4000;
 
 export const SUFFICIENT_QUESTION: DecisionQuestion = {
   type: "noul",

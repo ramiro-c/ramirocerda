@@ -62,6 +62,16 @@ describe("buildJudgeState", () => {
     expect(state.snippets[0].startsWith("[Experiencia] ")).toBe(true);
     expect(state.snippets[0].length).toBeLessThanOrEqual(JUDGE_SNIPPET_CHARS + "[Experiencia] ".length);
   });
+
+  it("shows the judge a fact that sits past the opening of a long chunk", () => {
+    // kb-en-perf keeps "75-90% de mejora" at char 913 of a 2111-char chunk. A window
+    // that stops at 350 hides it, the judge answers "insufficient" on a retrieval that
+    // was already correct, and the merge cap can then throw the good chunk away.
+    const filler = "relleno ".repeat(120);
+    const long = { id: "perf", score: 0.5, metadata: { section: "Experiencia", text: `${filler}logrando 75-90% de mejora en tiempos de respuesta` } };
+    const state = buildJudgeState("¿Qué mejoras de performance logró?", [long]);
+    expect(state.snippets[0]).toContain("75-90% de mejora");
+  });
 });
 
 describe("retrieveAdaptive", () => {

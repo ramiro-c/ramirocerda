@@ -208,7 +208,11 @@ hit when the free model is degraded.
      chars). The answer is always generated for the ORIGINAL message + history.
 2. **Retrieval with sufficiency judge** (`src/retrieval.ts`): when there is an
    alternate query (the other of raw / contextual), one request asks
-   `sufficient` (noul) over the question and the retrieved snippets. If it is
+   `sufficient` (noul) over the question and the retrieved chunks. The judge
+   sees each chunk's whole text (`JUDGE_SNIPPET_CHARS`, a 4000-char safety cap,
+   above the largest chunk in the base): with a 350-char window it answered
+   "insufficient" on correct retrievals whose fact sat further down, which then
+   triggered a re-search whose max-4 merge could evict the good chunk. If it is
    below 0.5, the worker searches once more with the alternate query and merges
    by chunk id keeping the best score. Without an alternate query (first turn)
    the judge is not called. Hard cap of 2 retrievals, enforced in code
