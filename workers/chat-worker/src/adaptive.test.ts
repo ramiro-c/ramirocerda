@@ -147,7 +147,7 @@ describe("adaptive RAG through handleRag", () => {
       hire_intent: true,
       hire_intent_p: 0.98,
       offer_contact: true,
-      rewritten: false,
+      rewritten: true,
     });
     expect(datapoints[0]?.doubles?.[8]).toBe(1);
     expect(datapoints[0]?.doubles?.[9]).toBe(0);
@@ -275,7 +275,7 @@ describe("adaptive RAG through handleRag", () => {
     expect(datapoints[0]?.doubles?.[9]).toBe(1);
   });
 
-  it("searches with previous user turn + message for follow-ups but generates with the original message + history", async () => {
+  it("searches the raw follow-up first and keeps the contextual query as the alternate, generating with the original message + history", async () => {
     const { env, run, datapoints } = makeEnv({ rounds: [[strong]] });
     const { calls } = await ask(
       env,
@@ -283,7 +283,8 @@ describe("adaptive RAG through handleRag", () => {
       { router: [routerAnswer("search", { needsHistory: 0.93 })], judge: [judgeAnswer(0.8)] },
       history,
     );
-    expect(run.mock.calls[0][1]).toEqual({ text: ["¿Dónde trabaja Ramiro? ¿y antes?"] });
+    expect(run.mock.calls[0][1]).toEqual({ text: ["¿y antes?"] });
+    expect(run.mock.calls[1]?.[1]).toBeUndefined();
     expect(calls.judge[0].state.question).toBe("¿y antes?");
     const gen = calls.generation[0] as { messages: Array<{ role: string; content: string }> };
     expect(gen.messages.at(-1)).toEqual({ role: "user", content: "¿y antes?" });
@@ -358,9 +359,10 @@ describe("adaptive RAG through handleRag", () => {
 
     const retrieved = lines.find((l) => l.event === "chat.rag_retrieved");
     expect(retrieved?.iterations).toBe(2);
-    // Both searches, in order: the history-merged query first, the raw message second.
+    // Both searches, in order: the raw message first, the history-merged query second.
     expect(retrieved?.queries).toHaveLength(2);
-    expect(retrieved?.queries?.[1]).toBe("¿Y sus estudios?");
+    expect(retrieved?.queries?.[0]).toBe("¿Y sus estudios?");
+    expect(retrieved?.queries?.[1]).toBe("¿Dónde trabaja Ramiro? ¿Y sus estudios?");
   });
 });
 

@@ -203,9 +203,12 @@ hit when the free model is degraded.
    - `off_topic`: fixed localized reply. No retrieval, no generation.
    - `smalltalk`: one short generation (identity prompt + a smalltalk
      instruction, no KB facts). No retrieval.
-   - `search`: retrieval with the raw message, or, when `needs_history >= 0.5`,
-     with the previous user turn + the message (composed in code, max 300
-     chars). The answer is always generated for the ORIGINAL message + history.
+   - `search`: retrieval with the raw message, and, when there is a previous
+     user turn, the previous user turn + the message (composed in code, max 300
+     chars) kept as the alternate query the sufficiency judge can fall back to.
+     The raw message is searched first: with the merged query first, measured
+     follow-ups retrieved 0 of 2 and 0 of 1 expected chunks that the raw message
+     finds. The answer is always generated for the ORIGINAL message + history.
 2. **Retrieval with sufficiency judge** (`src/retrieval.ts`): when there is an
    alternate query (the other of raw / contextual), one request asks
    `sufficient` (noul) over the question and the retrieved chunks. The judge

@@ -133,9 +133,13 @@ export async function routeMessage(
   // Skipping the KB is the risky direction: only trust a non-search route when the model is confident.
   const chosen = routeAnswer.choice as Route;
   const route: Route = chosen !== "search" && routeAnswer.confidence < config.decision.minConfidence ? "search" : chosen;
-  const useContext = contextual !== null && needsHistory !== null && needsHistory >= NOUL_YES;
-  const query = route === "search" && useContext ? contextual : message;
-  const alternate = contextual === null ? null : useContext ? message : contextual;
+  // The raw message is always the first search. On measured follow-ups the history-merged
+  // query lost chunks the raw one finds (fu-es-merge 0/2 vs 2/2, fu-en-when-certs 0/1 vs 1/1)
+  // and the judge rated both retrievals sufficient, so the wrong query had no safety net.
+  // The contextual query stays as the alternate the judge can fall back to, which is the
+  // direction where its pronoun resolution actually paid off.
+  const alternate = contextual;
+  const query = message;
 
   return {
     route,

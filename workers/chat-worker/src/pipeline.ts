@@ -114,7 +114,9 @@ export async function runAdaptivePipeline(opts: {
     : fallbackDecision(message, "disabled");
   const routerMs = Date.now() - tRoute;
   const offerContact = decision.hireIntent;
-  const rewritten = decision.route === "search" && decision.query !== message;
+  // True when a rewritten (history-merged) query exists as the judge's fallback. The raw
+  // message is always searched first, so this no longer means "the first search was rewritten".
+  const rewritten = decision.route === "search" && decision.alternateQuery !== null;
   log("chat.route", {
     route: decision.route,
     via: decision.via,
@@ -135,7 +137,7 @@ export async function runAdaptivePipeline(opts: {
     offer_contact: offerContact,
     rewritten,
     latency_ms: routerMs,
-    ...(rewritten ? { query_preview: decision.query.slice(0, 80) } : {}),
+    ...(rewritten && decision.alternateQuery ? { query_preview: decision.alternateQuery.slice(0, 80) } : {}),
   });
 
   const base = {

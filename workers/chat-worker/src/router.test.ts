@@ -109,13 +109,16 @@ describe("routeMessage", () => {
     expect(Object.keys(calls.router[0].questions)).toEqual(["route", "hire_intent"]);
   });
 
-  it("searches with previous user turn + message when the model says it needs the history; the raw message is the alternate", async () => {
+  it("searches the raw message first even when the model says it needs the history, with the contextual query as the alternate", async () => {
+    // Measured: with the history-merged query first, fu-es-merge retrieved 0 of its 2
+    // expected chunks and fu-en-when-certs 0 of 1, while the raw message found them. The
+    // judge called both retrievals sufficient, so the pipeline never noticed the loss.
     stubFetch({ router: [routerAnswer("search", { needsHistory: 0.93 })] });
     const decision = await routeMessage("¿Y antes de eso?", history, config);
     expect(decision).toMatchObject({
       route: "search",
-      query: "¿Dónde trabaja Ramiro? ¿Y antes de eso?",
-      alternateQuery: "¿Y antes de eso?",
+      query: "¿Y antes de eso?",
+      alternateQuery: "¿Dónde trabaja Ramiro? ¿Y antes de eso?",
       scores: { routeConfidence: 0.97, hireIntent: 0.03, needsHistory: 0.93 },
     });
   });
