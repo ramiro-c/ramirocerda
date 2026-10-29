@@ -24,9 +24,9 @@ import { readAdaptiveConfig, type AdaptiveEnvVars } from "./config";
 import { generateReply, type GenerateResult } from "./generate";
 import { detectLanguage, type Language } from "./language";
 import { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
-import { buildRagPrompt, HISTORY_TURNS, type ChatMessage, type RetrievedChunk } from "./rag";
+import { buildRagPrompt, HISTORY_TURNS, retrieveChunks, type ChatMessage, type RetrievedChunk } from "./rag";
 import { retrieveAdaptive, type JudgeVerdict } from "./retrieval";
-import { routeMessage, type HistoryTurn, type Route, type RouteDecision } from "./router";
+import { fallbackDecision, routeMessage, type HistoryTurn, type Route, type RouteDecision } from "./router";
 
 export interface PipelineEnv extends AdaptiveEnvVars {
   AI: { run: (model: string, input: unknown) => Promise<{ response?: unknown; data?: unknown; shape?: unknown }> };
@@ -107,7 +107,11 @@ export async function runAdaptivePipeline(opts: {
   const siteOrigin = env.SITE_ORIGIN ?? DEFAULT_SITE_ORIGIN;
 
   const tRoute = Date.now();
-  const decision = await routeMessage(message, history, config);
+  // The flag is the whole point of this switch: off means no decision model at all,
+  // so a deployment can turn the adaptive path off without touching any other knob.
+  const decision = config.adaptiveEnabled
+    ? await routeMessage(message, history, config)
+    : fallbackDecision(message, "disabled");
   const routerMs = Date.now() - tRoute;
   const offerContact = decision.hireIntent;
   const rewritten = decision.route === "search" && decision.query !== message;
@@ -183,11 +187,22 @@ export async function runAdaptivePipeline(opts: {
   }
 
   const tRet = Date.now();
-  const retrieval = await retrieveAdaptive(
-    { question: message, query: decision.query, alternateQuery: decision.alternateQuery },
-    env,
-    config,
-  );
+  // With the flag off there is no judge to ask and no rewrite to try: one search with
+  // the raw message, exactly the pre-adaptive pipeline.
+  const retrieval = config.adaptiveEnabled
+    ? await retrieveAdaptive(
+        { question: message, query: decision.query, alternateQuery: decision.alternateQuery },
+        env,
+        config,
+      )
+    : {
+        chunks: await retrieveChunks(message, env),
+        iterations: 1,
+        verdict: { kind: "skipped" } as JudgeVerdict,
+        judgeMs: 0,
+        queries: [message],
+        judgeTrace: undefined,
+      };
   const retrievalMs = Date.now() - tRet;
   const chunks = retrieval.chunks;
   const topScore = chunks.reduce((max, c) => Math.max(max, c.score), 0);

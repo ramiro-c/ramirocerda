@@ -26,7 +26,7 @@ interface Datapoint {
 
 type Match = { id: string; score: number; metadata?: Record<string, unknown> };
 
-function makeEnv(opts: { rounds?: Match[][]; configured?: boolean } = {}) {
+function makeEnv(opts: { rounds?: Match[][]; configured?: boolean; vars?: Record<string, string> } = {}) {
   const datapoints: Datapoint[] = [];
   const rounds = opts.rounds ?? [[]];
   let round = 0;
@@ -49,6 +49,7 @@ function makeEnv(opts: { rounds?: Match[][]; configured?: boolean } = {}) {
     EMBEDDING_MODEL: "@cf/baai/bge-m3",
     CHAT_RATE_LIMITER: { limit: () => Promise.resolve({ success: true }) },
     ...(opts.configured === false ? DECISION_OFF : DECISION_VARS),
+    ...(opts.vars ?? {}),
   };
   return { env, datapoints, query, run };
 }
@@ -451,5 +452,52 @@ describe("free-tier breaker", () => {
     expect(stub.calls.router).toHaveLength(2);
     expect(stub.calls.router[1].model).toBe("jev-1.13-free");
     expect(stub.calls.decisionHeaders[1].Authorization).toBeUndefined();
+  });
+});
+
+/**
+ * The whole adaptive path (router, sufficiency judge, query rewrite, re-search) is
+ * behind one flag: with it off the worker goes back to the pre-adaptive behaviour of
+ * searching the raw message once and generating. The logic stays in the code, so the
+ * only thing that changes is the route taken.
+ */
+describe("adaptive feature flag", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("skips the router and the judge entirely when ADAPTIVE_RAG is off", async () => {
+    const { env } = makeEnv({ rounds: [[strong]], vars: { ADAPTIVE_RAG: "0" } });
+    const lines: Array<Record<string, any>> = [];
+    vi.spyOn(console, "log").mockImplementation((line: string) => {
+      lines.push(JSON.parse(line));
+    });
+    const stub = stubFetch({});
+
+    const res = await worker.fetch(makeRequest("¿Y sus estudios?", history), env as never);
+
+    expect(res.status).toBe(200);
+    // No decision model call at all: neither the router nor the sufficiency judge.
+    expect(stub.calls.router).toHaveLength(0);
+    expect(stub.calls.judge).toHaveLength(0);
+    // One search, with the raw message: no history merge, no re-search.
+    expect(env.VECTORIZE.query).toHaveBeenCalledTimes(1);
+    const retrieved = lines.find((l) => l.event === "chat.rag_retrieved");
+    expect(retrieved?.queries).toEqual(["¿Y sus estudios?"]);
+    expect(retrieved?.iterations).toBe(1);
+    const route = lines.find((l) => l.event === "chat.route");
+    expect(route?.via).toBe("disabled");
+    expect(route?.offer_contact).toBe(false);
+  });
+
+  it("keeps the adaptive path when the flag is absent", async () => {
+    const { env } = makeEnv({ rounds: [[strong]] });
+    const stub = stubFetch({ router: [routerAnswer("search")], judge: [judgeAnswer(0.9)] });
+
+    const res = await worker.fetch(makeRequest("¿Dónde trabaja Ramiro?"), env as never);
+
+    expect(res.status).toBe(200);
+    expect(stub.calls.router).toHaveLength(1);
   });
 });

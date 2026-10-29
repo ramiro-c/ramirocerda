@@ -239,6 +239,7 @@ Config (vars in `wrangler.jsonc`, defaults in `src/config.ts`):
 | `DECISION_INTEGRATION_ID` | var | `opencode` | not sent; logged on `chat.route` |
 | `DECISION_TIMEOUT_MS` | var | `1500` | per attempt (worst case 6 s total, see above) |
 | `DECISION_MIN_CONFIDENCE` | var | `0.5` | min confidence to skip the KB |
+| `ADAPTIVE_RAG` | var | `1` | feature flag for the whole adaptive path (router, judge, rewrite, re-search); `0`/`false`/`off` runs the pre-adaptive behaviour (one search with the raw message, no decision call) |
 | `DECISION_FREE_COOLDOWN_MS` | var | `900000` | after the free tier answers 429, skip it for this long (15 min); `0` never skips |
 | `DECISION_FREE_DISABLED` | var | unset | `1`/`true` never calls the anonymous tier (needs a paid path); per-isolate breaker |
 | `MAX_RETRIEVAL_ITERATIONS` | var | `2` | clamped to 1..2 |

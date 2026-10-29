@@ -35,7 +35,7 @@ export interface HistoryTurn {
 }
 
 /** How the decision was made: the model answered validly, or which fallback applied. */
-export type RouteVia = "llm" | "not_configured" | DecisionFailure;
+export type RouteVia = "llm" | "not_configured" | "disabled" | DecisionFailure;
 
 export interface RouteDecision {
   route: Route;

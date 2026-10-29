@@ -185,6 +185,7 @@ describe("retrieveAdaptive", () => {
 describe("readAdaptiveConfig", () => {
   it("is ON by default with Jev free, anonymous, integration id opencode", () => {
     expect(readAdaptiveConfig({})).toEqual({
+      adaptiveEnabled: true,
       decision: {
         endpoint: DEFAULT_DECISION_ENDPOINT,
         model: DEFAULT_DECISION_MODEL,
@@ -238,4 +239,19 @@ describe("readAdaptiveConfig", () => {
     });
     expect(cfg.maxRetrievalIterations).toBe(2);
   });
+});
+
+/**
+ * One switch for the whole adaptive path, so a deployment can turn the router, the
+ * judge and the re-search off without editing the decision model config.
+ */
+it("reads the adaptive feature flag", () => {
+  expect(readAdaptiveConfig({}).adaptiveEnabled).toBe(true);
+  expect(readAdaptiveConfig({ ADAPTIVE_RAG: "1" }).adaptiveEnabled).toBe(true);
+  expect(readAdaptiveConfig({ ADAPTIVE_RAG: "true" }).adaptiveEnabled).toBe(true);
+  expect(readAdaptiveConfig({ ADAPTIVE_RAG: "0" }).adaptiveEnabled).toBe(false);
+  expect(readAdaptiveConfig({ ADAPTIVE_RAG: "false" }).adaptiveEnabled).toBe(false);
+  // An empty or unknown value keeps the default instead of silently switching the path off.
+  expect(readAdaptiveConfig({ ADAPTIVE_RAG: "" }).adaptiveEnabled).toBe(true);
+  expect(readAdaptiveConfig({ ADAPTIVE_RAG: "yes" }).adaptiveEnabled).toBe(true);
 });

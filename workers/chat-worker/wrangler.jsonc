@@ -47,8 +47,13 @@
     // called WITHOUT a key. If that call fails for any reason, ONE retry goes to
     // DECISION_FALLBACK_MODEL (jev-1.13, paid) with Authorization: Bearer of the
     // existing SECRET OPENCODE_GO_API_KEY (the generation key; no new secret).
-    // Key unset or DECISION_FALLBACK_MODEL "" skips the retry. Set DECISION_MODEL to "" to turn the decision model off
-    // (linear pipeline, offerContact false).
+    // Key unset or DECISION_FALLBACK_MODEL "" skips the retry.
+    //
+    // ADAPTIVE_RAG is the feature flag for the whole adaptive path (router, sufficiency
+    // judge, query rewrite, re-search). "0"/"false"/"off" runs the pre-adaptive
+    // behaviour instead: one search with the raw message, similarity gate, generate,
+    // and no decision call at all. The logic stays in the code; only the route changes.
+    "ADAPTIVE_RAG": "1",
     "DECISION_ENDPOINT": "https://opencode.ai/inference/systemone/v1/systemone",
     "DECISION_MODEL": "jev-1.13-free",
     // Paid slug from the OpenCode docs model table (console/models.mdx): "Jev 1.13 | jev-1.13".

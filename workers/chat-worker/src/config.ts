@@ -52,6 +52,8 @@ export const MAX_RETRIEVAL_ITERATIONS_CEILING = 2;
 export interface AdaptiveEnvVars {
   /** Botardo's OpenCode key (the generation secret). Sent ONLY on the paid fallback attempt. */
   OPENCODE_GO_API_KEY?: string;
+  /** "0"/"false" turns the adaptive path off; anything else (or absent) keeps it on. */
+  ADAPTIVE_RAG?: string;
   DECISION_ENDPOINT?: string;
   DECISION_MODEL?: string;
   DECISION_FALLBACK_MODEL?: string;
@@ -83,9 +85,21 @@ export interface DecisionConfig {
 }
 
 export interface AdaptiveConfig {
+  /**
+   * Feature flag for the whole adaptive path (router, sufficiency judge, query
+   * rewrite, re-search). Off means the pre-adaptive behaviour: one search with the
+   * raw message, similarity gate, generate. The code stays; only the route changes.
+   */
+  adaptiveEnabled: boolean;
   /** null when DECISION_MODEL or DECISION_ENDPOINT is set to "": no router, no judge. */
   decision: DecisionConfig | null;
   maxRetrievalIterations: number;
+}
+
+/** Only an explicit 0/false turns a flag off: an absent value keeps the default on. */
+function isOffFlag(raw: string | undefined): boolean {
+  const v = raw?.trim().toLowerCase();
+  return v === "0" || v === "false" || v === "off";
 }
 
 function positiveInt(raw: string | undefined, fallback: number): number {
@@ -114,6 +128,7 @@ export function readAdaptiveConfig(env: AdaptiveEnvVars): AdaptiveConfig {
   const model = setting(env.DECISION_MODEL, DEFAULT_DECISION_MODEL);
   const apiKey = env.OPENCODE_GO_API_KEY?.trim() || null;
   return {
+    adaptiveEnabled: !isOffFlag(env.ADAPTIVE_RAG),
     decision:
       endpoint && model
         ? {
