@@ -40,16 +40,18 @@ afterEach(() => {
 });
 
 describe("mergeChunks", () => {
-  it("dedupes by id keeping the best score, sorted, capped at 4", () => {
+  it("dedupes by id keeping the best score, sorted, capped at MAX_CHUNKS", () => {
     const merged = mergeChunks(
       [chunk("a", 0.4), chunk("b", 0.5), chunk("c", 0.31)],
-      [chunk("a", 0.6), chunk("d", 0.35), chunk("e", 0.32)],
+      [chunk("a", 0.6), chunk("d", 0.35), chunk("e", 0.32), chunk("f", 0.3), chunk("g", 0.29)],
     );
     expect(merged.map((c) => [c.id, c.score])).toEqual([
       ["a", 0.6],
       ["b", 0.5],
       ["d", 0.35],
       ["e", 0.32],
+      ["c", 0.31],
+      ["f", 0.3],
     ]);
   });
 });

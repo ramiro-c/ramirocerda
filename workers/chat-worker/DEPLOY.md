@@ -458,3 +458,6 @@ but also drops the project chunks (0.38–0.45) that answer AE1/AE2. Recommended
 keep `0.30` and rely on the prompt-level no-info rule (secondary layer) for
 weak-match cases; if verify with the real model shows AE3 misfires, raise toward
 `0.40`–`0.42` and accept weaker project-list recall, or revisit topK/chunking.
+The injected-window cap is `MAX_CHUNKS = 6` (`src/rag.ts`), measured offline as
+the recall knee over the 28 eval cases: top-8 recovers nothing beyond top-6, and
+the window must also absorb the two 4-chunk searches of a re-search merge.

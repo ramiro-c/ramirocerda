@@ -25,10 +25,10 @@ describe("filterChunks (D3)", () => {
     expect(result).toHaveLength(1);
   });
 
-  it("caps injected chunks at MAX_CHUNKS (4)", () => {
-    const result = filterChunks([0.9, 0.8, 0.7, 0.6, 0.5, 0.4].map((score) => match(score)), 0.3);
+  it("caps injected chunks at MAX_CHUNKS (6)", () => {
+    const result = filterChunks([0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3].map((score) => match(score)), 0.3);
     expect(result).toHaveLength(MAX_CHUNKS);
-    expect(MAX_CHUNKS).toBe(4);
+    expect(MAX_CHUNKS).toBe(6);
   });
 
   it("returns an empty array for no relevant matches", () => {

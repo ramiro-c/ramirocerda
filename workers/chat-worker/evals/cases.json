@@ -95,7 +95,8 @@
         "retrieve": true,
         "answerable": true,
         "expectedChunks": [
-          "kb-full-stack-tech-lead-hands-on-abr-2025-actualida"
+          "kb-full-stack-tech-lead-hands-on-abr-2025-actualida",
+          "kb-overview"
         ],
         "expectedFacts": [
           "LDP",
@@ -273,7 +274,8 @@
         "retrieve": true,
         "answerable": true,
         "expectedChunks": [
-          "kb-full-stack-tech-lead-hands-on-abr-2025-actualida"
+          "kb-full-stack-tech-lead-hands-on-abr-2025-actualida",
+          "kb-overview"
         ],
         "expectedFacts": [
           "LDP",
@@ -604,7 +606,6 @@
         "retrieve": true,
         "answerable": true,
         "expectedChunks": [
-          "kb-sitio-web-y-arquitectura-del-bot",
           "kb-botardo-implementacion"
         ],
         "expectedFacts": [

@@ -9,7 +9,13 @@
 
 import type { Language } from "./language";
 
-export const MAX_CHUNKS = 4;
+// 6 measured, not guessed: 9 of 28 eval cases missed their expected chunk and,
+// with the ranking unchanged, widening the window recovers three of them
+// (kb-es-factory-note at rank 5, hi-es-contacto-proyecto at rank 6, and room
+// for the max-4 merge of two searches). A top-8 would recover nothing more, so
+// the extra chunks would be pure prompt weight. The cost is ~300-500 tokens of
+// generation context per search (chunk median is ~540 chars).
+export const MAX_CHUNKS = 6;
 export const HISTORY_TURNS = 10;
 
 export interface ChatMessage {
