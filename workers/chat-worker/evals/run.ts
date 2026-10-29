@@ -42,6 +42,7 @@ import { fileURLToPath } from "node:url";
 
 import { runAdaptivePipeline, type PipelineEnv } from "../src/pipeline";
 import { instrument, offlineBindings, realBindings, zeroCounters, type MockRouterAnswer } from "./backends";
+import { loadLocalSecrets } from "./env";
 import { runLinearPipeline } from "./linear-pipeline";
 import { markdownTable, summarize, type CaseResult, type EvalCase, type EvalMode, type PipelineName } from "./metrics";
 import {
@@ -75,18 +76,8 @@ function readWranglerVars(): Record<string, string> {
   return (JSON.parse(json) as { vars: Record<string, string> }).vars;
 }
 
-function loadLocalSecrets(): void {
-  const tryLoad = (file: string) => {
-    try {
-      process.loadEnvFile(file);
-    } catch {
-      // missing file is fine: explicit env vars always work
-    }
-  };
-  if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID) tryLoad(path.join(ROOT_DIR, ".env"));
-  if (!process.env.OPENCODE_GO_API_KEY) {
-    tryLoad(path.join(WORKER_DIR, ".dev.vars"));
-  }
+function loadCredentials(): void {
+  loadLocalSecrets({ rootDir: ROOT_DIR, workerDir: WORKER_DIR });
 }
 
 async function main(): Promise<void> {
@@ -117,7 +108,7 @@ async function main(): Promise<void> {
     // No real OPENCODE_GO_API_KEY here: never send the "offline" placeholder as a Bearer key.
     decisionVars.DECISION_FALLBACK_MODEL = "";
   } else {
-    loadLocalSecrets();
+    loadCredentials();
     const required = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OPENCODE_GO_API_KEY"];
     const missing = required.filter((k) => !process.env[k]?.trim());
     if (missing.length > 0) {

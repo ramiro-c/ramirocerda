@@ -1,8 +1,8 @@
 /**
  * Credential-free validation of the stage judges (`pnpm eval:judges`).
  *
- * Runs the REAL Jev judges (anonymous jev-1.13-free on OpenCode System One; the
- * paid jev-1.13 retry only if OPENCODE_GO_API_KEY is already exported) over
+ * Runs the REAL Jev judges (anonymous jev-1.13-free on OpenCode System One, with
+ * the paid jev-1.13 retry when OPENCODE_GO_API_KEY is configured) over
  * evals/judge-fixtures.json: hand-labeled claims against verbatim KB excerpts,
  * and hand-written replies labeled abstains / answers. It measures how often
  * the judges agree with the labels. Everything here is a FIXTURE number: it
@@ -25,8 +25,11 @@ import {
   type Agreement,
   type ClaimCheck,
 } from "./stage-judges";
+import { loadLocalSecrets } from "./env";
 
 const EVAL_DIR = path.dirname(fileURLToPath(import.meta.url));
+const WORKER_DIR = path.join(EVAL_DIR, "..");
+const ROOT_DIR = path.join(WORKER_DIR, "..", "..");
 
 interface ClaimFixture {
   id: string;
@@ -47,8 +50,10 @@ async function main(): Promise<void> {
     claimSupport: ClaimFixture[];
     abstention: AbstentionFixture[];
   };
-  // Never loads key files: the paid retry only exists if the key is already exported.
-  const jev = evalJudgeConfig({ ...process.env, apiKey: process.env.OPENCODE_GO_API_KEY ?? null });
+  // Same credential loading as evals/run.ts: without the key the paid retry does
+  // not exist, and with the free tier exhausted every claim fails with 429.
+  loadLocalSecrets({ rootDir: ROOT_DIR, workerDir: WORKER_DIR });
+  const jev = evalJudgeConfig({ ...process.env, apiKey: process.env.OPENCODE_GO_API_KEY?.trim() || null });
 
   const claimRows: Array<{ fixture: string; label: boolean; check: ClaimCheck }> = [];
   const answerPairs: Array<{ label: boolean; verdict: boolean | null }> = [];
