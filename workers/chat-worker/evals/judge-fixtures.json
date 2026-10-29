@@ -198,6 +198,24 @@
       "question": "¿Cómo lo puedo contactar?",
       "reply": "Escribile a rami992009@gmail.com, es su canal preferido.",
       "abstains": false
+    },
+    {
+      "id": "fu-merge-answers",
+      "question": "¿Y quién hace el merge al final?",
+      "reply": "La decisión final siempre es humana: no hay auto-merge. Los agentes ejecutan la fontanería pesada, pero el merge y el criterio quedan del lado del equipo.",
+      "abstains": false
+    },
+    {
+      "id": "fu-embeddings-answers",
+      "question": "Does Botardo use embeddings?",
+      "reply": "Botardo uses the bge-m3 embedding model from Workers AI. Each visitor message gets embedded with it, and the result is used to retrieve the most relevant chunks from Cloudflare Vectorize before generating the answer with DeepSeek V4.1 Flash via OpenCode Go.",
+      "abstains": false
+    },
+    {
+      "id": "kb-soccer-describes",
+      "question": "¿Qué es el Soccer Analytics Agent?",
+      "reply": "El Soccer Analytics Agent es un agente de chat de análisis y predicción de fútbol montado sobre ~49k partidos internacionales (1872–hoy, dataset de Kaggle). El loop de tools está escrito a mano, sin framework de agentes, y es Gemini vía Vertex AI el que razona, decide y llama a las tools. Expone 9 herramientas, entre ellas SQL de solo lectura y búsqueda vectorial.",
+      "abstains": false
     }
   ]
 }
