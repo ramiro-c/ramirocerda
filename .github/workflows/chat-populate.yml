@@ -31,6 +31,12 @@ jobs:
         with:
           node-version: 22
 
+      # Cheap guard before any network work: a manifest committed with merge
+      # conflict markers fails here in two seconds with a readable message,
+      # instead of blowing up inside populate's JSON.parse after the job starts.
+      - name: Validate manifest JSON
+        run: node -e "JSON.parse(require('node:fs').readFileSync('workers/chat-worker/vectorize-manifest.json','utf8'))"
+
       # Populate (network): rechunks the sources, upserts the Vectorize index,
       # and rewrites the manifest. Content drift is resolved here, not failed on:
       # the manifest sync step below commits any difference back to main.

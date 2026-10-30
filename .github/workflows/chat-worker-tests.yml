@@ -22,6 +22,12 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      # Merge-gate guard: catches a manifest committed with conflict markers
+      # before the suite runs (JSON validity only — content drift is legit and
+      # is resolved by the chat-worker populate workflow, not failed on here).
+      - name: Validate manifest JSON
+        run: node -e "JSON.parse(require('node:fs').readFileSync('workers/chat-worker/vectorize-manifest.json','utf8'))"
+
       - run: pnpm install --frozen-lockfile --filter ramirocerda-chat-worker
 
       - run: pnpm --filter ramirocerda-chat-worker typecheck
