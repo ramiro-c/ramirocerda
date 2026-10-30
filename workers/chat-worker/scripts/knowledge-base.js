@@ -62,6 +62,65 @@ Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente con
 * **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4.1 Flash), Vercel.
 * **Link:** https://ramirocerda.com.ar
 
+### Spec Refinery
+Herramienta para refinar especificaciones de producto/feature con IA. Permite convertir ideas vagas en specs claras, accionables y verificables, con iteraciones guiadas para alinear requerimientos, alcance, criterios de aceptación y edge cases antes de pasar a diseño/código. Orientada a acelerar el handoff entre intención y ejecución con agentes de IA.
+* **Stack:** TypeScript, IA/LLMs, CLI/Web.
+* **Link:** https://github.com/ramiro-c/spec-refinery
+
+## Otros Proyectos
+### AI Agents Hub — Laboratorio de agentes de IA
+Monorepo de aprendizaje y referencia con Google ADK y LangGraph: de agentes chicos a apps full-stack en producción. Incluye Customer Support Chat y Career Coach (Vertex AI Agent Engine + Cloud Run).
+* **Stack:** Python 3.13, Google ADK, LangGraph, FastAPI, React 19, Vertex AI, Cloud Run, LiteLLM
+* **Link:** https://github.com/ramiro-c/ai-agents-hub
+
+
+### Agent General — Asistente de producto multi-agente
+Asistente de producto para una plataforma futbolística: un agente raíz que clasifica cada turno y delega en 14 sub-agentes de dominio, construido con Google ADK y desplegado en Vertex AI Agent Engine.
+* **Stack:** Python 3.13, Google ADK, Vertex AI Agent Engine, Gemini, uv, pytest
+
+
+### Gastify — Finanzas con bot de Telegram
+Tracker de finanzas personales con dashboard PWA y bot de Telegram que parsea mensajes en lenguaje natural a transacciones estructuradas usando IA. Desplegado en Cloudflare Workers con Drizzle ORM sobre Turso/libSQL.
+* **Stack:** SvelteKit, Svelte 5, TypeScript, Cloudflare Workers, Drizzle ORM, Turso / libSQL, OpenRouter
+
+
+### Orquestador LangGraph
+Orquestador multi-agente construido con LangGraph para coordinar flujos complejos de trabajo con agentes de IA.
+* **Stack:** Python, LangGraph, LangChain
+* **Link:** https://github.com/ramiro-c/orquestador-langgraph
+
+
+### RAG Citation Agent
+Agente RAG con citas verificadas para responder con referencias trazables al contenido fuente.
+* **Stack:** Python, RAG, LLMs, Vector DB
+* **Link:** https://github.com/ramiro-c/rag-citation-agent
+
+
+### Rutinify
+App para crear y seguir rutinas diarias con seguimiento de hábitos.
+* **Stack:** TypeScript, React
+* **Link:** https://github.com/ramiro-c/rutinify
+
+
+### Lactaria
+Aplicación web para seguimiento de lactancia/maternidad.
+* **Stack:** TypeScript, React
+* **Link:** https://github.com/ramiro-c/lactaria
+
+
+### Agent Scout
+Agente para scouting y análisis de jugadores/fútbol con IA.
+* **Stack:** Python, Google ADK, LLMs
+* **Link:** https://github.com/ramiro-c/agent-scout
+
+
+### Agent Evals
+Framework/harness para evaluar agentes de IA con pruebas determinísticas.
+* **Stack:** Python, pytest, LLM evals
+* **Link:** https://github.com/ramiro-c/agent-evals
+
+
+
 ## Sitio Web y Arquitectura del Bot
 
 * **Sitio:** https://ramirocerda.com.ar, desarrollado con Astro y TypeScript, desplegado en Vercel.
