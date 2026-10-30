@@ -51,6 +51,74 @@ const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const EMBED_BATCH_SIZE = 16;
 const INDEX_NAME = process.env.VECTORIZE_INDEX ?? "botardo-kb";
 
+
+function extractLangBlock(body, lang) {
+  const re = new RegExp(`^\\s*${lang}:\\s*\\n([\\s\\S]*?)(?=^\\s*[a-z]{2}:\\s*\\n|^---\\s*$|$)`, "m");
+  const m = body.match(re);
+  if (!m) return "";
+  return m[1];
+}
+
+function getField(block, key) {
+  const re = new RegExp(key + ":\\s*\"([\\s\\S]*?)\"", "m");
+  const m = block.match(re);
+  if (!m) return "";
+  return m[1].replace(/\r?\n\\s*/g, " ").replace(/\\s+/g, " ").trim();
+}
+
+function getList(block, key) {
+  const re = new RegExp(key + ":\\s*\\[([\\s\\S]*?)\\]", "m");
+  const m = block.match(re);
+  if (!m) return [];
+  const inner = m[1];
+  return inner
+    .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+    .map((s) => s.trim().replace(/^["']|["']$/g, "").replace(/^-+\\s*/, ""))
+    .filter(Boolean);
+}
+
+function buildProjectSynthetic(md, filePath) {
+  const { frontmatter, body } = stripFrontmatter(md);
+  if (!frontmatter) return [];
+  const slug = frontmatter.slug || path.basename(filePath, ".md");
+  const repo = frontmatter.repo || "";
+  const out = [];
+
+  for (const lang of ["es", "en"]) {
+    const block = extractLangBlock(body, lang);
+    if (!block) continue;
+
+    const title = getField(block, "title");
+    const summary = getField(block, "summary");
+    const problem = getField(block, "problem");
+    const what = getField(block, "what");
+    const highlights = getList(block, "highlights");
+    const stack = getList(block, "stack");
+    const demoMatch = body.match(/(?:Demo|demo):\s*(https?:\/\/\S+)/i);
+    const demo = demoMatch ? demoMatch[1] : undefined;
+
+    const lines = [];
+    lines.push("# " + (title || slug));
+    if (summary) { lines.push(""); lines.push(summary); }
+    if (problem) { lines.push(""); lines.push(lang === "es" ? "## Problema" : "## Problem"); lines.push(problem); }
+    if (what) { lines.push(""); lines.push(lang === "es" ? "## Qué hice" : "## What I did"); lines.push(what); }
+    if (highlights.length) {
+      lines.push("");
+      lines.push(lang === "es" ? "## Destacados" : "## Highlights");
+      for (const h of highlights) lines.push("- " + h);
+    }
+    if (stack.length) { lines.push(""); lines.push(lang === "es" ? "## Stack" : "## Stack"); lines.push(stack.join(", ")); }
+    if (repo) { lines.push(""); lines.push(lang === "es" ? "## Repositorio" : "## Repository"); lines.push(repo); }
+    if (demo) { lines.push(""); lines.push(lang === "es" ? "## Demo" : "## Demo"); lines.push(demo); }
+    lines.push("");
+    lines.push(lang === "es" ? "## Ruta" : "## Path");
+    lines.push(lang === "en" ? "/en/projects/" + slug : "/projects/" + slug);
+
+    out.push({ lang, text: lines.join("\n") });
+  }
+  return out;
+}
+
 /** First 8 hex chars of the sha1 of a string. */
 export function sha1Hex(text) {
   return createHash("sha1").update(text, "utf8").digest("hex");
