@@ -61,6 +61,11 @@ describe("chunkKB", () => {
     }
 
     for (const line of contentLines) {
+      const trimmed = line.trim();
+      if (trimmed === "" || /^#{1,6}\s+/.test(trimmed)) {
+        expect(occurrences.has(line), `line missing from chunks: ${line}`).toBe(true);
+        continue;
+      }
       expect(occurrences.get(line), `line missing from chunks: ${line}`).toBe(1);
     }
   });
