@@ -209,6 +209,7 @@ describe("readAdaptiveConfig", () => {
         freeCooldownMs: DEFAULT_DECISION_FREE_COOLDOWN_MS,
         freeDisabled: false,
       },
+      judgeSufficientThreshold: 0.4,
       maxRetrievalIterations: 2,
     });
     expect(DEFAULT_DECISION_ENDPOINT).toBe("https://opencode.ai/inference/systemone/v1/systemone");
