@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-10-30T02:27:35.400Z",
+  "generatedAt": "2026-10-30T17:44:28.417Z",
   "sources": {
     "kb": 22,
     "notes": 32
@@ -13,7 +13,7 @@
     "kb-card-start-83ccf382",
     "kb-desarrollador-mobile-front-end-ssr-react-native--9a3f9045",
     "kb-devgam-secretaria-de-tic-utn-frlp-y-new-logic-ae916f6a",
-    "kb-educacion-758e50e9",
+    "kb-educacion-5fdc797d",
     "kb-full-stack-tech-lead-hands-on-abr-2025-actualida-82319aba",
     "kb-google-cloud-ai-agents-path-completo-jun-jul-202-33bfdb1e",
     "kb-judgment-day-e3192d1e",
