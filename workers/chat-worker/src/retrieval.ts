@@ -80,8 +80,9 @@ export async function judgeSufficiency(
     return { verdict: { kind: "error", reason: "invalid_shape" }, trace: { ...result.trace, tier: "none", model: null } };
   }
   const probability = answer.noul;
+  const threshold = config.judgeSufficientThreshold ?? NOUL_YES;
   return {
-    verdict: probability >= NOUL_YES ? { kind: "sufficient", probability } : { kind: "insufficient", probability },
+    verdict: probability >= threshold ? { kind: "sufficient", probability } : { kind: "insufficient", probability },
     usage: result.usage,
     trace: result.trace,
   };

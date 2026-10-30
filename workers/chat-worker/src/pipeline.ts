@@ -122,6 +122,7 @@ export async function runAdaptivePipeline(opts: {
   log("chat.route", {
     route: decision.route,
     via: decision.via,
+    judge_threshold: config.judgeSufficientThreshold,
     // Which model answered: free (jev-1.13-free), paid (fallback, Bearer key) or none.
     model_tier: decision.trace?.tier ?? "none",
     model: decision.trace?.model ?? null,
@@ -214,6 +215,9 @@ export async function runAdaptivePipeline(opts: {
     log("chat.rag_judge", {
       verdict: retrieval.verdict.kind,
       ...(retrieval.verdict.kind === "error" ? { reason: retrieval.verdict.reason } : { p: retrieval.verdict.probability }),
+      judge_threshold: config.judgeSufficientThreshold,
+      would_research: retrieval.verdict.kind === "insufficient",
+      alternate: decision.alternateQuery ? true : false,
       model_tier: retrieval.judgeTrace?.tier ?? "none",
       ...(retrieval.judgeTrace?.primaryError ? { primary_error: retrieval.judgeTrace.primaryError } : {}),
       fallback: retrieval.judgeTrace?.fallback ?? "off",

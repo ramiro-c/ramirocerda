@@ -40,6 +40,8 @@ export const DEFAULT_DECISION_INTEGRATION_ID = "opencode";
 export const DEFAULT_DECISION_TIMEOUT_MS = 1000;
 /** Below this choice confidence a non-search route is not trusted: search instead. */
 export const DEFAULT_DECISION_MIN_CONFIDENCE = 0.5;
+/** Probability threshold for the sufficiency judge: >= means sufficient, else re-search. */
+export const DEFAULT_JUDGE_SUFFICIENT_THRESHOLD = 0.4;
 /**
  * How long the anonymous free tier is skipped after it answers 429. The free model's
  * quota is a rolling usage limit, so the exact reset is unknown; 15 minutes keeps the
@@ -66,6 +68,8 @@ export interface AdaptiveEnvVars {
   /** "1" or "true" skips the anonymous tier outright (the paid path must exist). */
   DECISION_FREE_DISABLED?: string;
   MAX_RETRIEVAL_ITERATIONS?: string;
+  /** Sufficiency judge threshold (default 0.4). >= means sufficient. */
+  JUDGE_SUFFICIENT_THRESHOLD?: string;
 }
 
 export interface DecisionConfig {
@@ -95,6 +99,8 @@ export interface AdaptiveConfig {
   /** null when DECISION_MODEL or DECISION_ENDPOINT is set to "": no router, no judge. */
   decision: DecisionConfig | null;
   maxRetrievalIterations: number;
+  /** Probability threshold for sufficient judge verdict (>= means sufficient). */
+  judgeSufficientThreshold: number;
 }
 
 /** Only an explicit 0/false turns a flag off: an absent value keeps the default on. */
@@ -148,5 +154,6 @@ export function readAdaptiveConfig(env: AdaptiveEnvVars): AdaptiveConfig {
       positiveInt(env.MAX_RETRIEVAL_ITERATIONS, MAX_RETRIEVAL_ITERATIONS_CEILING),
       MAX_RETRIEVAL_ITERATIONS_CEILING,
     ),
+    judgeSufficientThreshold: unitInterval(env.JUDGE_SUFFICIENT_THRESHOLD, DEFAULT_JUDGE_SUFFICIENT_THRESHOLD),
   };
 }

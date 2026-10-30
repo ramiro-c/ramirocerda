@@ -36,9 +36,9 @@
   "vars": {
     "TOP_K": "5",
     "SIMILARITY_THRESHOLD": "0.30",
-    // Rerank: dense top-20 -> cross-encoder top-6 (kb-educacion rescue). Fail-open.
+    // Rerank: dense top-15 -> cross-encoder top-6. Fail-open.
     "RAG_RERANK_MODEL": "@cf/baai/bge-reranker-base",
-    "RAG_RERANK_CANDIDATES": "20",
+    "RAG_RERANK_CANDIDATES": "15",
     "GENERATION_MODEL": "deepseek-v4.1-flash",
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
     "EMBEDDING_MODEL": "@cf/baai/bge-m3",
@@ -54,6 +54,7 @@
     "DECISION_INTEGRATION_ID": "opencode",
     "DECISION_TIMEOUT_MS": "1000",
     "DECISION_MIN_CONFIDENCE": "0.5",
+    "JUDGE_SUFFICIENT_THRESHOLD": "0.4",
     "MAX_RETRIEVAL_ITERATIONS": "2"
   },
   "observability": {
