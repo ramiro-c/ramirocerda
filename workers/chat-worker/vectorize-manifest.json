@@ -1,11 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-<<<<<<< HEAD
-  "generatedAt": "2026-10-30T17:44:28.417Z",
-=======
-  "generatedAt": "2026-10-30T18:13:34.746Z",
->>>>>>> feat/botardo-adaptive-rag
+  "generatedAt": "2026-10-30T18:28:12.170Z",
   "sources": {
     "kb": 22,
     "notes": 32
@@ -15,13 +11,8 @@
     "kb-card-pr-df0a4f67",
     "kb-card-review-d686f9e6",
     "kb-card-start-83ccf382",
-<<<<<<< HEAD
-    "kb-desarrollador-mobile-front-end-ssr-react-native--9a3f9045",
-    "kb-devgam-secretaria-de-tic-utn-frlp-y-new-logic-ae916f6a",
-=======
     "kb-desarrollador-mobile-front-end-ssr-react-native--e3bc6ad6",
     "kb-devgam-secretaria-de-tic-utn-frlp-y-new-logic-5473d7c1",
->>>>>>> feat/botardo-adaptive-rag
     "kb-educacion-5fdc797d",
     "kb-full-stack-tech-lead-hands-on-abr-2025-actualida-82319aba",
     "kb-google-cloud-ai-agents-path-completo-jun-jul-202-33bfdb1e",
