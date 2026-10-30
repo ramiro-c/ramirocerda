@@ -18,6 +18,13 @@ import type { Language } from "./language";
 export const MAX_CHUNKS = 6;
 export const HISTORY_TURNS = 10;
 
+/**
+ * Cross-encoder used when `RAG_RERANK_MODEL` is set: the dense rank stays the
+ * round-1 vote and this model re-orders its candidates as round 2 (see
+ * `rerankOrder`). Empty/absent keeps the single-stage dense path.
+ */
+export const DEFAULT_RAG_RERANK_MODEL = "@cf/baai/bge-reranker-base";
+
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
@@ -37,7 +44,10 @@ export interface VectorizeMatch {
 
 interface RagBindings {
   AI: {
-    run: (model: string, input: unknown) => Promise<{ data?: unknown; shape?: unknown }>;
+    run: (
+      model: string,
+      input: unknown,
+    ) => Promise<{ data?: unknown; shape?: unknown; response?: unknown }>;
   };
   VECTORIZE: {
     query: (
@@ -48,6 +58,9 @@ interface RagBindings {
   EMBEDDING_MODEL: string;
   TOP_K: string;
   SIMILARITY_THRESHOLD: string;
+  /** Set to enable the two-stage retrieval: wide dense fetch + cross-encoder rerank. */
+  RAG_RERANK_MODEL?: string;
+  RAG_RERANK_CANDIDATES?: string;
 }
 
 type RagEnv = RagBindings;
@@ -73,9 +86,10 @@ export async function embedQuestion(question: string, env: RagEnv): Promise<numb
   return extractEmbedding(result);
 }
 
-export async function queryIndex(vector: number[], env: RagEnv): Promise<VectorizeMatch[]> {
+export async function queryIndex(vector: number[], env: RagEnv, topKOverride?: number): Promise<VectorizeMatch[]> {
   const parsed = Number.parseInt(env.TOP_K ?? "5", 10);
-  const topK = Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
+  const fallback = Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
+  const topK = topKOverride ?? fallback;
   const result = await env.VECTORIZE.query(vector, { topK, returnMetadata: "all" });
   return result.matches ?? [];
 }
@@ -94,8 +108,75 @@ export function filterChunks(matches: VectorizeMatch[], threshold: number, cap: 
 export async function retrieveChunks(question: string, env: RagEnv): Promise<RetrievedChunk[]> {
   const threshold = defaultThreshold(env.SIMILARITY_THRESHOLD);
   const vector = await embedQuestion(question, env);
-  const matches = await queryIndex(vector, env);
-  return filterChunks(matches, threshold, MAX_CHUNKS);
+  const rerankModel = (env.RAG_RERANK_MODEL ?? "").trim() || null;
+  if (!rerankModel) {
+    const matches = await queryIndex(vector, env);
+    return filterChunks(matches, threshold, MAX_CHUNKS);
+  }
+  // Two-stage retrieval: the dense rank stays the round-1 vote and the
+  // cross-encoder is the round-2 judge. The dense threshold is not a per-chunk
+  // filter here: "¿Qué estudió Ramiro?" scores kb-educacion at 0.285 (below the
+  // 0.30 gate) yet the reranker ranks it first of 20, so a pre-gate would drop
+  // the one chunk we added this knob for. The gate keeps only its no-info
+  // meaning: when NO candidate is above the threshold the question is outside
+  // the knowledge base and the bot still owes the visitor a "no-info" reply.
+  const parsedCandidates = Number.parseInt(env.RAG_RERANK_CANDIDATES ?? "20", 10);
+  const candidates = Number.isFinite(parsedCandidates) && parsedCandidates > 0 ? parsedCandidates : 20;
+  const matches = await queryIndex(vector, env, candidates);
+  if (Math.max(...matches.map((m) => m.score), 0) < threshold) return [];
+  const ordered = await rerankOrder(question, matches, rerankModel, env);
+  return ordered.slice(0, MAX_CHUNKS).map((match) => ({ id: match.id, score: match.score, metadata: match.metadata }));
+}
+
+/**
+ * Reorder the dense candidates with the bge-reranker cross-encoder
+ * (`@cf/baai/bge-reranker-base`, measured in the 2026-10-29 probe: identical
+ * scores across two runs; the expected chunk jumped 15 -> 5 for
+ * "¿Qué estudió Ramiro?" and 18 -> 2 for "What stack did he use for that one?").
+ * Any failure — network error, invalid envelope, wrong ids — fails OPEN: the
+ * dense order is kept, because a slower correct answer outranks no answer.
+ */
+async function rerankOrder(
+  question: string,
+  candidates: VectorizeMatch[],
+  model: string,
+  env: RagEnv,
+): Promise<VectorizeMatch[]> {
+  if (candidates.length <= 1) return candidates;
+  try {
+    const result = await env.AI.run(model, {
+      query: question,
+      contexts: candidates.map((candidate) => ({ text: candidate.metadata?.text ?? "" })),
+      top_k: candidates.length,
+    });
+    const entries = Array.isArray((result as { response?: unknown }).response)
+      ? ((result as { response: unknown[] }).response)
+      : [];
+    if (entries.length !== candidates.length) throw new Error("reranker response size mismatch");
+    const scores = new Array<number | undefined>(candidates.length).fill(undefined);
+    for (const entry of entries) {
+      const { id, score } = entry as { id?: unknown; score?: unknown };
+      if (
+        typeof id !== "number" ||
+        !Number.isInteger(id) ||
+        (id as number) < 0 ||
+        (id as number) >= candidates.length ||
+        typeof score !== "number" ||
+        !Number.isFinite(score)
+      ) {
+        throw new Error("reranker response entry mismatch");
+      }
+      scores[id as number] = score as number;
+    }
+    // The scores are model-specific logits, useful only for their ORDER; the
+    // chunks keep their dense score on the wire.
+    return candidates
+      .map((candidate, index) => ({ candidate, rerank: scores[index] as number }))
+      .sort((a, b) => b.rerank - a.rerank)
+      .map(({ candidate }) => candidate);
+  } catch {
+    return candidates;
+  }
 }
 
 const LANG_INSTRUCTIONS: Record<Language, string> = {

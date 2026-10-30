@@ -461,3 +461,28 @@ weak-match cases; if verify with the real model shows AE3 misfires, raise toward
 The injected-window cap is `MAX_CHUNKS = 6` (`src/rag.ts`), measured offline as
 the recall knee over the 28 eval cases: top-8 recovers nothing beyond top-6, and
 the window must also absorb the two 4-chunk searches of a re-search merge.
+
+### Reranked retrieval (two-stage, 2026-10-29)
+
+With `RAG_RERANK_MODEL` set (default `@cf/baai/bge-reranker-base` in
+`wrangler.jsonc`), retrieval becomes two-stage instead of a single dense cut:
+
+1. The dense fetch widens to `RAG_RERANK_CANDIDATES` (default 20) candidates.
+2. The dense gate keeps its **no-info meaning only**: when no candidate scores
+   above `SIMILARITY_THRESHOLD` the chunk list is empty and no rerank call is
+   made (the bot declines as before). Otherwise ALL candidates — including
+   sub-threshold ones — go to the cross-encoder.
+3. The cross-encoder re-orders the full chunk texts (`bge-reranker-base` takes
+   `{query, contexts: [{text}...], top_k}`); the final top `MAX_CHUNKS` are
+   injected, keeping their dense cosine on the wire/logs.
+
+Why: cosine ranking is a bi-encoder vote. For "¿Qué estudió Ramiro?" the
+kb-educacion chunk scores 0.285 (rank 15+, below the 0.30 gate) while generic
+chunks score ~0.45, so the bot answered "no tengo ese dato" despite the fact
+being in the base. The probe measured the cross-encoder deterministic across
+runs: kb-educacion dense rank 15 -> rerank rank 5 (inside the window), and
+"What stack did he use for that one?" 18 -> 2. Cost: one extra Workers AI call
+per search (~0.5-2.5 s) and ~2x Los tokens en el fetch, no reindex needed.
+Fail-open semantics: any reranker failure, invalid shape, or foreign id keeps
+the dense order, never throwing into the visitor's request. Set
+`RAG_RERANK_MODEL` to `""` or remove the var to restore single-stage dense.

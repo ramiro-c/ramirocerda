@@ -37,6 +37,14 @@
     "RAG_ENABLED": "true",
     "TOP_K": "5",
     "SIMILARITY_THRESHOLD": "0.30",
+    // Two-stage retrieval: with a model set, the worker fetches
+    // RAG_RERANK_CANDIDATES dense candidates (default 20) and re-orders them
+    // with the cross-encoder, so "¿Qué estudió Ramiro?" reaches the
+    // kb-educacion chunk that cosine ranking keeps out of the top-4 (measured
+    // 2026-10-29: dense rank 15 -> rerank rank 5). Fail-open: any rerank
+    // failure keeps the dense order. Leave unset to disable completely.
+    "RAG_RERANK_MODEL": "@cf/baai/bge-reranker-base",
+    "RAG_RERANK_CANDIDATES": "20",
     "GENERATION_MODEL": "deepseek-v4.1-flash",
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
     "EMBEDDING_MODEL": "@cf/baai/bge-m3",

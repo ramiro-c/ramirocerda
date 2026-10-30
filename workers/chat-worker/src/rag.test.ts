@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildRagPrompt,
+  DEFAULT_RAG_RERANK_MODEL,
   extractEmbedding,
   filterChunks,
   MAX_CHUNKS,
+  retrieveChunks,
   type VectorizeMatch,
 } from "./rag";
 
@@ -13,6 +15,126 @@ const IDENTITY = "Sos Botardo, el asistente virtual de la web personal de Ramiro
 function match(score: number, id = `kb-${score}`): VectorizeMatch {
   return { id, score, metadata: { section: "Overview", source: "knowledge-base", idx: 0, text: `texto de ${id}` } };
 }
+
+function withText(score: number, id: string, text: string): VectorizeMatch {
+  return { id, score, metadata: { section: "Educación", text } };
+}
+
+function ragEnv(
+  opts: {
+    matches?: VectorizeMatch[];
+    rerankResult?: unknown;
+    rerankError?: Error;
+    on?: boolean;
+    vars?: Record<string, string>;
+  } = {},
+) {
+  const run = vi
+    .fn()
+    .mockImplementation(async (model: string) => {
+      if (model === "@cf/baai/bge-m3") return { data: [[0.1, 0.2, 0.3]] };
+      if (opts.rerankError) throw opts.rerankError;
+      const raw = opts.rerankResult ?? { response: [] };
+      return raw as { data?: unknown; response?: unknown };
+    });
+  const query = vi.fn(async (_vector: number[], _opts: { topK: number }) => ({
+    matches: opts.matches ?? [],
+  }));
+  const env = {
+    AI: { run },
+    VECTORIZE: { query },
+    EMBEDDING_MODEL: "@cf/baai/bge-m3",
+    TOP_K: "5",
+    SIMILARITY_THRESHOLD: "0.30",
+    ...(opts.on ? { RAG_RERANK_MODEL: DEFAULT_RAG_RERANK_MODEL } : {}),
+    ...(opts.vars ?? {}),
+  };
+  return { env, run, query };
+}
+
+describe("retrieveChunks with the reranker", () => {
+  it("rescues a chunk the dense score could not let in, ordered by the reranker", async () => {
+    const matches = [
+      withText(0.42, "kb-overview-aa", "Ramiro Cerdá, Full-Stack Engineer."),
+      withText(0.38, "kb-note-bb", "nota sobre determinismo y graders."),
+      withText(0.285, "kb-educacion-cc", "Universidad Tecnológica Nacional FRLP, Ingeniería en Sistemas."),
+    ];
+    const { env, run, query } = ragEnv({
+      on: true,
+      matches,
+      rerankResult: { response: [{ id: 2, score: 9e-4 }, { id: 0, score: 1e-6 }, { id: 1, score: 5e-7 }] },
+    });
+    const result = await retrieveChunks("¿Qué estudió Ramiro?", env);
+    expect(result.map((c) => c.id)).toEqual(["kb-educacion-cc", "kb-overview-aa", "kb-note-bb"]);
+    expect(result.map((c) => c.score)).toEqual([0.285, 0.42, 0.38]);
+    // One embedding call, one reranker call with the question and full chunk texts.
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(run.mock.calls[1][0]).toBe(DEFAULT_RAG_RERANK_MODEL);
+    expect(run.mock.calls[1][1]).toEqual({
+      query: "¿Qué estudió Ramiro?",
+      contexts: matches.map((m) => ({ text: m.metadata?.text })),
+      top_k: 3,
+    });
+    // Candidates come from the widened fetch, not TOP_K.
+    expect(query.mock.calls[0][1].topK).toBe(20);
+  });
+
+  it("keeps the no-info gate: nothing above the dense threshold means no rerank call", async () => {
+    const matches = [withText(0.2, "kb-a", "x"), withText(0.15, "kb-b", "y")];
+    const { env, run } = ragEnv({ on: true, matches });
+    expect(await retrieveChunks("¿qué color es el cielo?", env)).toEqual([]);
+    expect(run).toHaveBeenCalledTimes(1); // embedding only
+  });
+
+  it("fail-open: an invalid reranker answer keeps the dense order", async () => {
+    const matches = [withText(0.42, "kb-a", "x"), withText(0.38, "kb-b", "y"), withText(0.31, "kb-c", "z")];
+    for (const bad of [{ response: [{ id: 9, score: 1 }] }, { weird: true }]) {
+      const { env } = ragEnv({ on: true, matches, rerankResult: bad });
+      expect((await retrieveChunks("q", env)).map((c) => c.id)).toEqual(["kb-a", "kb-b", "kb-c"]);
+    }
+  });
+
+  it("fail-open: a reranker network error keeps the dense order too", async () => {
+    const matches = [withText(0.42, "kb-a", "x"), withText(0.38, "kb-b", "y")];
+    const { env } = ragEnv({ on: true, matches, rerankError: new Error("boom") });
+    expect((await retrieveChunks("q", env)).map((c) => c.id)).toEqual(["kb-a", "kb-b"]);
+  });
+
+  it("caps the reranked order at MAX_CHUNKS (6)", async () => {
+    const matches = Array.from({ length: 8 }, (_, i) => withText(0.5 - i * 0.01, `kb-${i}`, `texto ${i}`));
+    const { env } = ragEnv({
+      on: true,
+      matches,
+      rerankResult: {
+        response: Array.from({ length: 8 }, (_, i) => ({ id: 7 - i, score: 1e-4 - i * 1e-5 })),
+      },
+    });
+    const result = await retrieveChunks("q", env);
+    expect(result).toHaveLength(MAX_CHUNKS);
+    expect(result.map((c) => c.id).join(",")).toBe("kb-7,kb-6,kb-5,kb-4,kb-3,kb-2");
+  });
+
+  it("stays off without RAG_RERANK_MODEL, exactly the dense-only path", async () => {
+    const matches = [withText(0.42, "kb-a", "x"), withText(0.38, "kb-b", "y"), withText(0.2, "kb-c", "z")];
+    const { env, run, query } = ragEnv({ matches });
+    const result = await retrieveChunks("q", env);
+    expect(result.map((c) => c.id)).toEqual(["kb-a", "kb-b"]);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0][1].topK).toBe(5);
+  });
+
+  it("RAG_RERANK_CANDIDATES widens the candidate fetch", async () => {
+    const matches = [withText(0.42, "kb-a", "x")];
+    const { env, query } = ragEnv({
+      on: true,
+      matches,
+      rerankResult: { response: [{ id: 0, score: 1e-5 }] },
+      vars: { RAG_RERANK_CANDIDATES: "50" },
+    });
+    await retrieveChunks("q", env);
+    expect(query.mock.calls[0][1].topK).toBe(50);
+  });
+});
 
 describe("filterChunks (D3)", () => {
   it("drops matches below the similarity threshold", () => {
