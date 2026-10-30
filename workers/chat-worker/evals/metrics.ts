@@ -303,6 +303,7 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
     ["Llamadas al juez de suficiencia (Jev) por consulta", f1(linear.perQuery.judgeCalls), f1(adaptive.perQuery.judgeCalls)],
     ["Llamadas de generación por consulta", f1(linear.perQuery.generationCalls), f1(adaptive.perQuery.generationCalls)],
     ["Embeddings por consulta", f1(linear.perQuery.embeddingCalls), f1(adaptive.perQuery.embeddingCalls)],
+    ["Rerank por consulta", f1(linear.perQuery.rerankCalls), f1(adaptive.perQuery.rerankCalls)],
     ["Queries a Vectorize por consulta", f1(linear.perQuery.vectorizeQueries), f1(adaptive.perQuery.vectorizeQueries)],
     [
       "Tokens decisión (Jev) in / out por consulta",

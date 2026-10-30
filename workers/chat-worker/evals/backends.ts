@@ -24,6 +24,8 @@ import type { PipelineEnv } from "../src/pipeline";
 
 export interface Counters {
   embeddingCalls: number;
+  /** Cross-encoder reranker calls (only when RAG_RERANK_MODEL is configured). */
+  rerankCalls: number;
   vectorizeQueries: number;
   routerCalls: number;
   judgeCalls: number;
@@ -38,6 +40,7 @@ export interface Counters {
 export function zeroCounters(): Counters {
   return {
     embeddingCalls: 0,
+    rerankCalls: 0,
     vectorizeQueries: 0,
     routerCalls: 0,
     judgeCalls: 0,
@@ -145,6 +148,7 @@ export async function instrument<T>(
     AI: {
       run: async (model, input) => {
         if (model === vars.EMBEDDING_MODEL) counters.embeddingCalls += 1;
+        if (vars.RAG_RERANK_MODEL && model === vars.RAG_RERANK_MODEL) counters.rerankCalls += 1;
         return bindings.AI.run(model, input);
       },
     },

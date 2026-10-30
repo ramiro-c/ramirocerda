@@ -39,6 +39,8 @@ export interface PipelineEnv extends AdaptiveEnvVars {
   OPENCODE_GO_API_KEY: string;
   TOP_K: string;
   SIMILARITY_THRESHOLD: string;
+  RAG_RERANK_MODEL?: string;
+  RAG_RERANK_CANDIDATES?: string;
   GENERATION_MODEL: string;
   OPENCODE_GO_ENDPOINT: string;
   EMBEDDING_MODEL: string;
