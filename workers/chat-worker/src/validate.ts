@@ -125,16 +125,35 @@ export function trimHistory(
   const recent = valid.slice(-MAX_HISTORY_TURNS);
   const out: Array<{ role: HistoryRole; content: string }> = [];
   let totalChars = 0;
+  let droppedTurns = 0;
 
   for (const turn of recent) {
     if (totalChars + turn.content.length > MAX_HISTORY_TOTAL_CHARS) {
       const room = MAX_HISTORY_TOTAL_CHARS - totalChars;
-      if (room <= 0) break;
-      out.push({ role: turn.role, content: turn.content.slice(0, room) });
+      // Count the dropped turns even when nothing fits (exact-fit case): that
+      // is a real truncation and used to stay silent because the count was
+      // only assigned after a partial slice had been pushed.
+      droppedTurns = recent.length - out.length;
+      if (room > 0) {
+        out.push({ role: turn.role, content: turn.content.slice(0, room) });
+      }
       break;
     }
     totalChars += turn.content.length;
     out.push(turn);
+  }
+
+  // Truncation used to be invisible server side; log only counts, which is why
+  // no turn text ever appears in the event.
+  if (droppedTurns > 0) {
+    console.log(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        event: "chat.history_truncated",
+        kept_turns: out.length,
+        dropped_turns: droppedTurns,
+      }),
+    );
   }
 
   return out;

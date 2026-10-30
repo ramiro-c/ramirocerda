@@ -174,7 +174,16 @@ async function rerankOrder(
       .map((candidate, index) => ({ candidate, rerank: scores[index] as number }))
       .sort((a, b) => b.rerank - a.rerank)
       .map(({ candidate }) => candidate);
-  } catch {
+  } catch (error) {
+    // A silent fail-open hides a dead reranker behind dense order; the event
+    // carries the failure reason only, never visitor text.
+    console.log(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        event: "chat.rerank_fallback",
+        reason: error instanceof Error ? error.message : "unknown",
+      }),
+    );
     return candidates;
   }
 }

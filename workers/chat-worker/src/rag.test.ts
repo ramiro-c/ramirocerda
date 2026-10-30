@@ -100,6 +100,30 @@ describe("retrieveChunks with the reranker", () => {
     expect((await retrieveChunks("q", env)).map((c) => c.id)).toEqual(["kb-a", "kb-b"]);
   });
 
+  it("logs a chat.rerank_fallback event so a dead reranker is not silent", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const matches = [withText(0.42, "kb-a", "x"), withText(0.38, "kb-b", "y")];
+      const { env } = ragEnv({ on: true, matches, rerankError: new Error("boom") });
+      await retrieveChunks("q", env);
+      const events = log.mock.calls.map((c) => JSON.parse(String(c[0])));
+      const fallback = events.find((e) => e.event === "chat.rerank_fallback");
+      expect(fallback).toBeTruthy();
+      expect(fallback.reason).toContain("boom");
+      // The happy path stays quiet: no event when the reranker answers.
+      log.mockClear();
+      const { env: ok } = ragEnv({
+        on: true,
+        matches,
+        rerankResult: { response: [{ id: 1, score: 9e-4 }, { id: 0, score: 1e-6 }] },
+      });
+      await retrieveChunks("q", ok);
+      expect(log.mock.calls.some((c) => String(c[0]).includes("chat.rerank_fallback"))).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   it("caps the reranked order at MAX_CHUNKS (6)", async () => {
     const matches = Array.from({ length: 8 }, (_, i) => withText(0.5 - i * 0.01, `kb-${i}`, `texto ${i}`));
     const { env } = ragEnv({
