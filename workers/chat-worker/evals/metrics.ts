@@ -170,7 +170,7 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
           errors: judged.filter((r) => r.verdict === "error").length,
           agreement: ratio(
             withCase
-              .filter(({ r, c }) => (r.verdict === "sufficient" || r.verdict === "insufficient") && c.expected.answerable !== null)
+              .filter(({ r, c }) => (r.verdict === "sufficient" || r.verdict === "insufficient") && c.expected.answerable !== null && c.category !== "followup")
               .map(({ r, c }) => (r.verdict === "sufficient") === c.expected.answerable),
           ),
           researches: ratio(searchedRs.map((r) => r.counters.vectorizeQueries >= 2)),

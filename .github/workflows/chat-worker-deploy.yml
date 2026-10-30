@@ -1,0 +1,50 @@
+# Deploy the Botardo chat-worker to Cloudflare whenever its code or config
+# changes on main. Tests run first; a red suite blocks the deploy.
+# Content/KB changes are handled separately by chat-populate.yml.
+name: chat-worker deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "workers/chat-worker/src/**"
+      - "workers/chat-worker/wrangler.jsonc"
+      - "workers/chat-worker/package.json"
+      - ".github/workflows/chat-worker-deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: chat-worker-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --filter ramirocerda-chat-worker
+
+      - name: Test
+        run: pnpm --filter ramirocerda-chat-worker test
+
+      # Worker secrets (OPENCODE_GO_API_KEY) live in Cloudflare and are kept
+      # across deploys; this step only ships code and wrangler.jsonc config.
+      # wrangler 3.x does not auto-discover wrangler.jsonc (it looks for
+      # wrangler.toml), so pass --config explicitly and pin wrangler 4.x,
+      # which reads jsonc natively.
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/chat-worker
+          wranglerVersion: "4"
+          command: deploy --config wrangler.jsonc

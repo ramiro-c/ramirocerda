@@ -939,6 +939,76 @@
         "answerable": null,
         "offerContact": false
       }
+    },
+    {
+      "id": "kb-es-ubicacion",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Dónde vive Ramiro?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": [
+          "kb-overview"
+        ],
+        "expectedFacts": [
+          "La Plata",
+          "Buenos Aires"
+        ],
+        "offerContact": false
+      }
+    },
+    {
+      "id": "kb-es-experiencia",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Cuántos años de experiencia tiene Ramiro?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": [
+          "kb-overview"
+        ],
+        "expectedFacts": [
+          "6+"
+        ],
+        "offerContact": false
+      }
+    },
+    {
+      "id": "kb-en-stack",
+      "category": "kb",
+      "lang": "en",
+      "message": "What technologies does Ramiro work with?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": [
+          "kb-overview"
+        ],
+        "expectedFacts": [
+          "Node.js",
+          "React",
+          "TypeScript"
+        ],
+        "offerContact": false
+      }
+    },
+    {
+      "id": "un-es-salario",
+      "category": "unanswerable",
+      "lang": "es",
+      "message": "¿Cuánto gana Ramiro por mes?",
+      "expected": {
+        "route": null,
+        "retrieve": null,
+        "answerable": false,
+        "offerContact": true,
+        "unanswerableKind": "out_of_kb"
+      }
     }
   ]
 }

@@ -56,7 +56,11 @@ export const SUFFICIENT_QUESTION: DecisionQuestion = {
 function snippet(chunk: RetrievedChunk): string {
   const section = typeof chunk.metadata?.section === "string" ? chunk.metadata.section : "knowledge-base";
   const text = typeof chunk.metadata?.text === "string" ? chunk.metadata.text : "";
-  return `[${section}] ${text.replace(/\s+/g, " ").slice(0, JUDGE_SNIPPET_CHARS)}`;
+  const normalized = text.replace(/\s+/g, " ");
+  if (normalized.length > JUDGE_SNIPPET_CHARS) {
+    console.log(JSON.stringify({ ts: new Date().toISOString(), event: "chat.judge_snippet_truncated", section, chars: normalized.length, cap: JUDGE_SNIPPET_CHARS }));
+  }
+  return `[${section}] ${normalized.slice(0, JUDGE_SNIPPET_CHARS)}`;
 }
 
 export function buildJudgeState(question: string, chunks: RetrievedChunk[]) {

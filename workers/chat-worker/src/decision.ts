@@ -11,13 +11,21 @@
  *                                            "<name>": { "type": "noul", "noul": 0.98 } },
  *               "usage": { "input_tokens": 120, "output_tokens": 12, ... } }
  *
- * Two tiers: the primary model (jev-1.13-free) is called WITHOUT a key. If that
- * attempt fails for ANY reason (network, timeout, any non-2xx including the 400
- * "Model is unavailable" an unknown or retired model gets, or a body that does
- * not validate), ONE retry goes to the paid fallback model (jev-1.13) with
- * `Authorization: Bearer <OPENCODE_GO_API_KEY>`. No key or no fallback model: no
- * retry. Each attempt has its own DECISION_TIMEOUT_MS. Jev does not generate
- * text, so there is no max_tokens / temperature / response_format.
+ * Two tiers: the primary model (DECISION_MODEL) and an optional retry model
+ * (DECISION_FALLBACK_MODEL). The primary is called anonymously when its slug ends in
+ * "-free" (jev-1.13-free) and with `Authorization: Bearer <OPENCODE_GO_API_KEY>` when
+ * it is a paid slug (jev-1.13). If the primary fails for any reason (network, timeout,
+ * any non-2xx including the 400 "Model is unavailable" an unknown or retired model gets,
+ * or a body that does not validate), ONE retry goes to the fallback model with the same
+ * credential rule (anonymous for free slugs, keyed for paid slugs). No fallback model or
+ * no key (when the fallback is paid) skips the retry. Each attempt has its own
+ * DECISION_TIMEOUT_MS. Jev does not generate text, so there is no max_tokens /
+ * temperature / response_format.
+ *
+ * With DECISION_MODEL=jev-1.13 and DECISION_FALLBACK_MODEL=jev-1.13 (both paid) every
+ * call goes to the paid tier, which is ~3x faster than the anonymous one; the free tier
+ * is then only used as a cost fallback when the operator sets DECISION_FALLBACK_MODEL to
+ * jev-1.13-free.
  *
  * It never throws: every failure comes back as `{ ok: false, reason }` so the
  * caller can apply its safe default. Each answer is validated against the
@@ -147,12 +155,20 @@ async function attempt(
   }
 }
 
+/** Slugs OpenCode marks as the anonymous (free) tier end in "-free". */
+const isFreeModel = (model: string | null): boolean =>
+  model !== null && (model === "jev-1.13-free" || model.endsWith("-free"));
+
 /**
  * Free attempt (anonymous), then at most ONE paid retry. Never throws.
  *
  * The anonymous tier is skipped when a paid path exists and either the isolate breaker
  * remembers a recent 429 (see src/breaker.ts) or DECISION_FREE_DISABLED is set: paying
  * twice for the same known-bad quota is pure latency.
+ *
+ * Tiering is now flexible: the primary model may be free (called anonymously) or paid
+ * (called with the key). With DECISION_MODEL=jev-1.13 and DECISION_FALLBACK_MODEL=jev-1.13
+ * every call goes to the paid tier, which is ~3x faster than the anonymous one.
  */
 export async function askDecision(
   config: DecisionConfig,
@@ -161,24 +177,60 @@ export async function askDecision(
 ): Promise<DecisionResult> {
   const now = Date.now();
   const paidConfigured = Boolean(config.fallbackModel) && Boolean(config.apiKey);
-  const skipFree = paidConfigured && (config.freeDisabled || isFreeTierExhausted(now));
-  const free = skipFree ? null : await attempt(config, config.model, null, state, questions);
-  if (free?.ok) {
-    return { ...free, trace: { tier: "free", model: config.model, primaryError: null, fallback: "not_needed" } };
+
+  const primaryIsFree = isFreeModel(config.model);
+  // Skip the anonymous primary when the paid path exists and the isolate remembers a
+  // recent 429 (or the operator disabled the free tier). Applies only to the free model.
+  const skipPrimary = primaryIsFree && paidConfigured && (config.freeDisabled || isFreeTierExhausted(now));
+
+  let primaryError: DecisionFailure;
+  let primarySkipped = skipPrimary;
+
+  if (skipPrimary) {
+    primaryError = "free_skipped";
+  } else {
+    const primaryKey = primaryIsFree ? null : config.apiKey;
+    const primary = await attempt(config, config.model, primaryKey, state, questions);
+    if (primary.ok) {
+      return {
+        ...primary,
+        trace: {
+          tier: primaryIsFree ? "free" : "paid",
+          model: config.model,
+          primaryError: null,
+          fallback: "not_needed",
+        },
+      };
+    }
+    primaryError = primary.reason;
+    if (primary.reason === "http_429" && primaryIsFree) noteFreeTierExhausted(now, config.freeCooldownMs);
   }
-  const primaryError: DecisionFailure = free ? free.reason : "free_skipped";
-  // Only an exhaustion signal opens the window; a 500/401/network stays a one-off failure.
-  if (free?.reason === "http_429") noteFreeTierExhausted(now, config.freeCooldownMs);
+
   if (!config.fallbackModel) {
     return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_model" } };
   }
-  if (!config.apiKey) {
+  const fallbackIsFree = isFreeModel(config.fallbackModel);
+  const fallbackKey = fallbackIsFree ? null : config.apiKey;
+
+  // Skip a free fallback when the breaker is tripped or the operator disabled it.
+  if (fallbackKey === null && (config.freeDisabled || isFreeTierExhausted(now))) {
+    return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "free_skipped" } };
+  }
+  if (!fallbackIsFree && !config.apiKey) {
     return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_key" } };
   }
-  const paid = await attempt(config, config.fallbackModel, config.apiKey, state, questions);
-  if (paid.ok) {
-    const fallback: FallbackOutcome = free ? "used" : "free_skipped";
-    return { ...paid, trace: { tier: "paid", model: config.fallbackModel, primaryError, fallback } };
+  const fallback = await attempt(config, config.fallbackModel, fallbackKey, state, questions);
+  if (!fallback.ok && fallback.reason === "http_429" && fallbackIsFree) noteFreeTierExhausted(now, config.freeCooldownMs);
+  if (fallback.ok) {
+    return {
+      ...fallback,
+      trace: {
+        tier: fallbackKey !== null ? "paid" : "free",
+        model: config.fallbackModel,
+        primaryError,
+        fallback: primarySkipped ? "free_skipped" : "used",
+      },
+    };
   }
-  return { ok: false, reason: paid.reason, trace: { tier: "none", model: null, primaryError, fallback: "failed" } };
+  return { ok: false, reason: fallback.reason, trace: { tier: "none", model: null, primaryError, fallback: "failed" } };
 }

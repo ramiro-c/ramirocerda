@@ -34,45 +34,25 @@
     }
   ],
   "vars": {
-    "RAG_ENABLED": "true",
     "TOP_K": "5",
     "SIMILARITY_THRESHOLD": "0.30",
-    // Two-stage retrieval: with a model set, the worker fetches
-    // RAG_RERANK_CANDIDATES dense candidates (default 20) and re-orders them
-    // with the cross-encoder, so "¿Qué estudió Ramiro?" reaches the
-    // kb-educacion chunk that cosine ranking keeps out of the top-4 (measured
-    // 2026-10-29: dense rank 15 -> rerank rank 5). Fail-open: any rerank
-    // failure keeps the dense order. Leave unset to disable completely.
+    // Rerank: dense top-20 -> cross-encoder top-6 (kb-educacion rescue). Fail-open.
     "RAG_RERANK_MODEL": "@cf/baai/bge-reranker-base",
     "RAG_RERANK_CANDIDATES": "20",
     "GENERATION_MODEL": "deepseek-v4.1-flash",
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
     "EMBEDDING_MODEL": "@cf/baai/bge-m3",
     "SITE_ORIGIN": "https://ramirocerda.com.ar",
-    // Adaptive RAG (src/pipeline.ts): router + sufficiency judge with Jev (TypeSafe
-    // System One) served by OpenCode. Not OpenAI-compatible: typed questions in,
-    // typed answers out (src/decision.ts). DECISION_MODEL (jev-1.13-free) is always
-    // called WITHOUT a key. If that call fails for any reason, ONE retry goes to
-    // DECISION_FALLBACK_MODEL (jev-1.13, paid) with Authorization: Bearer of the
-    // existing SECRET OPENCODE_GO_API_KEY (the generation key; no new secret).
-    // Key unset or DECISION_FALLBACK_MODEL "" skips the retry.
-    //
-    // ADAPTIVE_RAG is the feature flag for the whole adaptive path (router, sufficiency
-    // judge, query rewrite, re-search). "0"/"false"/"off" runs the pre-adaptive
-    // behaviour instead: one search with the raw message, similarity gate, generate,
-    // and no decision call at all. The logic stays in the code; only the route changes.
     "ADAPTIVE_RAG": "1",
     "DECISION_ENDPOINT": "https://opencode.ai/inference/systemone/v1/systemone",
-    "DECISION_MODEL": "jev-1.13-free",
-    // Paid slug from the OpenCode docs model table (console/models.mdx): "Jev 1.13 | jev-1.13".
+    // Paid primary (jev-1.13): ~3x faster than the anonymous free tier (jev-1.13-free).
+    // Both tiers are paid here, so every call bills to the Console balance; the retry
+    // reuses the same paid model. To fall back to the free tier for cost, set
+    // DECISION_FALLBACK_MODEL back to "jev-1.13-free" (the code sends no key to free slugs).
+    "DECISION_MODEL": "jev-1.13",
     "DECISION_FALLBACK_MODEL": "jev-1.13",
-    // OpenCode credential integration id. Not sent on the wire (the endpoint only
-    // takes a Bearer key); logged on chat.route for traceability.
     "DECISION_INTEGRATION_ID": "opencode",
-    // Per-ATTEMPT timeout for the router and the judge (ms). Measured free p95 is ~0.36 s.
-    // Worst case: 2 attempts x 2 steps (router + judge) = 4 x 1500 = 6 s of decision time.
-    "DECISION_TIMEOUT_MS": "1500",
-    // Below this route confidence, smalltalk/off_topic is not trusted and the message is searched.
+    "DECISION_TIMEOUT_MS": "1000",
     "DECISION_MIN_CONFIDENCE": "0.5",
     "MAX_RETRIEVAL_ITERATIONS": "2"
   },

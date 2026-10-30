@@ -127,7 +127,7 @@ Completé el recorrido completo de Google Cloud en AI Agents: 10 certificaciones
 
 ## Educación
 
-(In English: Education — Information Systems Engineering degree at Universidad Tecnológica Nacional (UTN FRLP), 2018-2023, GPA 8.04; AI Engineering short course at Coderhouse, 2026.)
+(In English: Education — Information Systems Engineering degree at Universidad Tecnológica Nacional (UTN FRLP), 2018-2023, GPA 8.04; AI Engineering short course at Coderhouse, 2026. Keywords: studies, study, university, degree, education, GPA, career, academic background.)
 
 * **Universidad Tecnológica Nacional - FRLP | Feb 2018 - May 2023**
   * **Ingeniería en Sistemas de Información** — Promedio: 8.04

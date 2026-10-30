@@ -41,7 +41,6 @@ function makeEnv(opts: { rounds?: Match[][]; configured?: boolean; vars?: Record
     VECTORIZE: { query },
     ANALYTICS: { writeDataPoint: (p: Datapoint) => datapoints.push(p) },
     OPENCODE_GO_API_KEY: "secret-key",
-    RAG_ENABLED: "true",
     TOP_K: "5",
     SIMILARITY_THRESHOLD: "0.30",
     GENERATION_MODEL: "deepseek-v4-flash",

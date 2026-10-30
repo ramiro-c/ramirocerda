@@ -33,7 +33,7 @@ describe("generateReply (D8/D9, R5/R7)", () => {
       model: "deepseek-v4-flash",
       messages,
       max_tokens: 1024,
-      temperature: 0.3,
+      temperature: 0,
     });
   });
 

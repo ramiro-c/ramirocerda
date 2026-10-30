@@ -7,11 +7,12 @@
  * `state` plus typed `questions` (choice / noul) and answers come back typed
  * (see src/decision.ts).
  *
- * Two tiers per decision request: the primary DECISION_MODEL (jev-1.13-free) is
- * called WITHOUT a key; if that attempt fails for any reason, ONE retry goes to
- * DECISION_FALLBACK_MODEL (jev-1.13, paid) with `Authorization: Bearer
- * OPENCODE_GO_API_KEY` (the same key Botardo uses for generation). No key or an
- * empty fallback model skips the retry.
+ * Two tiers per decision request: the primary DECISION_MODEL and an optional retry model
+ * DECISION_FALLBACK_MODEL. The primary is called anonymously when its slug ends in "-free"
+ * (jev-1.13-free) and with `Authorization: Bearer OPENCODE_GO_API_KEY` when it is a paid
+ * slug (jev-1.13). If that attempt fails for any reason, ONE retry goes to the fallback
+ * model with the same credential rule (anonymous for free slugs, keyed for paid slugs).
+ * No fallback model or no key (when the fallback is paid) skips the retry.
  *
  * Setting DECISION_MODEL or DECISION_ENDPOINT to "" turns the decision model
  * off: the pipeline then runs the pre-adaptive behaviour (search with the raw
@@ -36,7 +37,7 @@ export const DEFAULT_DECISION_FALLBACK_MODEL = "jev-1.13";
  */
 export const DEFAULT_DECISION_INTEGRATION_ID = "opencode";
 /** Per ATTEMPT. Worst case per decision request is 2 attempts (free + paid). */
-export const DEFAULT_DECISION_TIMEOUT_MS = 1500;
+export const DEFAULT_DECISION_TIMEOUT_MS = 1000;
 /** Below this choice confidence a non-search route is not trusted: search instead. */
 export const DEFAULT_DECISION_MIN_CONFIDENCE = 0.5;
 /**
@@ -69,9 +70,9 @@ export interface AdaptiveEnvVars {
 
 export interface DecisionConfig {
   endpoint: string;
-  /** Primary model, always called anonymously. */
+  /** Primary model: anonymous for free slugs (ends in "-free"), keyed for paid slugs. */
   model: string;
-  /** Paid model for the single retry; null disables the retry. */
+  /** Retry model; null disables the retry. */
   fallbackModel: string | null;
   /** Bearer key for the fallback attempt (OPENCODE_GO_API_KEY); null disables the retry. */
   apiKey: string | null;

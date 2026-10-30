@@ -56,7 +56,6 @@ interface Env extends AdaptiveEnvVars {
     }) => void;
   };
   OPENCODE_GO_API_KEY: string;
-  RAG_ENABLED: string;
   TOP_K: string;
   SIMILARITY_THRESHOLD: string;
   GENERATION_MODEL: string;
@@ -266,6 +265,12 @@ export default {
       return jsonResponse(405, { error: "Method not allowed", code: "INVALID_REQUEST" }, origin);
     }
 
+    // Only accept the documented endpoint. Anything else is a 404.
+    const pathname = new URL(request.url).pathname;
+    if (pathname !== "/ask") {
+      log("request.invalid", { reason: "path_not_found", path: pathname });
+      return jsonResponse(404, { error: "Not found", code: "NOT_FOUND" }, origin);
+    }
     if (!isAllowedOrigin(origin)) {
       log("request.origin_blocked", { origin });
       return jsonResponse(403, { error: "Origin not allowed", code: "INVALID_REQUEST" }, origin);
@@ -299,11 +304,8 @@ export default {
 
       // Adaptive RAG pipeline (LLM router, retrieval with an LLM sufficiency
       // judge and at most one re-search, generation via OpenCode Go; see
-      // src/pipeline.ts) is the only path since the legacy static-KB + llama
-      // branch was removed. RAG_ENABLED is retained as a vestigial flag
-      // (cleanup is a documented follow-up); the flag stays "true" in config.
-      // sessionId: prefer the frontend's stable per-conversation ID; fall back
-      // to a fresh UUID so the Go session header is always present.
+      // src/pipeline.ts). sessionId: prefer the frontend's stable per-conversation
+      // ID; fall back to a fresh UUID so the Go session header is always present.
       return await handleRag(
         message,
         history,

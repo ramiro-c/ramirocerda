@@ -117,7 +117,7 @@ export async function generateReply(options: GenerateOptions): Promise<GenerateR
     model,
     messages,
     maxTokens = 1024,
-    temperature = 0.3,
+    temperature = 0,
     timeoutMs = 30_000,
     maxAttempts = 3,
     backoffMs = 250,
