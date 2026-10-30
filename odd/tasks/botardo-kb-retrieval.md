@@ -19,11 +19,14 @@ S7: eval cases.json queda como seed data; no cambia semantics de ningún otro ca
 |---|---|---|---|---|
 | T1 | S2 | measured-only | done (dead end documented) | — |
 | T2 | S3 | measured-only | done (dead end documented) | — |
-| T3 | S4 | inline | done (MAX_CHUNKS 6, 200 tests) | (see commit) |
-| T4 | S6 | inline (eval fixtures) | done (3 labels corrected) | (see commit) |
-| T5 | S5 | decision | pending user | — |
+| T3 | S4 | inline | done (MAX_CHUNKS 6) | 0f88883 |
+| T4 | S6 | inline (eval fixtures) | done (3 labels corrected) | 0f88883 |
+| T5 | S5 | inline | done (rerank cross-encoder en vez de BM25, probe decidio; KB en ingles) | 3936d1a, e24edaf, e19227d |
 
 ## Log
 
 - L1 (2026-10-29, verbatim): "que pasa entonces con los kb? hay errores?" y "vamos con todos, dale" — esta feature.
 - L2: probes offline fuera del repo, solo lectura (kb-magnet-measure, kb-enrich-measure). Baseline de comparación: eval real /tmp + report `evals/results/2026-10-29T18-34-18-935Z-real.md` (recall lineal 0.71 vs adaptativo 0.71).
+
+- L3 (2026-10-30): S5 se resolvio con cross-encoder (`RAG_RERANK_MODEL` @cf/baai/bge-reranker-base, top-20 -> rerank -> top-6) en vez de BM25/hybrid: el probe (rerank-probe.mjs) mostro que el cross-encoder rescata kb-educacion del rank 15 al 5 con el question '¿Qué estudió Ramiro?' y 'What stack...' 18->2, sin repoblar infra nueva; BM25 no arreglaria el gap lexical estudió<->Educacion. Ademas linea en ingles en el chunk kb-educacion (probe: margen maximo 1.24e-3 con chunk en ingles) + repopulate (54 upserts, 1 prune).
+- L4 (2026-10-30): eval real post-rerank `evals/results/2026-10-30T02-52-58-902Z-real.md`: **el flagship bug se arregla end-to-end** — kb-es-estudios adaptativo trae kb-educacion (rank 5) y ya NO abstiene (linear sigue fallando: dense-only). Recall 0.77 lin vs **0.84 ad** (primera vez que adaptativo claramente supera su baseline congelado); hits 23/28 vs 25/28; respuesta con dato 19/24 vs 21/24; falsa abstencion 3/24 en ambos; offerContact 51/52; router fallbacks 0/54; rerank 0.78/consulta. Costo: latencia p50 p50 4917 vs 4278 lin (el rerank suma ~0.5-2.5s por busqueda, como medido en el probe). Claims sin soporte: 13% lin vs 20% ad (ruidoso entre corridas, 18% la anterior). Commits: 3936d1a (rerank), e24edaf (counters eval), e19227d (KB + manifest + repopulate). Incidente: un populate real se ejecuto antes de tiempo por --help no manejado (54 upserts a mitad del primer eval de medicion -> eval abortado y relanzado limpio).
