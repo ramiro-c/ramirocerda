@@ -147,7 +147,13 @@ export function chunkKB(kbText, opts = {}) {
     }
     const ownText = [c.headingLine, ...c.body].join("\n").trimEnd();
     const lines = [...pendingParents, ownText];
-    pendingParents = [];
+    // Keep parent headings (higher level = fewer #) for sibling chunks at deeper levels
+    pendingParents = pendingParents.filter((p) => {
+      const pm = p.match(/^(#+)\s+/);
+      const cm = c.headingLine.match(/^(#+)\s+/);
+      if (!pm || !cm) return false;
+      return pm[1].length < cm[1].length;
+    });
     const text = lines.join("\n").trimEnd();
     chunks.push({ heading: c.heading, text });
   }
