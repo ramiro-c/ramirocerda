@@ -1,11 +1,10 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-10-30T23:39:10.378Z",
+  "generatedAt": "2026-10-31T01:44:46.100Z",
   "sources": {
     "kb": 23,
-    "notes": 32,
-    "projects": 2
+    "notes": 32
   },
   "ids": [
     "kb-botardo-implementacion-4f48cfdb",
@@ -47,9 +46,7 @@
     "note-donde-esto-no-alcanza-2949905f",
     "note-el-asset-bfbf1cbd",
     "note-el-flujo-de-un-caso-06d5cbd5",
-    "note-english-3d606c8f",
     "note-equipos-que-gobiernan-agentes-que-ejecutan-824a96f2",
-    "note-espanol-f4cdb8d6",
     "note-esto-a-quien-se-lo-vendes-78481eca",
     "note-formas-de-implementarlo-32635b18",
     "note-how-it-s-built-f4e04431",
