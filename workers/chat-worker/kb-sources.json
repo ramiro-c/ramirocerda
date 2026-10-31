@@ -12,7 +12,7 @@
     },
     {
       "id": "projects",
-      "type": "markdown",
+      "type": "projects",
       "glob": "src/content/projects/**/*.md"
     }
   ]

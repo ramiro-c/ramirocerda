@@ -41,6 +41,16 @@ Desarrollo full-stack para sistemas de administración comercial, gestión de st
 
 ## Proyectos Destacados
 
+### Agent General — Asistente de producto multi-agente
+Asistente de producto para una plataforma futbolística: un agente raíz clasifica cada turno y delega en 14 sub-agentes de dominio (scouting, perfiles, comparaciones, mercado, plantillas, reportes y más). Identidad por usuario: cada llamada a la API usa el JWT del usuario que conversa, con sesión aislada. Evals determinísticos sin LLM juez (grounding numérico, tools esperadas, idioma). Construido con Google ADK y desplegado en Vertex AI Agent Engine.
+* **Stack:** Python 3.13, Google ADK, Vertex AI Agent Engine, Gemini, uv, pytest.
+* **Link:** https://ramirocerda.com.ar/work/agent-general
+
+### Agent Scout — Asistente de scouting
+Asistente de scouting para la misma plataforma: responde preguntas de clubes y agentes en lenguaje natural llamando a la API real (búsqueda de jugadores estructurada y en texto libre, jugadores similares, destinos país→liga→club, encajes por club y plantillas), con Google ADK y 9 tools. LLM intercambiable vía LiteLLM (Vertex AI Gemini u OpenRouter). Evals determinísticos: 12 casos scripted + 32 consultas reales de cobertura de filtros y honestidad.
+* **Stack:** Python 3.13, Google ADK, Vertex AI, Gemini, LiteLLM, OpenRouter, uv.
+* **Link:** https://ramirocerda.com.ar/work/agent-scout
+
 ### Soccer Analytics Agent
 Agente de chat de análisis y predicción de fútbol sobre ~49k partidos internacionales (1872–hoy, dataset Kaggle), con un loop de herramientas escrito a mano (sin framework de agentes): Gemini vía Vertex AI razona, decide y llama tools. Expone 9 herramientas, entre ellas SQL de solo lectura, búsqueda vectorial, retrieval híbrido con fusión RRF, Elo por equipo, forma y head-to-head, y un predictor de resultados con XGBoost multiclass (51 features, 336 equipos, fallback Elo). Memoria de 3 niveles (working/episodic/semántica) y Postgres 16 + pgvector como capa única de datos, vectores y memoria. Fases 0–7 completas (predictor incluido); fase 8 de deploy a GCP (Cloud Run + Cloud SQL) en curso.
 * **Stack:** Python 3.12, uv, Postgres 16 + pgvector, sentence-transformers (MiniLM all-MiniLM-L6-v2, 384 dims), XGBoost, FastAPI, React, Gemini vía Vertex AI, Ruff, pre-commit.

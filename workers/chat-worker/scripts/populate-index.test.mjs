@@ -1,6 +1,18 @@
 import { describe, it, expect } from "vitest";
 
-import { chunkKB, chunkNote, diffIds, globFiles, isDraftNote, loadKBChunks, noteRoute, sha1Hex, stripFrontmatter } from "./populate-index.mjs";
+import {
+  buildProjectChunks,
+  chunkKB,
+  chunkNote,
+  diffIds,
+  globFiles,
+  isDraftNote,
+  loadKBChunks,
+  noteRoute,
+  projectRoute,
+  sha1Hex,
+  stripFrontmatter,
+} from "./populate-index.mjs";
 import { KNOWLEDGE_BASE } from "./knowledge-base.js";
 
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
@@ -311,6 +323,158 @@ describe("loadKBChunks", () => {
       expect(esChunk.urlAlt).toBe("/en/notes/factory-engineering");
       expect(enChunk.url).toBe("/en/notes/factory-engineering");
       expect(enChunk.urlAlt).toBe("/notes/factory-engineering");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("projectRoute", () => {
+  it("maps project slugs to the published /work routes", () => {
+    expect(projectRoute("agent-scout", "es")).toEqual({
+      slug: "agent-scout",
+      lang: "es",
+      url: "/work/agent-scout",
+      urlAlt: "/en/work/agent-scout",
+    });
+    expect(projectRoute("agent-scout", "en")).toEqual({
+      slug: "agent-scout",
+      lang: "en",
+      url: "/en/work/agent-scout",
+      urlAlt: "/work/agent-scout",
+    });
+  });
+});
+
+describe("buildProjectChunks", () => {
+  // Real project file shape: pure YAML frontmatter, nested es/en objects,
+  // closing `---` possibly at EOF without a trailing newline.
+  const project = `---
+slug: agent-scout
+year: "2026"
+featured: true
+es:
+  title: "Agent Scout — Asistente de scouting"
+  summary: "Asistente de scouting que llama a la API real."
+  problem: "El scouting vive de preguntas difusas."
+  what: "Construí el agente con Google ADK y 9 tools."
+  highlights:
+    - "9 tools sobre la API real."
+    - "Evals determinísticos sin juez LLM."
+  stack: ["Google ADK", "LiteLLM"]
+en:
+  title: "Agent Scout — Scouting assistant"
+  summary: "A scouting assistant that calls the real API."
+  what: "I built the agent with Google ADK and 9 tools."
+  highlights:
+    - "9 tools over the real API."
+  stack: ["Google ADK", "LiteLLM"]
+---`;
+
+  it("builds one populated chunk per language from pure frontmatter", () => {
+    const chunks = buildProjectChunks(project, { filePath: "src/content/projects/agent-scout.md" });
+    expect(chunks).toHaveLength(2);
+
+    const es = chunks[0];
+    expect(es.lang).toBe("es");
+    expect(es.slug).toBe("agent-scout");
+    expect(es.section).toBe("Agent Scout — Asistente de scouting");
+    expect(es.text).toContain("# Agent Scout — Asistente de scouting");
+    expect(es.text).toContain("Asistente de scouting que llama a la API real.");
+    expect(es.text).toContain("**Problema:** El scouting vive de preguntas difusas.");
+    expect(es.text).toContain("**Qué hice:** Construí el agente con Google ADK y 9 tools.");
+    expect(es.text).toContain("- 9 tools sobre la API real.");
+    expect(es.text).toContain("**Stack:** Google ADK, LiteLLM");
+    expect(es.text).toContain("**Página:** /work/agent-scout");
+    expect(es.url).toBe("/work/agent-scout");
+    expect(es.urlAlt).toBe("/en/work/agent-scout");
+
+    const en = chunks[1];
+    expect(en.lang).toBe("en");
+    expect(en.text).toContain("**What I did:** I built the agent with Google ADK and 9 tools.");
+    expect(en.text).toContain("**Page:** /en/work/agent-scout");
+    expect(en.url).toBe("/en/work/agent-scout");
+    expect(en.urlAlt).toBe("/work/agent-scout");
+  });
+
+  it("uses content-addressed ids stable across runs", () => {
+    const a = buildProjectChunks(project, { filePath: "src/content/projects/agent-scout.md" });
+    const b = buildProjectChunks(project, { filePath: "src/content/projects/agent-scout.md" });
+    expect(a.map((c) => c.id)).toEqual(b.map((c) => c.id));
+    for (const chunk of a) {
+      expect(chunk.id).toMatch(/^project-(es|en)-agent-scout-[0-9a-f]{8}$/);
+      expect(chunk.id.endsWith(sha1Hex(chunk.text).slice(0, 8))).toBe(true);
+    }
+  });
+
+  it("derives the slug from the file path when frontmatter omits it", () => {
+    const chunks = buildProjectChunks("---\nes:\n  title: \"Solo título\"\n---", {
+      filePath: "src/content/projects/deslizado.md",
+    });
+    expect(chunks).toHaveLength(1);
+    expect(chunks[0].slug).toBe("deslizado");
+    expect(chunks[0].id.startsWith("project-es-deslizado-")).toBe(true);
+  });
+
+  it("returns zero chunks without frontmatter or localized blocks", () => {
+    expect(buildProjectChunks("# Not frontmatter\n\nbody")).toEqual([]);
+    expect(buildProjectChunks("---\nyear: \"2026\"\n---")).toEqual([]);
+  });
+
+  it("tolerates a closing --- at EOF without a trailing newline", () => {
+    expect(buildProjectChunks(project.trimEnd())).toHaveLength(2);
+  });
+
+  it("indexes every real project file in es and en with its /work route", async () => {
+    const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+    const projectsDir = path.resolve(scriptDir, "..", "..", "..", "src", "content", "projects");
+    const fs = await import("node:fs/promises");
+    const mdFiles = (await fs.readdir(projectsDir)).filter((f) => f.endsWith(".md"));
+    expect(mdFiles.length).toBeGreaterThanOrEqual(16);
+    for (const file of mdFiles) {
+      const slug = file.replace(/\.md$/, "");
+      const md = await fs.readFile(path.join(projectsDir, file), "utf8");
+      const chunks = buildProjectChunks(md, { filePath: `src/content/projects/${file}` });
+      expect(chunks, slug).toHaveLength(2);
+      expect(chunks[0].lang, slug).toBe("es");
+      expect(chunks[1].lang, slug).toBe("en");
+      for (const chunk of chunks) {
+        // Every localized block must actually be populated (this is the bug
+        // that silently dropped all projects from the index).
+        expect(chunk.text.length, slug).toBeGreaterThan(300);
+        const pageLine =
+          chunk.lang === "es" ? `**Página:** /work/${slug}` : `**Page:** /en/work/${slug}`;
+        expect(chunk.text, slug).toContain(pageLine);
+        expect(chunk.url, slug).toBe(chunk.lang === "es" ? `/work/${slug}` : `/en/work/${slug}`);
+        expect(chunk.urlAlt, slug).toBe(chunk.lang === "es" ? `/en/work/${slug}` : `/work/${slug}`);
+      }
+    }
+  });
+});
+
+describe("loadKBChunks with projects source", () => {
+  it("loads project chunks with the projects source type and their route", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "botardo-kb-projects-"));
+    try {
+      await mkdir(path.join(root, "src", "content", "projects"), { recursive: true });
+      await writeFile(
+        path.join(root, "src", "content", "projects", "agent-general.md"),
+        `---\nslug: agent-general\nes:\n  title: "Agent General"\n  summary: "Root agent multi-agente."\n  what: "Google ADK con 14 sub-agentes."\nen:\n  title: "Agent General"\n  summary: "Multi-agent root assistant."\n---\n`,
+      );
+      await mkdir(path.join(root, "workers", "chat-worker"), { recursive: true });
+      await writeFile(
+        path.join(root, "workers", "chat-worker", "kb-sources.json"),
+        JSON.stringify({ sources: [{ id: "projects", type: "projects", glob: "src/content/projects/**/*.md" }] }),
+      );
+
+      const chunks = await loadKBChunks(root);
+      expect(Object.groupBy(chunks, (c) => c.source).projects).toHaveLength(2);
+      const esChunk = chunks.find((c) => c.lang === "es");
+      const enChunk = chunks.find((c) => c.lang === "en");
+      expect(esChunk.id).toMatch(/^project-es-agent-general-[0-9a-f]{8}$/);
+      expect(esChunk.text).toContain("Root agent multi-agente.");
+      expect(esChunk.url).toBe("/work/agent-general");
+      expect(enChunk.url).toBe("/en/work/agent-general");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

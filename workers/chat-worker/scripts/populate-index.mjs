@@ -52,71 +52,170 @@ const EMBED_BATCH_SIZE = 16;
 const INDEX_NAME = process.env.VECTORIZE_INDEX ?? "botardo-kb";
 
 
-function extractLangBlock(body, lang) {
-  const re = new RegExp(`^\\s*${lang}:\\s*\\n([\\s\\S]*?)(?=^\\s*[a-z]{2}:\\s*\\n|^---\\s*$|$)`, "m");
-  const m = body.match(re);
-  if (!m) return "";
-  return m[1];
+/**
+ * Peel the raw YAML frontmatter content (between the leading --- markers) out
+ * of a markdown document. Works even when the closing marker sits at EOF
+ * without a trailing newline.
+ */
+function rawFrontmatter(md) {
+  const m = md.match(/^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(\r?\n|\s*$)/);
+  return m ? m[1] : "";
 }
 
-function getField(block, key) {
-  const re = new RegExp(key + ":\\s*\"([\\s\\S]*?)\"", "m");
+/**
+ * Line-anchor-safe scalar field from a YAML block: matches the key at line
+ * start (any indentation), so a key like `userSlug` never matches `slug`.
+ * Quoted scalars are unquoted and whitespace-collapsed; plain scalars are kept
+ * verbatim (trimmed).
+ */
+function fieldOf(block, key) {
+  const re = new RegExp(`(?:^|\r?\n)[ \t]*${key}:[ \t]*("[^"\\r\\n]*"|'[^'\\r\\n]*'|[^\\r\\n]*)`, "m");
   const m = block.match(re);
   if (!m) return "";
-  return m[1].replace(/\r?\n\\s*/g, " ").replace(/\\s+/g, " ").trim();
+  const value = m[1].trim();
+  if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+    return value.slice(1, -1).replace(/\s+/g, " ").trim();
+  }
+  return value;
 }
 
-function getList(block, key) {
-  const re = new RegExp(key + ":\\s*\\[([\\s\\S]*?)\\]", "m");
-  const m = block.match(re);
-  if (!m) return [];
-  const inner = m[1];
-  return inner
-    .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
-    .map((s) => s.trim().replace(/^["']|["']$/g, "").replace(/^-+\\s*/, ""))
-    .filter(Boolean);
+function unquote(value) {
+  const v = value.trim();
+  if (v.length >= 2 && ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))) {
+    return v.slice(1, -1).trim();
+  }
+  return v;
 }
 
-function buildProjectSynthetic(md, filePath) {
-  const { frontmatter, body } = stripFrontmatter(md);
-  if (!frontmatter) return [];
-  const slug = frontmatter.slug || path.basename(filePath, ".md");
-  const repo = frontmatter.repo || "";
+/**
+ * List from a YAML block under `key`, read after the lang-block extraction:
+ * inline `[a, "b"]` arrays and block lists (`- item`) are both supported.
+ */
+function listOf(block, key) {
+  const inline = fieldOf(block, key);
+  if (inline.startsWith("[")) {
+    return inline
+      .slice(1, -1)
+      .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+      .map((s) => unquote(s))
+      .filter(Boolean);
+  }
+  const lines = block.split(/\r?\n/);
+  const keyIdx = lines.findIndex((line) => new RegExp(`^[ \t]*${key}:[ \t]*(?:$|\S)`).test(line));
+  if (keyIdx === -1) return [];
+  const items = [];
+  for (let i = keyIdx + 1; i < lines.length; i++) {
+    const m = lines[i].match(/^[ \t]+-[ \t]*(.+?)[ \t]*$/);
+    if (m) {
+      items.push(unquote(m[1]));
+      continue;
+    }
+    // A blank line inside a block list is fine; anything else ends the list.
+    if (lines[i].trim() === "") continue;
+    break;
+  }
+  return items;
+}
+
+/**
+ * Top-level `<lang>:` block (e.g. `es:` / `en:` at column 0) from raw
+ * frontmatter content: everything from the key line to the next top-level
+ * key or the closing `---`. Project files are pure frontmatter with nested
+ * localized objects, so the body is empty and this is where the content is.
+ */
+function extractLangBlock(front, lang) {
+  const lines = front.split(/\r?\n/);
+  const start = lines.findIndex((line) => line === `${lang}:`);
+  if (start === -1) return "";
   const out = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line === "") {
+      out.push(line);
+      continue;
+    }
+    if (/^(---|[A-Za-z_-]+:)/.test(line)) break;
+    out.push(line);
+  }
+  return out.join("\n");
+}
+
+/**
+ * Site route of a project page. Projects publish at /work/<slug> (Spanish,
+ * default locale) and /en/work/<slug> (English), same slugs in both.
+ *
+ * @param {string} slug
+ * @param {"es" | "en"} lang
+ * @returns {{ slug: string, lang: "es" | "en", url: string, urlAlt: string }}
+ */
+export function projectRoute(slug, lang) {
+  const url = lang === "en" ? `/en/work/${slug}` : `/work/${slug}`;
+  const urlAlt = lang === "en" ? `/work/${slug}` : `/en/work/${slug}`;
+  return { slug, lang, url, urlAlt };
+}
+
+/**
+ * Chunk one project file into one synthetic chunk per language. Project files
+ * under src/content/projects are pure YAML frontmatter with nested `es` / `en`
+ * objects (title, summary, problem, what, highlights, stack), so the chunk text
+ * is rebuilt from the frontmatter block, never from (the empty) body. One
+ * chunk per language keeps the whole project retrievable as a unit, and the
+ * published route is both in the text and in the url/urlAlt metadata so the
+ * bot can link it like it links notes.
+ *
+ * @param {string} md
+ * @param {{ filePath?: string }} [opts]
+ * @returns {Array<{ id: string, text: string, section: string, idx: number, slug: string, lang: "es" | "en", url: string, urlAlt: string }>}
+ */
+export function buildProjectChunks(md, opts = {}) {
+  const front = rawFrontmatter(md);
+  if (!front) return [];
+  const filePath = opts.filePath ?? "";
+  const slug = fieldOf(front, "slug") || path.basename(filePath, ".md");
+  if (!slug) return [];
+  const repo = fieldOf(front, "repo");
+  const demo = fieldOf(front, "demo");
+  const chunks = [];
 
   for (const lang of ["es", "en"]) {
-    const block = extractLangBlock(body, lang);
+    const block = extractLangBlock(front, lang);
     if (!block) continue;
+    const title = fieldOf(block, "title");
+    const summary = fieldOf(block, "summary");
+    if (!title && !summary) continue;
+    const problem = fieldOf(block, "problem");
+    const what = fieldOf(block, "what");
+    const highlights = listOf(block, "highlights");
+    const stack = listOf(block, "stack");
+    const labels =
+      lang === "es"
+        ? { problem: "Problema", what: "Qué hice", highlights: "Destacados", stack: "Stack", repo: "Repositorio", demo: "Demo", page: "Página" }
+        : { problem: "Problem", what: "What I did", highlights: "Highlights", stack: "Stack", repo: "Repository", demo: "Demo", page: "Page" };
 
-    const title = getField(block, "title");
-    const summary = getField(block, "summary");
-    const problem = getField(block, "problem");
-    const what = getField(block, "what");
-    const highlights = getList(block, "highlights");
-    const stack = getList(block, "stack");
-    const demoMatch = body.match(/(?:Demo|demo):\s*(https?:\/\/\S+)/i);
-    const demo = demoMatch ? demoMatch[1] : undefined;
-
-    const lines = [];
-    lines.push("# " + (title || slug));
-    if (summary) { lines.push(""); lines.push(summary); }
-    if (problem) { lines.push(""); lines.push(lang === "es" ? "## Problema" : "## Problem"); lines.push(problem); }
-    if (what) { lines.push(""); lines.push(lang === "es" ? "## Qué hice" : "## What I did"); lines.push(what); }
+    const lines = [`# ${title || slug}`];
+    if (summary) lines.push("", summary);
+    if (problem) lines.push("", `**${labels.problem}:** ${problem}`);
+    if (what) lines.push("", `**${labels.what}:** ${what}`);
     if (highlights.length) {
-      lines.push("");
-      lines.push(lang === "es" ? "## Destacados" : "## Highlights");
-      for (const h of highlights) lines.push("- " + h);
+      lines.push("", `**${labels.highlights}:**`);
+      for (const h of highlights) lines.push(`- ${h}`);
     }
-    if (stack.length) { lines.push(""); lines.push(lang === "es" ? "## Stack" : "## Stack"); lines.push(stack.join(", ")); }
-    if (repo) { lines.push(""); lines.push(lang === "es" ? "## Repositorio" : "## Repository"); lines.push(repo); }
-    if (demo) { lines.push(""); lines.push(lang === "es" ? "## Demo" : "## Demo"); lines.push(demo); }
-    lines.push("");
-    lines.push(lang === "es" ? "## Ruta" : "## Path");
-    lines.push(lang === "en" ? "/en/projects/" + slug : "/projects/" + slug);
+    if (stack.length) lines.push("", `**${labels.stack}:** ${stack.join(", ")}`);
+    if (repo) lines.push("", `**${labels.repo}:** ${repo}`);
+    if (demo) lines.push("", `**${labels.demo}:** ${demo}`);
+    const route = projectRoute(slug, lang);
+    lines.push("", `**${labels.page}:** ${route.url}`);
 
-    out.push({ lang, text: lines.join("\n") });
+    const text = lines.join("\n");
+    chunks.push({
+      id: `project-${lang}-${slug}-${sha1Hex(text).slice(0, 8)}`,
+      text,
+      section: title || slug,
+      idx: chunks.length,
+      ...route,
+    });
   }
-  return out;
+  return chunks;
 }
 
 /** First 8 hex chars of the sha1 of a string. */
@@ -373,6 +472,16 @@ export async function loadKBChunks(rootDir) {
         // The file path is known here, so every chunk also carries the route the
         // note is published at (the bot links it instead of lecturing the KB).
         chunks.push(...chunkNote(md, { filePath: file }).map((c) => ({ ...c, source: source.id })));
+      }
+      continue;
+    }
+    if (source.type === "projects") {
+      const files = await globFiles(rootDir, source.glob);
+      for (const file of files) {
+        const md = await readFile(file, "utf8");
+        // Project files are pure frontmatter; one synthetic populated chunk per
+        // language, carrying the published /work/<slug> route.
+        chunks.push(...buildProjectChunks(md, { filePath: file }).map((c) => ({ ...c, source: source.id })));
       }
       continue;
     }
