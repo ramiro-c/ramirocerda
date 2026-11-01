@@ -85,20 +85,20 @@ const panelHint = "Elegí una etapa para ver el detalle";
   <SiteHeader slot="header" lang={lang} />
 
   <section class="workflow">
-    <p class="mono eyebrow">{t("workflow.eyebrow")}</p>
-    <h1 class="display">{t("workflow.title")}</h1>
-    <p class="thesis">{thesis}</p>
+    <p class="eyebrow caption-3">{t("workflow.eyebrow")}</p>
+    <h1 class="heading-1">{t("workflow.title")}</h1>
+    <p class="thesis body-3">{thesis}</p>
 
     <WorkflowSplit nodes={nodes} hitlLabel={t("workflow.legend.hitl")} panelHint={panelHint} />
 
     <section class="how-terminates">
-      <h2 class="mono section-label">{t("workflow.howTerminatesLabel")}</h2>
-      <p class="terminates-text">{t("workflow.howTerminates")}</p>
+      <h2 class="section-label caption-3">{t("workflow.howTerminatesLabel")}</h2>
+      <p class="terminates-text body-6">{t("workflow.howTerminates")}</p>
     </section>
 
     <div class="cta-block">
-      <p class="cta-text">{cta}</p>
-      <a class="btn" href="/work/">{ctaLink}</a>
+      <p class="cta-text body-6">{cta}</p>
+      <a class="cta-primary" href="/work/">{ctaLink}</a>
     </div>
   </section>
 
@@ -106,52 +106,55 @@ const panelHint = "Elegí una etapa para ver el detalle";
 </BaseLayout>
 
 <style>
+  /* Visual system: landing-page-design skill Part B. Layout only; type comes
+     from the named text style classes in src/styles/global.css. */
   .workflow {
-    padding: 1rem 0 2rem;
+    padding: var(--space-200) 0 var(--space-600);
   }
   .eyebrow {
-    margin: 0 0 0.5rem;
-    font-size: 0.8rem;
+    margin: 0 0 var(--space-75);
     color: var(--muted-2);
   }
-  .display {
-    margin: 0 0 0.75rem;
-    font-size: clamp(1.6rem, 5vw, 2.4rem);
-    line-height: 1.05;
+  .workflow h1 {
+    margin: 0 0 var(--space-200);
   }
   .thesis {
-    max-width: 42rem;
-    margin: 0 0 0.5rem;
+    max-width: 680px;
+    margin: 0 0 var(--space-200);
     color: var(--muted);
-    font-size: 1rem;
-    line-height: 1.55;
   }
   .section-label {
-    margin: 0 0 0.5rem;
-    font-size: 0.8rem;
+    margin: 0 0 var(--space-75);
     color: var(--muted-2);
   }
   .how-terminates {
-    margin: 1.5rem 0;
-    padding-top: 1rem;
+    margin: var(--space-300) 0;
+    padding-top: var(--space-200);
     border-top: 1px solid var(--border);
   }
   .terminates-text {
-    max-width: 44rem;
+    max-width: 680px;
     margin: 0;
     color: var(--muted);
-    font-size: 0.95rem;
-    line-height: 1.55;
   }
   .cta-block {
-    margin: 2rem 0 0;
-    padding: 1.25rem;
+    display: grid;
+    justify-items: start;
+    gap: var(--space-100);
+    margin: var(--space-400) 0 0;
+    padding: var(--space-300);
     border: 1px solid var(--border);
-    background: color-mix(in srgb, var(--accent) 4%, var(--bg));
+    border-radius: var(--radius-2xl);
+    background: var(--surface);
   }
   .cta-text {
-    margin: 0 0 0.75rem;
+    margin: 0;
     color: var(--muted);
-    font-size: 0.95rem;
+  }
+  @media (max-width: 720px) {
+    .workflow h1 {
+      font-size: var(--text-4xl);
+      line-height: 40px;
+    }
   }
 </style>

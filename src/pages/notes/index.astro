@@ -22,23 +22,23 @@ const notes = (await getCollection("notes"))
   <SiteHeader slot="header" lang={lang} />
 
   <section class="notes">
-    <p class="mono label">02 / {t("notes.title").toUpperCase()}</p>
-    <h1 class="display heading">{t("notes.title")}</h1>
+    <p class="label caption-3">02 / {t("notes.title")}</p>
+    <h1 class="heading-1">{t("notes.title")}</h1>
 
     {notes.length === 0 ? (
-      <p class="empty">{t("notes.empty")}</p>
+      <p class="empty body-3">{t("notes.empty")}</p>
     ) : (
       <ul class="list">
         {notes.map((note, i) => (
           <li>
             <a href={getLocalizedPath(lang, `/notes/${note.slug}/`)}>
               <span class="row-head">
-                <span class="num mono">{String(i + 1).padStart(2, "0")}</span>
-                <span class="date mono">{note.dateStr}</span>
+                <span class="num mono caption-4">{String(i + 1).padStart(2, "0")}</span>
+                <span class="date mono caption-4">{note.dateStr}</span>
               </span>
-              <span class="title">{note.title}</span>
-              <span class="summary">{note.description}</span>
-              <span class="go mono">{t("notes.read")}</span>
+              <span class="title title-1">{note.title}</span>
+              <span class="summary body-6">{note.description}</span>
+              <span class="go caption-4">{t("notes.read")}</span>
             </a>
           </li>
         ))}
@@ -50,18 +50,17 @@ const notes = (await getCollection("notes"))
 </BaseLayout>
 
 <style>
+  /* Visual system: landing-page-design skill Part B. Layout only; type comes
+     from the named text style classes in src/styles/global.css. */
   .notes {
-    padding: 1rem 0 2rem;
+    padding: var(--space-200) 0 var(--space-600);
   }
   .label {
-    margin: 0 0 0.75rem;
+    margin: 0 0 var(--space-100);
     color: var(--muted-2);
-    font-size: 0.8rem;
   }
-  .heading {
-    margin: 0 0 1.5rem;
-    font-size: clamp(2.2rem, 7vw, 3.6rem);
-    line-height: 0.95;
+  .notes h1 {
+    margin: 0 0 var(--space-300);
   }
   .empty {
     color: var(--muted);
@@ -72,17 +71,21 @@ const notes = (await getCollection("notes"))
     margin: 0;
   }
   .list li {
-    border-top: 2px solid var(--border);
-    padding: 1.1rem 0 1.25rem;
+    border-top: 1px solid var(--border);
+    padding: var(--space-200) 0 var(--space-300);
   }
   .list li:last-child {
-    border-bottom: 2px solid var(--border);
+    border-bottom: 1px solid var(--border);
   }
   .list li a {
     display: grid;
-    gap: 0.4rem;
+    gap: var(--space-50);
     text-decoration: none;
     color: inherit;
+    transition: transform var(--dur-color) var(--ease-out);
+  }
+  .list li a:active {
+    transform: scale(0.98);
   }
   .row-head {
     display: flex;
@@ -90,40 +93,40 @@ const notes = (await getCollection("notes"))
     align-items: baseline;
   }
   .num {
-    color: var(--accent);
-    font-size: 0.75rem;
+    color: var(--accent-text);
   }
   .date {
-    font-size: 0.68rem;
     color: var(--muted-2);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
   .title {
-    font-family: "Archivo Black", sans-serif;
-    font-size: clamp(1.3rem, 3.6vw, 1.9rem);
-    line-height: 1.05;
-    transition: color 0.15s ease;
+    transition: color var(--dur-color) var(--ease-out);
   }
   .list li a:hover .title {
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .summary {
-    color: var(--muted);
-    font-size: 0.9rem;
     max-width: 46ch;
+    color: var(--muted);
   }
   .go {
-    font-size: 0.7rem;
     color: var(--muted-2);
     opacity: 0;
-    transform: translateX(-6px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transform: translateX(calc(var(--space-75) * -1));
+    transition:
+      opacity var(--dur-color) var(--ease-out),
+      transform var(--dur-move) var(--ease-out);
   }
-  .list li a:hover .go {
+  .list li a:hover .go,
+  .list li a:focus-within .go {
     opacity: 1;
     transform: none;
-    color: var(--accent);
+    color: var(--accent-text);
+  }
+  @media (max-width: 720px) {
+    .notes h1 {
+      font-size: var(--text-4xl);
+      line-height: 40px;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .title,
@@ -132,6 +135,9 @@ const notes = (await getCollection("notes"))
     }
     .go {
       opacity: 1;
+      transform: none;
+    }
+    .list li a:active {
       transform: none;
     }
   }
