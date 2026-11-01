@@ -48,8 +48,8 @@ const offer = landing[lang].botardoOffer;
 >
   <header class="botardo-header">
     <div class="botardo-header-title">
-      <span class="botardo-mark" aria-hidden="true">RC</span>
-      <span id="botardoTitle" class="botardo-title mono">Botardo</span>
+      <span class="botardo-mark caption-3" aria-hidden="true">RC</span>
+      <span id="botardoTitle" class="botardo-title title-4">Botardo</span>
     </div>
     <button class="botardo-close" type="button" aria-label={t("botardo.close")}>✕</button>
   </header>
@@ -559,23 +559,24 @@ const offer = landing[lang].botardoOffer;
 
   .botardo-island {
     position: fixed;
-    right: calc(20px + env(safe-area-inset-right));
-    bottom: calc(20px + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
+    right: calc(var(--space-200) + env(safe-area-inset-right));
+    bottom: calc(var(--space-200) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
     width: 58px;
     height: 58px;
     display: grid;
     place-items: center;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
     background: var(--accent);
     color: var(--bg);
     cursor: pointer;
-    z-index: 999;
-    box-shadow: none;
+    z-index: var(--z-dock);
+    /* Dark surfaces read elevation through a ring, not a drop shadow. */
+    box-shadow: 0 0 0 1px var(--border-strong);
     transition:
-      transform 160ms ease,
-      background-color 160ms ease,
-      color 160ms ease;
+      transform var(--dur-color) var(--ease-out),
+      background-color var(--dur-color) var(--ease-out),
+      color var(--dur-color) var(--ease-out);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
@@ -595,26 +596,27 @@ const offer = landing[lang].botardoOffer;
 
   .botardo-modal {
     position: fixed;
-    right: calc(20px + env(safe-area-inset-right));
-    bottom: calc(88px + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
-    width: min(400px, calc(100vw - 40px));
-    height: min(560px, calc(100vh - 112px - var(--dock-offset, 0px)));
+    right: calc(var(--space-200) + env(safe-area-inset-right));
+    bottom: calc(var(--space-900) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
+    width: min(400px, calc(100vw - var(--space-400)));
+    height: min(560px, calc(100vh - var(--space-900) - var(--dock-offset, 0px)));
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: var(--bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    z-index: 1000;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    z-index: var(--z-widget);
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
-    transform: translateY(10px) scale(0.985);
+    transform: translateY(var(--space-75)) scale(0.985);
     transition:
-      opacity 160ms ease,
-      transform 160ms ease,
-      visibility 0s linear 160ms;
-    box-shadow: 0 18px 42px rgba(17, 17, 17, 0.16);
+      opacity var(--dur-color) var(--ease-out),
+      transform var(--dur-move) var(--ease-out),
+      visibility 0s linear var(--dur-move);
+    /* Dark surfaces read elevation through a ring, not a drop shadow. */
+    box-shadow: 0 0 0 1px var(--border-strong);
   }
 
   .botardo-modal.is-open {
@@ -623,8 +625,8 @@ const offer = landing[lang].botardoOffer;
     visibility: visible;
     transform: translateY(0) scale(1);
     transition:
-      opacity 160ms ease,
-      transform 160ms ease,
+      opacity var(--dur-color) var(--ease-out),
+      transform var(--dur-move) var(--ease-out),
       visibility 0s;
   }
 
@@ -632,56 +634,54 @@ const offer = landing[lang].botardoOffer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.9rem 0.95rem;
-    border-bottom: 1.5px solid var(--border);
+    gap: var(--space-100);
+    padding: var(--space-200);
+    /* Divider between the header row and the message log, not a card edge. */
+    border-bottom: 1px solid var(--border);
     background: var(--bg);
   }
 
   .botardo-header-title {
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    gap: var(--space-75);
     min-width: 0;
   }
 
   .botardo-mark {
-    width: 2rem;
-    height: 2rem;
+    width: 32px;
+    height: 32px;
     display: grid;
     place-items: center;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     background: var(--text);
     color: var(--bg);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-  }
-
-  .botardo-title {
-    font-size: 0.92rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .botardo-close {
-    width: 2rem;
-    height: 2rem;
+    width: 32px;
+    height: 32px;
     display: grid;
     place-items: center;
-    border: 1px solid rgba(17, 17, 17, 0.25);
-    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--text);
     cursor: pointer;
     font: inherit;
     line-height: 1;
     padding: 0;
+    transition:
+      background-color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
   }
 
   .botardo-close:hover {
-    border-color: var(--border);
+    background: var(--surface-2);
+  }
+  .botardo-close:active {
+    transform: scale(0.98);
   }
 
   .botardo-messages {
@@ -690,18 +690,20 @@ const offer = landing[lang].botardoOffer;
     overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.95rem;
+    gap: var(--space-100);
+    padding: var(--space-200);
   }
 
+  /* JS appends these nodes, so the text style lives here as tokens (body-3). */
   .botardo-message {
     max-width: 94%;
-    padding: 0.8rem 0.85rem;
-    font-size: 0.98rem;
-    line-height: 1.5;
-    border: 1px solid rgba(17, 17, 17, 0.14);
-    border-radius: var(--radius);
-    background: #fffefb;
+    padding: var(--space-100);
+    font-size: var(--text-base);
+    line-height: 24px;
+    font-weight: 400;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
     color: var(--text);
     word-break: break-word;
   }
@@ -711,35 +713,38 @@ const offer = landing[lang].botardoOffer;
   }
 
   .botardo-message ul {
-    margin: 0.55rem 0 0 1.2rem;
+    margin: var(--space-75) 0 0 var(--space-300);
     padding: 0;
   }
 
   .botardo-message li + li {
-    margin-top: 0.35rem;
+    margin-top: var(--space-50);
   }
 
   .botardo-message strong {
-    font-weight: 700;
+    font-weight: 600;
   }
 
+  /* No italics in the visual system (skill B1). */
   .botardo-message em {
-    font-style: italic;
+    font-style: normal;
+    font-weight: 500;
   }
 
   .botardo-message a {
     color: inherit;
     text-decoration: underline;
-    text-underline-offset: 0.12em;
+    text-underline-offset: 2px;
   }
 
   .botardo-message code {
     font-family: var(--font-mono);
-    font-size: 0.92em;
-    padding: 0.08rem 0.25rem;
-    border: 1px solid rgba(17, 17, 17, 0.18);
-    border-radius: 2px;
-    background: rgba(17, 17, 17, 0.05);
+    font-size: var(--text-sm);
+    line-height: 20px;
+    padding: var(--space-25) var(--space-50);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--surface-2);
   }
 
   .botardo-assistant {
@@ -749,46 +754,59 @@ const offer = landing[lang].botardoOffer;
   .botardo-user {
     align-self: flex-end;
     margin-left: auto;
-    border-left: 3px solid var(--accent);
-    background: #fff7f2;
+    background: var(--surface-2);
+    border-color: var(--border);
   }
 
   .botardo-error {
     align-self: flex-start;
-    border-left: 3px solid var(--text);
-    background: #fff4f0;
+    border-color: var(--text);
+    background: var(--surface);
   }
 
   .botardo-retry {
-    margin-top: 0.55rem;
+    margin-top: var(--space-75);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     background: var(--text);
     color: var(--bg);
-    padding: 0.45rem 0.7rem;
+    padding: var(--space-75) var(--space-100);
     font: inherit;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
+    line-height: 20px;
+    font-weight: 600;
     cursor: pointer;
+    transition:
+      background-color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
+  }
+
+  .botardo-retry:hover {
+    background: var(--muted);
+  }
+  .botardo-retry:active {
+    transform: scale(0.98);
   }
 
   .botardo-offer p {
-    margin: 0 0 0.6rem;
+    margin: 0 0 var(--space-100);
   }
 
   .botardo-offer-button {
     min-height: 40px;
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
+    line-height: 20px;
   }
 
   .botardo-typing {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--space-50);
     width: fit-content;
-    padding: 0.75rem 0.85rem;
-    border: 1px solid rgba(17, 17, 17, 0.14);
-    border-radius: var(--radius);
-    background: #fffefb;
+    padding: var(--space-100);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
   }
 
   /* `display: flex` above beats the UA [hidden] rule without this. */
@@ -797,12 +815,12 @@ const offer = landing[lang].botardoOffer;
   }
 
   .botardo-dot {
-    width: 0.45rem;
-    height: 0.45rem;
-    border-radius: 999px;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
     background: var(--text);
     opacity: 0.36;
-    animation: botardoTyping 900ms infinite ease-in-out;
+    animation: botardoTyping 900ms var(--ease-out) infinite;
   }
 
   .botardo-dot:nth-child(2) {
@@ -815,24 +833,26 @@ const offer = landing[lang].botardoOffer;
 
   .botardo-inputbar {
     display: flex;
-    gap: 0.55rem;
-    padding: 0.9rem;
-    border-top: 1.5px solid var(--border);
+    gap: var(--space-75);
+    padding: var(--space-200);
+    /* Divider above the composer, not a card edge. */
+    border-top: 1px solid var(--border);
     background: var(--bg);
   }
 
   .botardo-input {
     flex: 1;
     min-width: 0;
-    height: 3rem;
-    padding: 0 0.85rem;
+    height: 48px;
+    padding: 0 var(--space-200);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: #fff;
+    border-radius: var(--radius-md);
+    background: var(--surface);
     color: var(--text);
     font: inherit;
+    font-size: var(--text-base);
     box-sizing: border-box;
-    line-height: 1;
+    line-height: 24px;
   }
 
   .botardo-input.is-error {
@@ -840,27 +860,37 @@ const offer = landing[lang].botardoOffer;
   }
 
   .botardo-input::placeholder {
-    color: rgba(17, 17, 17, 0.5);
+    color: var(--muted-2);
   }
 
   .botardo-send {
-    width: 3rem;
-    height: 3rem;
+    width: 48px;
+    height: 48px;
     flex: 0 0 auto;
     display: grid;
     place-items: center;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--border);
+    border-radius: var(--radius-md);
+    background: var(--text);
     color: var(--bg);
     cursor: pointer;
     box-sizing: border-box;
     padding: 0;
+    transition:
+      background-color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
+  }
+
+  .botardo-send:hover {
+    background: var(--muted);
+  }
+  .botardo-send:active {
+    transform: scale(0.98);
   }
 
   .botardo-send svg {
-    width: 1rem;
-    height: 1rem;
+    width: 16px;
+    height: 16px;
   }
 
   .botardo-send:disabled,
@@ -884,16 +914,16 @@ const offer = landing[lang].botardoOffer;
 
   @media (max-width: 768px) {
     .botardo-modal {
-      right: 16px;
-      left: 16px;
+      right: var(--space-200);
+      left: var(--space-200);
       width: auto;
-      bottom: calc(82px + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
-      height: min(68vh, 520px, calc(100dvh - 120px - var(--dock-offset, 0px)));
+      bottom: calc(var(--space-800) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
+      height: min(68vh, 520px, calc(100dvh - var(--space-900) - var(--space-300) - var(--dock-offset, 0px)));
     }
 
     .botardo-island {
-      right: 16px;
-      bottom: calc(16px + var(--dock-offset, 0px));
+      right: var(--space-200);
+      bottom: calc(var(--space-200) + var(--dock-offset, 0px));
     }
   }
 
@@ -903,6 +933,21 @@ const offer = landing[lang].botardoOffer;
     .botardo-dot {
       animation: none;
       transition: none;
+    }
+    .botardo-island:hover,
+    .botardo-island:active,
+    .botardo-modal.is-open {
+      transform: none;
+    }
+    .botardo-close,
+    .botardo-retry,
+    .botardo-send {
+      transition: none;
+    }
+    .botardo-close:active,
+    .botardo-retry:active,
+    .botardo-send:active {
+      transform: none;
     }
   }
 </style>

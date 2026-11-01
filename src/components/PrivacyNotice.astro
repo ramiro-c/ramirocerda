@@ -58,13 +58,13 @@ const copy = {
 ---
 
 <article class="privacy">
-  <h1 class="display">{copy.title}</h1>
-  <p class="intro">{copy.intro}</p>
+  <h1 class="heading-1">{copy.title}</h1>
+  <p class="intro body-2">{copy.intro}</p>
   {
     copy.sections.map((s) => (
       <section>
-        <h2>{s.h}</h2>
-        <p>{s.p}</p>
+        <h2 class="heading-6">{s.h}</h2>
+        <p class="body-3">{s.p}</p>
       </section>
     ))
   }
@@ -73,23 +73,25 @@ const copy = {
 <style>
   .privacy {
     max-width: 680px;
-    padding: var(--space-4) 0 var(--space-12);
+    padding: var(--space-200) 0 var(--space-600);
   }
-  h1 {
-    margin: 0 0 var(--space-6);
-    font-size: clamp(2.25rem, 6vw, 3.75rem);
+  .privacy h1 {
+    margin: 0 0 var(--space-300);
   }
-  h2 {
-    margin: var(--space-8) 0 var(--space-2);
-    font-size: 1.25rem;
+  .privacy h2 {
+    margin: var(--space-400) 0 var(--space-75);
   }
-  p {
+  .privacy p {
     margin: 0;
     color: var(--muted);
-    text-wrap: pretty;
   }
-  .intro {
+  .privacy .intro {
     color: var(--text);
-    font-size: 1.125rem;
+  }
+  @media (max-width: 720px) {
+    .privacy h1 {
+      font-size: var(--text-4xl);
+      line-height: 40px;
+    }
   }
 </style>

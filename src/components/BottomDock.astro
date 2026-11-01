@@ -22,11 +22,11 @@ const copy = landing[lang];
 
 <div class="dock" id="bottomDock">
   <div class="dock-notice" id="storageNotice" role="region" aria-label={copy.notice.link} hidden>
-    <p>
+    <p class="body-6">
       {copy.notice.text}
       <a href={getLocalizedPath(lang, "/privacy/")}>{copy.notice.link}</a>
     </p>
-    <button type="button" class="dock-dismiss mono" data-dismiss-notice>{copy.notice.dismiss}</button>
+    <button type="button" class="dock-dismiss button-xsm" data-dismiss-notice>{copy.notice.dismiss}</button>
   </div>
   <nav class="dock-bar" aria-label={copy.dock.label} data-dock-cta>
     <PrimaryCta lang={lang} position="dock" compact />
@@ -54,21 +54,42 @@ const copy = landing[lang];
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-4);
-    padding: var(--space-3) var(--space-4);
-    border-top: 1.5px solid var(--border);
-    background: var(--text);
-    color: var(--bg);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    gap: var(--space-200);
+    /* A compact card in the corner, not a full width bar. A bar that spans the
+       viewport reads as part of the layout and covers whatever is under it on
+       every scroll position, which is what made it feel intrusive. */
+    max-width: 26rem;
+    margin: 0 var(--space-300) var(--space-300);
+    padding: var(--space-200) var(--space-300);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--surface-2);
+    color: var(--text);
   }
   .dock-notice[hidden] {
     display: none;
   }
+  /* The notice only competes with the hero, where there is nothing to read under
+     it. Once the hero leaves the viewport it fades out, so it never sits over
+     body copy the way a permanent bar does. */
+  .dock-notice {
+    transition:
+      opacity var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out),
+      visibility 0s linear;
+  }
+  .dock-notice.is-away {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(var(--space-75));
+    transition:
+      opacity var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out),
+      visibility 0s linear var(--dur-color);
+  }
   .dock-notice p {
     margin: 0;
     max-width: 72ch;
-    text-wrap: pretty;
   }
   .dock-notice a {
     color: inherit;
@@ -76,71 +97,62 @@ const copy = landing[lang];
   .dock-dismiss {
     flex: none;
     min-height: 44px;
-    padding: var(--space-2) var(--space-4);
-    border: 1.5px solid var(--bg);
-    border-radius: var(--radius);
+    padding: var(--space-75) var(--space-200);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
     background: transparent;
-    color: var(--bg);
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    color: var(--text);
     cursor: pointer;
     transition:
-      background-color var(--dur-fast) var(--ease-out),
-      color var(--dur-fast) var(--ease-out);
+      background-color var(--dur-color) var(--ease-out),
+      color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
   }
   .dock-dismiss:hover {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--text);
+    color: var(--bg);
+  }
+  .dock-dismiss:active {
+    transform: scale(0.98);
   }
 
   /* Mobile: full width sticky bar, always present (Botardo floats above it). */
   .dock-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-3) var(--space-4);
-    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
-    border-top: 1.5px solid var(--border);
+    gap: var(--space-200);
+    padding: var(--space-100) var(--space-200);
+    padding-bottom: calc(var(--space-100) + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
     background: var(--bg);
   }
   .dock-bar :global(.cta-primary) {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
-  /* Desktop: floating CTA bottom left, out of the way of Botardo (bottom right). */
+  /* Desktop: no floating CTA. The hero and the closing section already carry the
+     primary action, so a second button that appears and disappears while you
+     scroll only reads as a glitch. The dock holds the storage notice, nothing else. */
   @media (min-width: 768px) {
     .dock {
       display: flex;
       flex-direction: column-reverse;
     }
     .dock-bar {
-      position: absolute;
-      left: var(--space-6);
-      bottom: calc(100% + var(--space-6));
-      padding: 0;
-      border: 0;
-      background: none;
-      transition:
-        opacity var(--dur-fast) var(--ease-out),
-        transform var(--dur-move) var(--ease-out);
-    }
-    .dock-bar :global(.cta-primary) {
-      box-shadow: 0 4px 0 var(--border);
-    }
-    .dock-bar[data-hidden] {
-      opacity: 0;
-      transform: translateY(var(--space-4));
-      pointer-events: none;
-      visibility: hidden;
-    }
-    .dock:not(:has(.dock-notice:not([hidden]))) .dock-bar {
-      bottom: var(--space-6);
+      display: none;
     }
   }
 
   :global(body) {
     padding-bottom: var(--dock-offset);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dock-dismiss:active {
+      transform: none;
+    }
   }
 </style>
 
@@ -180,19 +192,12 @@ const copy = landing[lang];
   desktop.addEventListener("change", publishOffset);
   publishOffset();
 
-  // Hide the floating CTA while another primary CTA is visible on the page.
-  const inPage = Array.from(document.querySelectorAll<HTMLElement>(".cta-primary[data-cta-position]")).filter(
-    (el) => !bar?.contains(el),
-  );
-  if (bar && inPage.length && "IntersectionObserver" in window) {
-    const visible = new Set<Element>();
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) visible.add(entry.target);
-        else visible.delete(entry.target);
-      }
-      bar.toggleAttribute("data-hidden", visible.size > 0);
-    });
-    inPage.forEach((el) => observer.observe(el));
+  // Fade the notice out once the hero scrolls away, so it never covers body copy.
+  const hero = document.querySelector(".hero");
+  if (notice && hero && "IntersectionObserver" in window) {
+    new IntersectionObserver(
+      ([entry]) => notice.classList.toggle("is-away", !entry.isIntersecting),
+      { threshold: 0 },
+    ).observe(hero);
   }
 </script>

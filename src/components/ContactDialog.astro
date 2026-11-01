@@ -42,44 +42,44 @@ const config = {
 <dialog class="contact-sheet" id="contactDialog" aria-labelledby="contactTitle" data-config={JSON.stringify(config)}>
   <div class="contact-inner">
     <header class="contact-head">
-      <h2 id="contactTitle" class="display">{f.title}</h2>
+      <h2 id="contactTitle" class="heading-4">{f.title}</h2>
       <button type="button" class="contact-close" data-close-contact aria-label={f.close}>
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"
           ><path d="M6 6l12 12M18 6L6 18"></path></svg
         >
       </button>
     </header>
-    <p class="contact-lede">{f.lede}</p>
+    <p class="contact-lede body-3">{f.lede}</p>
 
     {
       TURNSTILE_SITE_KEY ? (
         <form class="contact-form" id="contactForm" novalidate>
           <div class="field">
-            <label for="contactName">{f.name}</label>
+            <label class="title-4" for="contactName">{f.name}</label>
             <input id="contactName" name="name" type="text" autocomplete="name" maxlength="100" required aria-describedby="contactNameError" />
-            <p class="field-error" id="contactNameError" hidden />
+            <p class="field-error body-6" id="contactNameError" hidden />
           </div>
           <div class="field">
-            <label for="contactEmail">{f.email}</label>
+            <label class="title-4" for="contactEmail">{f.email}</label>
             <input id="contactEmail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required aria-describedby="contactEmailError" />
-            <p class="field-error" id="contactEmailError" hidden />
+            <p class="field-error body-6" id="contactEmailError" hidden />
           </div>
           <div class="field">
-            <label for="contactMessage">{f.message}</label>
+            <label class="title-4" for="contactMessage">{f.message}</label>
             <textarea id="contactMessage" name="message" rows="5" minlength="10" maxlength="2000" required placeholder={f.messagePlaceholder} aria-describedby="contactMessageError"></textarea>
-            <p class="field-error" id="contactMessageError" hidden />
+            <p class="field-error body-6" id="contactMessageError" hidden />
           </div>
           {/* Honeypot: hidden from people and assistive tech; bots fill it. */}
           <div class="hp" aria-hidden="true">
-            <label for="contactWebsite">Website</label>
+            <label class="title-4" for="contactWebsite">Website</label>
             <input id="contactWebsite" name="website" type="text" tabindex="-1" autocomplete="off" />
           </div>
           <div class="turnstile-slot" id="contactTurnstile" />
           <button type="submit" class="cta-primary contact-submit" id="contactSubmit">{f.submit}</button>
-          <p class="contact-privacy mono">
+          <p class="contact-privacy caption-5">
             {f.privacy} <a href={getLocalizedPath(lang, "/privacy/")}>{landing[lang].notice.link}</a>
           </p>
-          <p class="contact-status" id="contactStatus" role="status" aria-live="polite" hidden />
+          <p class="contact-status body-3" id="contactStatus" role="status" aria-live="polite" hidden />
         </form>
       ) : (
         <p class="contact-fallback">
@@ -103,11 +103,12 @@ const config = {
     margin: 0;
     padding: 0;
     border: 0;
-    border-left: 1.5px solid var(--border);
     background: var(--bg);
     color: var(--text);
     z-index: var(--z-dialog);
     transform: translateX(100%);
+    /* Dark surfaces read elevation through a ring, not a drop shadow. */
+    box-shadow: 0 0 0 1px var(--border-strong);
     transition:
       transform var(--dur-move) var(--ease-out),
       display var(--dur-move) allow-discrete,
@@ -122,28 +123,25 @@ const config = {
     }
   }
   .contact-sheet::backdrop {
-    background: rgba(17, 17, 17, 0.4);
+    background: rgba(0, 0, 0, 0.72);
   }
   .contact-inner {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-200);
     height: 100%;
     overflow-y: auto;
-    padding: var(--space-6);
-    padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+    padding: var(--space-300);
+    padding-bottom: calc(var(--space-300) + env(safe-area-inset-bottom));
   }
   .contact-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: var(--space-4);
+    gap: var(--space-200);
   }
   .contact-head h2 {
     margin: 0;
-    font-size: 1.875rem;
-    line-height: 2.25rem;
-    text-wrap: balance;
   }
   .contact-close {
     flex: none;
@@ -152,62 +150,60 @@ const config = {
     justify-content: center;
     width: 44px;
     height: 44px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     background: transparent;
     color: inherit;
     cursor: pointer;
-    transition: background-color var(--dur-fast) var(--ease-out);
+    transition:
+      background-color var(--dur-color) var(--ease-out),
+      color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
   }
   .contact-close:hover {
     background: var(--text);
     color: var(--bg);
   }
+  .contact-close:active {
+    transform: scale(0.98);
+  }
   .contact-lede {
     margin: 0;
     color: var(--muted);
-    text-wrap: pretty;
   }
   .contact-form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-200);
   }
   .field {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-  }
-  .field label {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    gap: var(--space-75);
   }
   .field input,
   .field textarea {
     width: 100%;
     min-height: 44px;
-    padding: var(--space-3);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
+    padding: var(--space-100);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     background: var(--surface);
     color: var(--text);
     font: inherit;
-    font-size: 1rem;
-    transition: box-shadow var(--dur-fast) var(--ease-out);
+    font-size: var(--text-base);
+    transition: box-shadow var(--dur-color) var(--ease-out);
   }
   .field textarea {
     resize: vertical;
   }
   .field [aria-invalid="true"] {
-    border-color: #b3261e;
-    box-shadow: 0 0 0 1px #b3261e;
+    border-color: var(--error);
+    box-shadow: 0 0 0 1px var(--error);
   }
   .field-error {
     margin: 0;
-    color: #b3261e;
-    font-size: 0.875rem;
+    color: var(--error);
   }
   .hp {
     position: absolute;
@@ -225,21 +221,20 @@ const config = {
   .contact-privacy {
     margin: 0;
     color: var(--muted);
-    font-size: 0.75rem;
   }
   .contact-privacy a {
     color: inherit;
   }
   .contact-status {
     margin: 0;
-    padding: var(--space-3);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
+    padding: var(--space-100);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     background: var(--surface);
   }
   .contact-status[data-tone="error"] {
-    border-color: #b3261e;
-    color: #b3261e;
+    border-color: var(--error);
+    color: var(--error);
   }
   .contact-fallback {
     margin: 0;
@@ -247,6 +242,14 @@ const config = {
   @media (prefers-reduced-motion: reduce) {
     .contact-sheet {
       transition: none;
+    }
+    .contact-close,
+    .field input,
+    .field textarea {
+      transition: none;
+    }
+    .contact-close:active {
+      transform: none;
     }
   }
 </style>
