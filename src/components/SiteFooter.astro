@@ -11,9 +11,9 @@ const t = useTranslations(lang);
 const year = new Date().getFullYear();
 ---
 
-<footer class="footer site-shell">
+<footer class="footer site-shell caption-2">
   <p>{t("footer.line")} · <span>{year}</span></p>
-  <p class="footer-links">
+  <p class="footer-links caption-2">
     <a href="https://github.com/ramiro-c" rel="noreferrer" target="_blank">GitHub</a>
     <span aria-hidden="true">·</span>
     <a
@@ -30,20 +30,36 @@ const year = new Date().getFullYear();
 
 <style>
   .footer {
-    margin-top: 4rem;
-    padding: 1.5rem 0 3rem;
+    margin-top: var(--space-800);
+    padding: var(--space-300) 0 var(--space-600);
     border-top: 1px solid var(--border);
     color: var(--muted-2);
-    font-size: 0.9rem;
   }
 
   .footer-links {
-    margin-top: 0.35rem;
-    font-size: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-75);
+    margin: var(--space-50) 0 0;
   }
 
   .footer-links a {
     text-decoration-thickness: 1px;
     text-underline-offset: 0.15em;
+    transition:
+      color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
+  }
+
+  .footer-links a:hover {
+    color: var(--text);
+  }
+  .footer-links a:active {
+    transform: scale(0.98);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .footer-links a:active {
+      transform: none;
+    }
   }
 </style>

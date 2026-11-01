@@ -9,13 +9,13 @@ const { lang } = Astro.props;
 const path = Astro.url.pathname;
 ---
 
-<nav class="lang mono" aria-label="Language">
+<nav class="lang" aria-label="Language">
   {
     (Object.keys(languages) as Lang[]).map((code) => (
       <a
         href={switchLangPath(path, code)}
         aria-current={code === lang ? "page" : undefined}
-        class:list={[{ active: code === lang }]}
+        class:list={["caption-3", { active: code === lang }]}
       >
         {code}
       </a>
@@ -26,18 +26,33 @@ const path = Astro.url.pathname;
 <style>
   .lang {
     display: flex;
-    gap: 0.5rem;
-    font-size: 0.85rem;
+    gap: var(--space-25);
   }
   .lang a {
-    text-decoration: none;
+    padding: var(--space-25) var(--space-75);
+    border-radius: var(--radius-md);
     color: var(--muted-2);
-    text-transform: uppercase;
+    text-decoration: none;
+    transition:
+      color var(--dur-color) var(--ease-out),
+      background-color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
+  }
+  .lang a:hover {
+    color: var(--text);
+    background: var(--surface-2);
+  }
+  .lang a:active {
+    transform: scale(0.98);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lang a:active {
+      transform: none;
+    }
   }
   .lang a.active,
   .lang a[aria-current="page"] {
     color: var(--text);
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    background: var(--surface-2);
   }
 </style>
