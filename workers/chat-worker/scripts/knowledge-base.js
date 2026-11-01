@@ -62,6 +62,11 @@ Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente con
 * **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4.1 Flash), Vercel.
 * **Link:** https://ramirocerda.com.ar
 
+### Spec Refinery
+Herramienta para refinar especificaciones de producto/feature con IA. Permite convertir ideas vagas en specs claras, accionables y verificables, con iteraciones guiadas para alinear requerimientos, alcance, criterios de aceptación y edge cases antes de pasar a diseño/código. Orientada a acelerar el handoff entre intención y ejecución con agentes de IA.
+* **Stack:** TypeScript, IA/LLMs, CLI/Web.
+* **Link:** https://github.com/ramiro-c/spec-refinery
+
 ## Sitio Web y Arquitectura del Bot
 
 * **Sitio:** https://ramirocerda.com.ar, desarrollado con Astro y TypeScript, desplegado en Vercel.
@@ -126,6 +131,8 @@ Completé el recorrido completo de Google Cloud en AI Agents: 10 certificaciones
 * **Idiomas:** Español (Nativo) | Inglés (Intermedio/Avanzado).
 
 ## Educación
+
+(In English: Education — Information Systems Engineering degree at Universidad Tecnológica Nacional (UTN FRLP), 2018-2023, GPA 8.04; AI Engineering short course at Coderhouse, 2026. Keywords: studies, study, university, degree, education, GPA, career, academic background.)
 
 * **Universidad Tecnológica Nacional - FRLP | Feb 2018 - May 2023**
   * **Ingeniería en Sistemas de Información** — Promedio: 8.04

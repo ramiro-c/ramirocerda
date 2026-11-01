@@ -9,6 +9,11 @@
       "id": "notes",
       "type": "markdown",
       "glob": "src/content/notes/**/*.md"
+    },
+    {
+      "id": "projects",
+      "type": "markdown",
+      "glob": "src/content/projects/**/*.md"
     }
   ]
 }

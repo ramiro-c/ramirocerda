@@ -824,12 +824,15 @@ const offer = landing[lang].botardoOffer;
   .botardo-input {
     flex: 1;
     min-width: 0;
-    padding: 0.8rem 0.85rem;
+    height: 3rem;
+    padding: 0 0.85rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: #fff;
     color: var(--text);
     font: inherit;
+    box-sizing: border-box;
+    line-height: 1;
   }
 
   .botardo-input.is-error {
@@ -851,6 +854,8 @@ const offer = landing[lang].botardoOffer;
     background: var(--border);
     color: var(--bg);
     cursor: pointer;
+    box-sizing: border-box;
+    padding: 0;
   }
 
   .botardo-send svg {

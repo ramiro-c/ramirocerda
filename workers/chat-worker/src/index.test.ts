@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import worker, { IDENTITY_PROMPT, NO_INFO_REPLY } from "./index";
+import worker from "./index";
+import { IDENTITY_PROMPT, NO_INFO_REPLY } from "./prompts";
 
 interface Datapoint {
   blobs?: string[];
@@ -28,12 +29,13 @@ function makeEnv(opts: {
       },
     },
     OPENCODE_GO_API_KEY: "secret-key",
-    RAG_ENABLED: "true",
     TOP_K: "5",
     SIMILARITY_THRESHOLD: "0.30",
     GENERATION_MODEL: "deepseek-v4-flash",
     OPENCODE_GO_ENDPOINT: "https://opencode.example/v1/chat/completions",
     EMBEDDING_MODEL: "@cf/baai/bge-m3",
+    // Decision model off: these tests cover the linear RAG plumbing (adaptive.test.ts covers routing).
+    DECISION_MODEL: "",
     CHAT_RATE_LIMITER: {
       limit: () => Promise.resolve({ success: true }),
     },
@@ -101,7 +103,7 @@ describe("chat usage analytics data points", () => {
     const body = await res.json();
     expect(body.reply).toBe(NO_INFO_REPLY.en);
     expect(datapoints[0]?.indexes?.[0]).toBe("conv-noise");
-    expect(datapoints[0]?.blobs).toEqual(["en", "ok", "What is the capital of France?"]);
+    expect(datapoints[0]?.blobs).toEqual(["en", "ok", "What is the capital of France?", "none"]);
     expect(datapoints[0]?.doubles?.slice(0, 2)).toEqual([0, 0]);
     expect(datapoints[0]?.doubles?.[3]).toBe(0);
   });

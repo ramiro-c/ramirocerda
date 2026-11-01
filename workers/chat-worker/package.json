@@ -5,10 +5,17 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "populate": "node scripts/populate-index.mjs"
+    "populate": "node scripts/populate-index.mjs",
+    "eval": "tsx evals/run.ts",
+    "eval:offline": "tsx evals/run.ts --offline",
+    "eval:decision": "tsx evals/run.ts --decision-only",
+    "eval:judges": "tsx evals/judge-check.ts"
   },
   "devDependencies": {
-    "typescript": "^5.8.0",
-    "vitest": "^4.1.10"
+    "@types/node": "24.13.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.156.0"
   }
 }
