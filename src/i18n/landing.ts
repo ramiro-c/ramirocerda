@@ -107,8 +107,8 @@ export const landing: Record<Lang, LandingCopy> = {
     hero: {
       eyebrow: "Tech lead y desarrollador full stack",
       headline: "Pienso el producto",
-      headlineAccent: "y lo dejo andando.",
-      sub: "Soy tech lead en Libro de Pases y colaboro con Kano Studio. Diseño, construyo y mantengo productos web y móviles, plataformas y agentes de IA. Me quedo hasta que andan bien con usuarios reales.",
+      headlineAccent: "y lo pongo en producción.",
+      sub: "Tech lead y desarrollador full stack. Diseño, desarrollo y mantengo productos web, móviles y agentes de IA. Me quedo en cada proyecto hasta que funciona con usuarios reales.",
       returningNote: "Hola de nuevo.",
       proof: "Ninguno de estos es un demo.",
       visualAlt:
@@ -261,8 +261,8 @@ export const landing: Record<Lang, LandingCopy> = {
     hero: {
       eyebrow: "Tech lead and full stack developer",
       headline: "I think the product through",
-      headlineAccent: "and leave it running.",
-      sub: "I am a tech lead at Libro de Pases and I collaborate with Kano Studio. I design, build and maintain web and mobile products, platforms and AI agents. I stay until they work well with real users.",
+      headlineAccent: "and ship it to production.",
+      sub: "Tech lead and full stack developer. I design, build and maintain web and mobile products, platforms and AI agents. I stay on every project until it works with real users.",
       returningNote: "Welcome back.",
       proof: "None of these is a demo.",
       visualAlt:
