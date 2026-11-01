@@ -43,6 +43,9 @@ export interface LandingCopy {
     sub: string;
     returningNote: string;
     proof: string;
+    visualAlt: string;
+    visualCredit: string;
+    visualCreditNote: string;
   };
   cta: {
     primary: string;
@@ -102,12 +105,16 @@ const TESTIMONIALS: Testimonial[] = [];
 export const landing: Record<Lang, LandingCopy> = {
   es: {
     hero: {
-      eyebrow: "Ramiro Cerdá · Tech Lead y Full Stack Engineer",
-      headline: "De la idea",
-      headlineAccent: "al producto en producción.",
-      sub: "Tech Lead en Libro de Pases y colaboro con Kano Studio. Desarrollo apps web y mobile, plataformas y agentes de IA, y me quedo hasta que funcionan bien con usuarios reales.",
+      eyebrow: "Tech lead y desarrollador full stack",
+      headline: "Pienso el producto",
+      headlineAccent: "y lo dejo andando.",
+      sub: "Soy tech lead en Libro de Pases y colaboro con Kano Studio. Diseño, construyo y mantengo productos web y móviles, plataformas y agentes de IA. Me quedo hasta que andan bien con usuarios reales.",
       returningNote: "Hola de nuevo.",
-      proof: "En LDP lideré refactors de búsqueda que mejoraron la latencia más del 75%.",
+      proof: "Ninguno de estos es un demo.",
+      visualAlt:
+        "Fotografía en blanco y negro de un pabellón de hormigón: un anillo circular en primer plano enmarca muros estriados y una columna.",
+      visualCredit: "ESO/L. Sbordone",
+      visualCreditNote: "Recortada",
     },
     cta: {
       primary: "Agendá 20 min para charlar tu idea",
@@ -126,42 +133,42 @@ export const landing: Record<Lang, LandingCopy> = {
     },
     cases: {
       label: "Casos",
-      title: "Productos que ya están en uso",
+      title: "Productos en producción",
       more: "Ver el caso",
       visit: "Ver el sitio",
       items: [
         {
           id: "ldp",
           href: "https://www.ldptech.ai/",
-          label: "Tech Lead · plataforma",
+          label: "Tech lead",
           title: "Libro de Pases (LDP), plataforma de fútbol",
-          result: "Entré por la app mobile y hoy lidero el desarrollo full stack. Hice refactors de búsqueda que mejoraron la latencia más del 75%, y sumé observabilidad con Sentry y New Relic, tests y CI.",
+          result: "Entré por la app móvil y hoy lidero el desarrollo full stack. Hice refactors de búsqueda que bajaron la latencia más del 75%. Sumé monitoreo de errores y performance, tests y CI.",
         },
         {
           id: "kano",
           href: "https://kano.studio/",
-          label: "Colaboración · web",
+          label: "Colaboración",
           title: "Kano Studio, landing y diagnóstico interactivo",
-          result: "Con el equipo de Kano hice el design system, la i18n y el SEO. También corregí los problemas de accesibilidad WCAG 2.2 AA que marcó una auditoría.",
+          result: "Con el equipo de Kano hice el sistema de diseño, la versión en dos idiomas y el SEO. También corregí los problemas de accesibilidad que marcó una auditoría.",
         },
         {
           id: "avellana",
           href: "https://avellana.store/",
-          label: "Colaboración con Kano Studio · app mobile",
+          label: "Colaboración",
           title: "Avellana, app para comprar ropa en Av. Avellaneda",
           result: "App gratuita para Android e iOS. Compara precios de ropa de mujer entre los locales de Av. Avellaneda, guarda favoritos y arma el recorrido más corto.",
         },
         {
           id: "lactaria",
           href: "/work/lactaria/",
-          label: "Freelance · app mobile",
+          label: "Freelance",
           title: "LactarIA, apoyo en lactancia materna",
           result: "App de salud con un chatbot de IA que responde desde un banco de preguntas curado. Tuvo un piloto cerrado con 50 madres.",
         },
         {
           id: "mundial-2026",
           href: "/work/mundial-2026/",
-          label: "Producto · full stack",
+          label: "Producto",
           title: "Mundial 2026, la app para seguir el torneo",
           result: "Muestra grupos, fixture en tu huso horario, cuadro eliminatorio, mapa de sedes y guía de TV por país. Cruza datos históricos entre selecciones. Está online.",
         },
@@ -170,19 +177,19 @@ export const landing: Record<Lang, LandingCopy> = {
           href: "/work/agent-general/",
           label: "IA en producción",
           title: "Agent General, asistente de producto",
-          result: "Un agente raíz delega en 14 subagentes de dominio y usa el JWT de cada usuario. Lo evalúo con casos reales, sin LLM juez.",
+          result: "Un agente raíz reparte el trabajo en 14 subagentes de dominio y responde con los permisos de cada usuario. Lo evalúo con casos reales, sin un modelo que haga de juez.",
         },
         {
           id: "freelance",
           href: "/about/",
-          label: "Freelance · sistemas de gestión",
+          label: "Freelance",
           title: "Software de gestión para negocios",
           result: "Hice sistemas de gestión multi rubro en DevGAM (PHP, JS, MySQL) y un sistema de trámites administrativos para la UTN FRLP (Laravel, Vue).",
         },
       ],
     },
     testimonials: { label: "Lo que dicen", items: TESTIMONIALS },
-    tagline: "Me hago cargo del producto completo, desde la primera pantalla hasta el deploy.",
+    tagline: "Me hago cargo del producto entero, de la primera pantalla al deploy.",
     faq: {
       label: "Preguntas frecuentes",
       title: "Antes de escribirme",
@@ -193,7 +200,7 @@ export const landing: Record<Lang, LandingCopy> = {
         },
         {
           q: "¿Podés mejorar algo que ya existe?",
-          a: "Sí. En Libro de Pases buena parte del trabajo fue mejorar lo que ya estaba: refactors de búsqueda con mejoras de latencia de más del 75%, observabilidad con Sentry y New Relic, testing y CI.",
+          a: "Sí. En Libro de Pases buena parte del trabajo fue mejorar lo que ya estaba: la búsqueda, el monitoreo de errores y performance, los tests y el CI. Llegué por la app móvil y hoy lidero el desarrollo full stack.",
         },
         {
           q: "¿Necesito IA en mi producto?",
@@ -214,7 +221,7 @@ export const landing: Record<Lang, LandingCopy> = {
       ],
     },
     final: {
-      title: "¿Tenés una idea o un producto para mejorar?",
+      title: "¿Tenés algo para construir o para arreglar?",
       body: "Contame qué querés resolver. En 20 minutos vemos si tiene sentido y cuál sería el primer paso.",
     },
     form: {
@@ -252,12 +259,16 @@ export const landing: Record<Lang, LandingCopy> = {
   },
   en: {
     hero: {
-      eyebrow: "Ramiro Cerdá · Tech Lead and Full Stack Engineer",
-      headline: "From idea",
-      headlineAccent: "to a product in production.",
-      sub: "Tech Lead at Libro de Pases, collaborating with Kano Studio. I build web and mobile apps, platforms, and AI agents, and I stay until they work well with real users.",
+      eyebrow: "Tech lead and full stack developer",
+      headline: "I think the product through",
+      headlineAccent: "and leave it running.",
+      sub: "I am a tech lead at Libro de Pases and I collaborate with Kano Studio. I design, build and maintain web and mobile products, platforms and AI agents. I stay until they work well with real users.",
       returningNote: "Welcome back.",
-      proof: "At LDP I led search refactors that improved latency by more than 75%.",
+      proof: "None of these is a demo.",
+      visualAlt:
+        "Black and white photograph of a concrete pavilion: a circular ring in the foreground frames ribbed walls and a column.",
+      visualCredit: "ESO/L. Sbordone",
+      visualCreditNote: "Cropped",
     },
     cta: {
       primary: "Book 20 minutes to talk through your idea",
@@ -276,42 +287,42 @@ export const landing: Record<Lang, LandingCopy> = {
     },
     cases: {
       label: "Cases",
-      title: "Products already in use",
+      title: "Products in production",
       more: "Read the case",
       visit: "Visit the site",
       items: [
         {
           id: "ldp",
           href: "https://www.ldptech.ai/",
-          label: "Tech Lead · platform",
+          label: "Tech lead",
           title: "Libro de Pases (LDP), football platform",
-          result: "I joined on the mobile app and now lead full stack development. I did search refactors that improved latency by more than 75%, and added observability with Sentry and New Relic, tests, and CI.",
+          result: "I joined on the mobile app and now lead full stack development. I did search refactors that cut latency by more than 75%. I added error and performance monitoring, tests, and CI.",
         },
         {
           id: "kano",
           href: "https://kano.studio/",
-          label: "Collaboration · web",
+          label: "Collaboration",
           title: "Kano Studio, landing and interactive diagnostic",
-          result: "With the Kano team I built the design system, i18n, and SEO. I also fixed the WCAG 2.2 AA accessibility issues an audit flagged.",
+          result: "With the Kano team I built the design system, the bilingual version, and the SEO. I also fixed the accessibility issues an audit flagged.",
         },
         {
           id: "avellana",
           href: "https://avellana.store/",
-          label: "Collaboration with Kano Studio · mobile app",
+          label: "Collaboration",
           title: "Avellana, an app to shop for clothes on Av. Avellaneda",
           result: "A free app for Android and iOS. It compares women's clothing prices across the shops on Av. Avellaneda in Buenos Aires, saves favorites, and plans the shortest route.",
         },
         {
           id: "lactaria",
           href: "/en/work/lactaria/",
-          label: "Freelance · mobile app",
+          label: "Freelance",
           title: "LactarIA, breastfeeding support",
           result: "A health app with an AI chatbot that answers from a curated question bank. It ran a closed pilot with 50 mothers.",
         },
         {
           id: "mundial-2026",
           href: "/en/work/mundial-2026/",
-          label: "Product · full stack",
+          label: "Product",
           title: "Mundial 2026, the app to follow the tournament",
           result: "It shows groups, fixtures in your time zone, the knockout bracket, a venue map, and a TV guide by country. It cross references historical data between teams. It is live.",
         },
@@ -320,12 +331,12 @@ export const landing: Record<Lang, LandingCopy> = {
           href: "/en/work/agent-general/",
           label: "AI in production",
           title: "Agent General, product assistant",
-          result: "A root agent delegates to 14 domain sub agents and uses each user's JWT. I evaluate it on real cases, with no LLM judge.",
+          result: "A root agent splits the work across 14 domain sub agents and answers with each user's permissions. I evaluate it on real cases, with no model acting as judge.",
         },
         {
           id: "freelance",
           href: "/en/about/",
-          label: "Freelance · business software",
+          label: "Freelance",
           title: "Management software for businesses",
           result: "I built multi industry management systems at DevGAM (PHP, JS, MySQL) and an administrative workflow system for UTN FRLP (Laravel, Vue).",
         },
@@ -343,7 +354,7 @@ export const landing: Record<Lang, LandingCopy> = {
         },
         {
           q: "Can you improve something that already exists?",
-          a: "Yes. At Libro de Pases much of the work was improving what was there: search refactors with latency improvements of more than 75%, observability with Sentry and New Relic, testing and CI.",
+          a: "Yes. At Libro de Pases much of the work was improving what was already there: search, error and performance monitoring, tests, and CI. I joined on the mobile app and now lead full stack development.",
         },
         {
           q: "Do I need AI in my product?",
@@ -364,7 +375,7 @@ export const landing: Record<Lang, LandingCopy> = {
       ],
     },
     final: {
-      title: "Got an idea or a product to improve?",
+      title: "Got something to build or something to fix?",
       body: "Tell me what you want to solve. In 20 minutes we see whether it makes sense and what the first step would be.",
     },
     form: {
