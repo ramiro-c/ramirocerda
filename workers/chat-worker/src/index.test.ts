@@ -263,6 +263,6 @@ describe("offerContact contract", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.reply).toBe("Sí, toma proyectos.");
-    expect(body.offerContact).toBeUndefined();
+    expect(body.offerContact).toBe(false);
   });
 });

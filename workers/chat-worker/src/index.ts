@@ -2,6 +2,8 @@ import type { AdaptiveEnvVars } from "./config";
 import { detectLanguage } from "./language";
 import { ROUTE_CODE, routerStatusCode, runAdaptivePipeline, VERDICT_CODE, type PipelineOutcome } from "./pipeline";
 import { validateAskBody } from "./validate";
+import { handleEvent } from "./events";
+import { handleLead, type LeadEnv, type WaitUntil } from "./lead";
 
 interface AskRequest {
   message: string;
@@ -36,7 +38,7 @@ const ALLOWED_ORIGINS = new Set([
 // Only the default handler and type-only exports live here; prompts are
 // imported from ./prompts directly (tests included).
 
-interface Env extends AdaptiveEnvVars {
+interface Env extends AdaptiveEnvVars, LeadEnv {
   AI: {
     run: (model: string, input: unknown) => Promise<{ response?: unknown; data?: unknown; shape?: unknown }>;
   };
@@ -241,7 +243,7 @@ async function handleRag(
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: WaitUntil): Promise<Response> {
     const origin = request.headers.get("Origin");
 
     // Handle CORS preflight
@@ -265,15 +267,33 @@ export default {
       return jsonResponse(405, { error: "Method not allowed", code: "INVALID_REQUEST" }, origin);
     }
 
-    // Only accept the documented endpoint. Anything else is a 404.
+    // Only accept the documented endpoints. Anything else is a 404.
     const pathname = new URL(request.url).pathname;
-    if (pathname !== "/ask") {
-      log("request.invalid", { reason: "path_not_found", path: pathname });
-      return jsonResponse(404, { error: "Not found", code: "NOT_FOUND" }, origin);
-    }
     if (!isAllowedOrigin(origin)) {
       log("request.origin_blocked", { origin });
       return jsonResponse(403, { error: "Origin not allowed", code: "INVALID_REQUEST" }, origin);
+    }
+    if (pathname === "/event") {
+      return handleEvent(
+        request,
+        env,
+        (status, payload) => jsonResponse(status, payload, origin),
+        () => new Response(null, { status: 204, headers: corsHeaders(origin) }),
+        log,
+      );
+    }
+    if (pathname === "/lead") {
+      return handleLead(
+        request,
+        env,
+        ctx,
+        (status, payload) => jsonResponse(status, payload, origin),
+        log,
+      );
+    }
+    if (pathname !== "/ask") {
+      log("request.invalid", { reason: "path_not_found", path: pathname });
+      return jsonResponse(404, { error: "Not found", code: "NOT_FOUND" }, origin);
     }
 
     const clientIp = request.headers.get("CF-Connecting-IP") ?? "unknown";
