@@ -162,10 +162,13 @@ const labels = {
   }
   @media (max-width: 1149px) {
     /* Stacked, the photo is the only image on the page, so it takes the full
-       measure and centres instead of sitting small in the left corner. */
+       measure and centres instead of sitting small in the left corner. It also
+       needs room before the trajectory label, which carries no top margin of its
+       own. */
     .personal-photo {
       max-width: 24rem;
       margin-inline: auto;
+      margin-bottom: var(--space-700);
     }
     .personal-photo-caption {
       text-align: center;
