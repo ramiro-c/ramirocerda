@@ -76,7 +76,7 @@ const labels = {
     </ul>
   </div>
 
-  <aside class="d-rail">
+  <section class="d-skills">
     <p class="section-label caption-3">{labels.skillsLabel}</p>
     <ul class="skill-idx">
       {
@@ -98,15 +98,17 @@ const labels = {
         <span class="skill-items body-6">{copy.education}</span>
       </li>
     </ul>
-  </aside>
+  </section>
 </div>
 
 <style>
   /* Visual system: landing-page-design skill Part B. Layout only; type comes
      from the named text style classes in src/styles/global.css. */
+  /* One column. The skills index used to sit in a rail beside the bio, which
+     gave a reference list the same weight as the text. It belongs at the end,
+     after the trajectory, where a reader who wants it goes looking. */
   .dossier {
-    display: grid;
-    gap: var(--space-300);
+    display: block;
   }
   .years {
     margin: 0 0 var(--space-200);
@@ -191,6 +193,9 @@ const labels = {
     list-style: none;
     padding: 0;
     margin: 0;
+    /* Same measure as the skills index below it, so the two lists close on the
+       same vertical line instead of ending at different widths. */
+    max-width: 52rem;
   }
   .d-rows li {
     display: flex;
@@ -215,12 +220,19 @@ const labels = {
   .d-rows li:hover .role {
     color: var(--accent-text);
   }
+  .d-skills {
+    margin-top: var(--space-700);
+  }
   .skill-idx {
     list-style: none;
     padding: 0;
     margin: 0;
     display: grid;
     gap: var(--space-100);
+    /* A capped measure, same as the running text. The technology lists are long
+       and at the full shell width they would run as one line you have to track
+       across the page. */
+    max-width: 52rem;
   }
   .skill-idx li {
     display: grid;
@@ -239,12 +251,6 @@ const labels = {
   }
   .skill-items {
     color: var(--muted);
-  }
-  @media (min-width: 860px) {
-    .dossier {
-      grid-template-columns: 1.7fr 1fr;
-      gap: var(--space-500);
-    }
   }
   @media (prefers-reduced-motion: reduce) {
     .role {
