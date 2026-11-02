@@ -34,17 +34,14 @@ const labels = {
     <p class="bio body-3">{copy.bio}</p>
 
     <div class="personal">
-      <div class="personal-copy">
-        <p class="section-label caption-3">{labels.personalLabel}</p>
-        {copy.personal.map((paragraph) => <p class="personal-p body-3">{paragraph}</p>)}
-      </div>
+      <p class="section-label caption-3">{labels.personalLabel}</p>
 
       <figure class="personal-photo">
         <picture>
           <source
             type="image/webp"
             srcset="/nerdearla-midudev-400.webp 400w, /nerdearla-midudev-720.webp 720w"
-            sizes="22rem"
+            sizes="24rem"
           />
           <img
             class="personal-photo-img"
@@ -58,6 +55,10 @@ const labels = {
         </picture>
         <figcaption class="personal-photo-caption caption-5">{labels.photoCaption}</figcaption>
       </figure>
+
+      <div class="personal-copy">
+        {copy.personal.map((paragraph) => <p class="personal-p body-3">{paragraph}</p>)}
+      </div>
     </div>
 
     <p class="section-label caption-3">{labels.rolesLabel}</p>
@@ -129,24 +130,27 @@ const labels = {
     margin: 0 0 var(--space-200);
     color: var(--muted);
   }
-  /* The photo sits beside the personal paragraphs, not under them, so the reader
-     sees the person while reading about him. The column is a ratio, not a fixed
-     width, so the picture grows with the page instead of staying at thumbnail
-     size on a wide screen. */
+  /* The photo floats beside the personal paragraphs, so the reader sees the
+     person while reading about him. A float instead of two columns is what
+     makes the block survive any length of copy: the paragraphs that run past
+     the picture simply widen back to the full measure, and the column never
+     leaves a hole under the caption. */
   .personal {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-300);
-    align-items: start;
     margin-top: var(--space-400);
+    margin-bottom: var(--space-600);
   }
-  /* Two columns only once the text column can hold a readable measure beside a
-     large picture. Earlier than this the paragraphs fall to a few words a line,
-     so the photo takes the full measure instead. */
+  /* Wide enough for a large picture and still a readable measure beside it.
+     Earlier than this the paragraphs fall to a few words a line, so the photo
+     takes the full measure instead. */
   @media (min-width: 1150px) {
-    .personal {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-      gap: var(--space-500);
+    .personal-photo {
+      float: right;
+      width: 24rem;
+      max-width: none;
+      margin: 0 0 var(--space-300) var(--space-500);
+    }
+    .personal-photo-caption {
+      text-align: left;
     }
   }
   .personal-copy > :last-child {
@@ -173,7 +177,7 @@ const labels = {
     /* Stacked, the photo is the only image on the page, so it takes the full
        measure and centres instead of sitting small in the left corner. */
     .personal-photo {
-      max-width: 22rem;
+      max-width: 24rem;
       margin-inline: auto;
     }
     .personal-photo-caption {
