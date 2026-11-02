@@ -690,10 +690,10 @@ const offer = landing[lang].botardoOffer;
 
   .botardo-island {
     position: fixed;
-    right: calc(var(--space-200) + env(safe-area-inset-right));
-    bottom: calc(var(--space-200) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
-    width: 58px;
-    height: 58px;
+    right: calc(var(--botardo-inset) + env(safe-area-inset-right));
+    bottom: calc(var(--botardo-inset) + var(--dock-bar-offset, 0px) + env(safe-area-inset-bottom));
+    width: var(--botardo-size);
+    height: var(--botardo-size);
     display: grid;
     place-items: center;
     border: 1px solid var(--border);
@@ -728,9 +728,9 @@ const offer = landing[lang].botardoOffer;
   .botardo-modal {
     position: fixed;
     right: calc(var(--space-200) + env(safe-area-inset-right));
-    bottom: calc(var(--space-900) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
+    bottom: calc(var(--space-900) + var(--dock-bar-offset, 0px) + env(safe-area-inset-bottom));
     width: min(400px, calc(100vw - var(--space-400)));
-    height: min(560px, calc(100vh - var(--space-900) - var(--dock-offset, 0px)));
+    height: min(560px, calc(100vh - var(--space-900) - var(--dock-bar-offset, 0px)));
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1048,13 +1048,13 @@ const offer = landing[lang].botardoOffer;
       right: var(--space-200);
       left: var(--space-200);
       width: auto;
-      bottom: calc(var(--space-800) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
-      height: min(68vh, 520px, calc(100dvh - var(--space-900) - var(--space-300) - var(--dock-offset, 0px)));
+      bottom: calc(var(--space-800) + var(--dock-bar-offset, 0px) + env(safe-area-inset-bottom));
+      height: min(68vh, 520px, calc(100dvh - var(--space-900) - var(--space-300) - var(--dock-bar-offset, 0px)));
     }
 
     .botardo-island {
-      right: var(--space-200);
-      bottom: calc(var(--space-200) + var(--dock-offset, 0px));
+      right: var(--botardo-inset);
+      bottom: calc(var(--botardo-inset) + var(--dock-bar-offset, 0px));
     }
   }
 

@@ -1,8 +1,10 @@
 ---
 /**
  * Fixed bottom layer: storage notice (until dismissed), the mobile sticky CTA
- * bar and the desktop floating CTA. It publishes its height as --dock-offset
- * so Botardo's island and the page padding sit above it.
+ * bar and the desktop floating CTA. It publishes --dock-offset (whole dock) for
+ * the page padding and --dock-bar-offset (persistent bar only) for Botardo, so
+ * the bubble never moves when the notice shows or is dismissed. The notice
+ * keeps out of the bubble's corner through --botardo-gutter.
  * The floating CTA hides while an in page primary CTA is on screen, so there
  * is never a duplicate primary action in view.
  */
@@ -59,7 +61,7 @@ const copy = landing[lang];
        viewport reads as part of the layout and covers whatever is under it on
        every scroll position, which is what made it feel intrusive. */
     max-width: 26rem;
-    margin: 0 var(--space-300) var(--space-300);
+    margin: 0 var(--botardo-gutter) var(--space-300) var(--space-300);
     padding: var(--space-200) var(--space-300);
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
@@ -169,7 +171,9 @@ const copy = landing[lang];
     // On desktop the CTA floats, so only the notice takes vertical space.
     const noticeHeight = notice && !notice.hidden ? notice.offsetHeight : 0;
     const barHeight = bar && !desktop.matches ? bar.offsetHeight : 0;
-    document.documentElement.style.setProperty("--dock-offset", `${noticeHeight + barHeight}px`);
+    const root = document.documentElement.style;
+    root.setProperty("--dock-offset", `${noticeHeight + barHeight}px`);
+    root.setProperty("--dock-bar-offset", `${barHeight}px`);
   }
 
   try {
