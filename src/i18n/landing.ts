@@ -156,7 +156,7 @@ export const landing: Record<Lang, LandingCopy> = {
           href: "https://avellana.store/",
           label: "Colaboración",
           title: "Avellana, app para comprar ropa en Av. Avellaneda",
-          result: "App gratuita para Android e iOS. Compara precios de ropa de mujer entre los locales de Av. Avellaneda, guarda favoritos y arma el recorrido más corto.",
+          result: "App gratuita para Android e iOS. Compara precios de ropa de mujer entre los locales de Av. Avellaneda en Buenos Aires, guarda favoritos y arma el recorrido más corto.",
         },
         {
           id: "lactaria",
@@ -196,7 +196,7 @@ export const landing: Record<Lang, LandingCopy> = {
       items: [
         {
           q: "¿Qué tipo de proyectos hacés?",
-          a: "Apps web y mobile, plataformas con backend propio, sitios y landings, y agentes de IA. Algunos ejemplos: la plataforma de Libro de Pases, la landing de Kano Studio, la app Avellana, LactarIA y Mundial 2026.",
+          a: "Apps web y móviles, plataformas con backend propio, sitios y landings, y agentes de IA. Algunos ejemplos: la plataforma de Libro de Pases, la landing de Kano Studio, la app Avellana, LactarIA y Mundial 2026.",
         },
         {
           q: "¿Podés mejorar algo que ya existe?",
