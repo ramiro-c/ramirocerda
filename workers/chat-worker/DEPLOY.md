@@ -185,11 +185,12 @@ key is refused, `chat.route` / `chat.rag_judge` show `fallback: "failed"`,
 `reason` with the paid failure (`http_401` for a rejected key, `http_402` for
 an empty balance); set `DECISION_FALLBACK_MODEL=""` to stop retrying.
 
-Latency budget: `DECISION_TIMEOUT_MS` (1500) is per attempt. Worst case per
-step is 2 attempts = 3 s; a `search` message has 2 steps (router + judge), so
-the worst-case decision time is 4 x 1.5 s = 6 s, on top of up to 2 embeddings,
-2 Vectorize queries and 1 generation. Without `OPENCODE_GO_API_KEY` it stays at
-2 x 1.5 s = 3 s. The measured free p95 is about 0.36 s, so the timeout is only
+Latency budget: `DECISION_TIMEOUT_MS` (1000) is per attempt. Worst case per
+step is 2 attempts = 2 s; a `search` message has 2 steps (router + judge), so
+the worst-case decision time is 4 x 1 s = 4 s. The router overlaps the first
+embedding + Vectorize + rerank (they run in parallel), so only the judge and
+generation add to it. Without `OPENCODE_GO_API_KEY` it stays at
+1 x 1 s per step. The measured free p50 is about 0.35 s (2026-11-02), so the timeout is only
 hit when the free model is degraded.
 
 ### Flow

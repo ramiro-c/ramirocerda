@@ -276,3 +276,15 @@ describe("router state", () => {
     expect(q?.endsWith(" ¿y antes?")).toBe(true);
   });
 });
+
+describe("deployed router config (wrangler.jsonc)", () => {
+  it("uses the free jev-1.13-free as primary and the paid jev-1.13 as the keyed retry", async () => {
+    const { readFileSync } = await import("node:fs");
+    const raw = readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8");
+    const json = JSON.parse(raw.replace(/^\s*\/\/.*$/gm, ""));
+    expect(json.vars.DECISION_MODEL).toBe("jev-1.13-free");
+    expect(json.vars.DECISION_FALLBACK_MODEL).toBe("jev-1.13");
+    expect(json.vars.DECISION_MODEL).toBe(DEFAULT_DECISION_MODEL);
+    expect(json.vars.GENERATION_MODEL).toBe("deepseek-v4.1-flash");
+  });
+});
