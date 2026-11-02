@@ -110,13 +110,19 @@ export interface AdaptiveRetrieval {
 }
 
 export async function retrieveAdaptive(
-  input: { question: string; query: string; alternateQuery: string | null },
+  input: {
+    question: string;
+    query: string;
+    alternateQuery: string | null;
+    /** The first search for `query`, already in flight (started in parallel with the router). */
+    prefetched?: Promise<RetrievedChunk[]>;
+  },
   env: RetrievalEnv,
   config: AdaptiveConfig,
 ): Promise<AdaptiveRetrieval> {
   const { question, query } = input;
   // First search errors propagate (same as the linear pipeline: MODEL_ERROR).
-  const first = await retrieveChunks(query, env);
+  const first = await (input.prefetched ?? retrieveChunks(query, env));
   const queries = [query];
   const cap = Math.max(1, Math.min(config.maxRetrievalIterations, 2));
   const alternate = input.alternateQuery?.trim() || null;

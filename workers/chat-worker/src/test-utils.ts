@@ -104,6 +104,9 @@ export function stubFetch(script: FetchScript = {}, opts: { resetBreaker?: boole
     }
     if (url === GENERATION_ENDPOINT) {
       calls.generation.push(body);
+      if (body.stream === true && (script.generationStatus ?? 200) === 200) {
+        return Promise.resolve(sseResponse(splitDeltas(script.generation ?? "Respuesta")));
+      }
       return Promise.resolve(
         new Response(JSON.stringify({ choices: [{ message: { content: script.generation ?? "Respuesta" } }] }), {
           status: script.generationStatus ?? 200,
@@ -120,3 +123,41 @@ export function stubFetch(script: FetchScript = {}, opts: { resetBreaker?: boole
 export const DECISION_VARS = { DECISION_TIMEOUT_MS: "50" };
 /** Decision model off: the linear pipeline. */
 export const DECISION_OFF = { DECISION_MODEL: "" };
+
+/** Two-ish chunks per reply so streaming tests see more than one delta. */
+export function splitDeltas(text: string): string[] {
+  const cut = Math.ceil(text.length / 2);
+  return [text.slice(0, cut), text.slice(cut)].filter((t) => t.length > 0);
+}
+
+/** An OpenAI-style streamed completion (`data: {...}` lines, then `data: [DONE]`). */
+export function sseResponse(deltas: string[], finishReason = "stop"): Response {
+  const lines = [
+    ...deltas.map((d) => `data: ${JSON.stringify({ choices: [{ delta: { content: d }, finish_reason: null }] })}\n\n`),
+    `data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: finishReason }] })}\n\n`,
+    "data: [DONE]\n\n",
+  ];
+  const encoder = new TextEncoder();
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        for (const line of lines) controller.enqueue(encoder.encode(line));
+        controller.close();
+      },
+    }),
+    { status: 200, headers: { "Content-Type": "text/event-stream" } },
+  );
+}
+
+/** Parse a worker SSE body into [{event, data}]. */
+export async function readEvents(res: Response): Promise<Array<{ event: string; data: any }>> {
+  const text = await res.text();
+  return text
+    .split("\n\n")
+    .filter((block) => block.trim().length > 0)
+    .map((block) => {
+      const event = /^event: (.*)$/m.exec(block)?.[1] ?? "message";
+      const data = JSON.parse(/^data: (.*)$/m.exec(block)?.[1] ?? "null");
+      return { event, data };
+    });
+}

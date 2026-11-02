@@ -195,6 +195,114 @@ function okReply(reply: string, offerContact: boolean, origin: string | null): R
   });
 }
 
+const RATE_LIMITED_BODY = { error: "Demasiadas consultas. Esperá un momento y volvé a intentar.", code: "RATE_LIMITED" };
+const MODEL_ERROR_BODY = { error: "Ocurrió un error al procesar tu consulta. Intentá de nuevo.", code: "MODEL_ERROR" };
+
+/** Opt-in streaming: only clients that ask for SSE get it; everything else keeps the JSON contract. */
+export function wantsStream(request: Request): boolean {
+  return (request.headers.get("Accept") ?? "").includes("text/event-stream");
+}
+
+/**
+ * SSE contract for /ask (Accept: text/event-stream). Events, in order:
+ *   meta   {"offerContact": bool}      once, right after the router (before any text)
+ *   delta  {"text": "..."}             zero or more content chunks
+ *   done   {"reply": "...", "offerContact": bool}   the full, trimmed reply (same as the JSON body)
+ *   error  {"error": "...", "code": "RATE_LIMITED" | "MODEL_ERROR"}   instead of done
+ * The HTTP status is 200 once the stream starts; errors before that (400/403/429) stay JSON.
+ */
+function handleRagStream(
+  message: string,
+  history: AskRequest["history"],
+  env: Env,
+  sessionId: string,
+  origin: string | null,
+  ctx?: WaitUntil,
+): Response {
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+  const send = (event: string, data: unknown) =>
+    writer.write(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)).catch(() => {});
+
+  const task = (async () => {
+    try {
+      const run = await runAdaptivePipeline({
+        message,
+        history,
+        env,
+        sessionId,
+        log,
+        onRouted: (decision) => void send("meta", { offerContact: decision.hireIntent }),
+        onDelta: (text) => void send("delta", { text }),
+      });
+      const result = finishRag(run, message, env, sessionId);
+      if (result.kind === "ok") {
+        // Fixed replies (off_topic / no_info) never streamed: send them as one delta.
+        if (run.outcome.kind !== "generated") await send("delta", { text: result.reply });
+        await send("done", { reply: result.reply, offerContact: run.offerContact });
+      } else {
+        log(result.kind === "rate_limited" ? "error.rate_limited" : "error.model", { stream: true });
+        await send("error", result.kind === "rate_limited" ? RATE_LIMITED_BODY : MODEL_ERROR_BODY);
+      }
+    } catch (err) {
+      log("error.model", { error_message: err instanceof Error ? err.message : String(err) });
+      await send("error", MODEL_ERROR_BODY);
+    } finally {
+      await writer.close().catch(() => {});
+    }
+  })();
+  ctx?.waitUntil(task);
+
+  return new Response(readable, {
+    status: 200,
+    headers: {
+      ...corsHeaders(origin),
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+    },
+  });
+}
+
+type RagResult = { kind: "ok"; reply: string } | { kind: "rate_limited" } | { kind: "model_error" };
+
+/** Shared tail of both transports: usage datapoint + outcome mapping. */
+function finishRag(
+  run: Awaited<ReturnType<typeof runAdaptivePipeline>>,
+  message: string,
+  env: Env,
+  sessionId: string,
+): RagResult {
+  const { outcome } = run;
+  const usage = (status: "ok" | "rate_limited" | "model_error") =>
+    writeUsage(env, {
+      sessionId,
+      lang: run.lang,
+      status,
+      preview: message.slice(0, 80),
+      chunkCount: run.chunks.length,
+      topScore: run.topScore,
+      retrievalMs: run.retrievalMs,
+      generationMs: run.generationMs,
+      run,
+    });
+  if (outcome.kind !== "generated") {
+    usage("ok");
+    return { kind: "ok", reply: outcome.reply };
+  }
+  const gen = outcome.result;
+  if (gen.status === 429) {
+    usage("rate_limited");
+    return { kind: "rate_limited" };
+  }
+  if (gen.status === 500) {
+    usage("model_error");
+    return { kind: "model_error" };
+  }
+  usage("ok");
+  return { kind: "ok", reply: gen.content.trim() };
+}
+
 async function handleRag(
   message: string,
   history: AskRequest["history"],
@@ -209,37 +317,10 @@ async function handleRag(
   });
 
   const run = await runAdaptivePipeline({ message, history, env, sessionId, log });
-  const { outcome } = run;
-  const usage = (status: "ok" | "rate_limited" | "model_error") =>
-    writeUsage(env, {
-      sessionId,
-      lang: run.lang,
-      status,
-      preview: message.slice(0, 80),
-      chunkCount: run.chunks.length,
-      topScore: run.topScore,
-      retrievalMs: run.retrievalMs,
-      generationMs: run.generationMs,
-      run,
-    });
-
-  if (outcome.kind !== "generated") {
-    usage("ok");
-    return okReply(outcome.reply, run.offerContact, origin);
-  }
-
-  const gen = outcome.result;
-  if (gen.status === 429) {
-    usage("rate_limited");
-    return rateLimitedResponse(origin);
-  }
-  if (gen.status === 500) {
-    usage("model_error");
-    return modelErrorResponse(origin);
-  }
-
-  usage("ok");
-  return okReply(gen.content.trim(), run.offerContact, origin);
+  const result = finishRag(run, message, env, sessionId);
+  if (result.kind === "rate_limited") return rateLimitedResponse(origin);
+  if (result.kind === "model_error") return modelErrorResponse(origin);
+  return okReply(result.reply, run.offerContact, origin);
 }
 
 export default {
@@ -326,11 +407,21 @@ export default {
       // judge and at most one re-search, generation via OpenCode Go; see
       // src/pipeline.ts). sessionId: prefer the frontend's stable per-conversation
       // ID; fall back to a fresh UUID so the Go session header is always present.
+      const id = sessionId ?? crypto.randomUUID();
+      if (wantsStream(request)) {
+        log("chat.rag_start", {
+          lang: detectLanguage(message),
+          msg_preview: message.slice(0, 80),
+          history_turns: history?.length ?? 0,
+          stream: true,
+        });
+        return handleRagStream(message, history, env, id, origin, ctx);
+      }
       return await handleRag(
         message,
         history,
         env,
-        sessionId ?? crypto.randomUUID(),
+        id,
         origin,
       );
     } catch (err) {
