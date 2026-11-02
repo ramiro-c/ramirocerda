@@ -1,7 +1,10 @@
 # Build the Astro site and check every link in the output (es and en).
-# Broken internal links fail the job. External links are fetched with retries:
-# 404, 410 and DNS failures fail the job; bot blocks (401, 403, 429), 5xx and
-# timeouts only warn. See scripts/check-links.mjs for the allowlist.
+# Broken internal links always fail the job, on every trigger.
+# External links are only fetched on the weekly schedule and on manual dispatch:
+# they are network-bound, slow and flaky, so they never gate a pull request.
+# When fetched, 404, 410 and DNS failures fail the job; bot blocks
+# (401, 403, 429), 5xx and timeouts only warn. See scripts/check-links.mjs
+# for the allowlist.
 name: site links
 
 on:
@@ -33,4 +36,10 @@ jobs:
 
       - run: bun run build
 
-      - run: bun run links -- --external
+      - name: Check internal links
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        run: bun run links
+
+      - name: Check internal and external links
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: bun run links -- --external
