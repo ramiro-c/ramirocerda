@@ -177,7 +177,7 @@ export const landing: Record<Lang, LandingCopy> = {
           href: "/work/agent-general/",
           label: "IA en producción",
           title: "Agent General, asistente de producto",
-          result: "Un agente raíz reparte el trabajo en 14 subagentes de dominio y responde con los permisos de cada usuario. Lo evalúo con casos reales, sin un modelo que haga de juez.",
+          result: "Un agente raíz reparte el trabajo entre subagentes de dominio y responde con los permisos de cada usuario. Lo evalúo con casos reales, sin un modelo que haga de juez.",
         },
         {
           id: "freelance",
@@ -331,7 +331,7 @@ export const landing: Record<Lang, LandingCopy> = {
           href: "/en/work/agent-general/",
           label: "AI in production",
           title: "Agent General, product assistant",
-          result: "A root agent splits the work across 14 domain sub agents and answers with each user's permissions. I evaluate it on real cases, with no model acting as judge.",
+          result: "A root agent splits the work across domain sub agents and answers with each user's permissions. I evaluate it on real cases, with no model acting as judge.",
         },
         {
           id: "freelance",
