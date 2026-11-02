@@ -164,25 +164,23 @@ const faqSchema = {
 </section>
 
 {
-  (testimonials.length > 0 || isDev) && (
+  /* The section only exists when there is something to say. An empty state that
+     announces its own emptiness is worse than no section at all. */
+  testimonials.length > 0 && (
     <section class="band testimonials reveal" aria-label={c.testimonials.label}>
       <p class="label caption-3">{c.testimonials.label}</p>
-      {testimonials.length > 0 ? (
-        <ul class="quote-list">
-          {testimonials.map((item) => (
-            <li>
-              <blockquote>
-                <p class="body-3">{item.quote}</p>
-                <footer class="caption-2">
-                  {item.name}, {item.role}
-                </footer>
-              </blockquote>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p class="dev-placeholder caption-2">TODO (dev only): add real testimonials in src/i18n/landing.ts. Hidden in production while empty.</p>
-      )}
+      <ul class="quote-list">
+        {testimonials.map((item) => (
+          <li>
+            <blockquote>
+              <p class="body-3">{item.quote}</p>
+              <footer class="caption-2">
+                {item.name}, {item.role}
+              </footer>
+            </blockquote>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }
@@ -568,13 +566,6 @@ const faqSchema = {
     margin: 0;
     padding: 0;
     list-style: none;
-  }
-  .dev-placeholder {
-    margin: 0;
-    padding: var(--space-200);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-lg);
-    color: var(--muted);
   }
 
   .tagline {
