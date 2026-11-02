@@ -1,13 +1,29 @@
 # Build the Astro site and check every link in the output (es and en).
-# Broken internal links fail the job. External links are fetched with retries:
-# 404, 410 and DNS failures fail the job; bot blocks (401, 403, 429), 5xx and
-# timeouts only warn. See scripts/check-links.mjs for the allowlist.
+# Broken internal links always fail the job, on every trigger.
+# External links are only fetched on the weekly schedule and on manual dispatch:
+# they are network-bound, slow and flaky, so they never gate a pull request.
+# When fetched, 404, 410 and DNS failures fail the job; bot blocks
+# (401, 403, 429), 5xx and timeouts only warn. See scripts/check-links.mjs
+# for the allowlist.
+#
+# Pull requests and pushes are filtered by path: a change that cannot alter the
+# rendered site (the worker, docs, the odd task log) does not pay for a build.
+# The schedule ignores paths, so link rot is still caught every Monday.
 name: site links
 
 on:
   pull_request:
+    paths: &site_paths
+      - "src/**"
+      - "public/**"
+      - "scripts/**"
+      - "astro.config.*"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/site-links.yml"
   push:
     branches: [main]
+    paths: *site_paths
   schedule:
     # Mondays 12:00 UTC (09:00 Buenos Aires), to catch external links that rot.
     - cron: "0 12 * * 1"
@@ -33,4 +49,10 @@ jobs:
 
       - run: bun run build
 
-      - run: bun run links -- --external
+      - name: Check internal links
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        run: bun run links
+
+      - name: Check internal and external links
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: bun run links -- --external
