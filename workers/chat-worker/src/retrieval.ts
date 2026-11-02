@@ -108,7 +108,7 @@ export function mergeChunks(a: RetrievedChunk[], b: RetrievedChunk[]): Retrieved
     const current = best.get(chunk.id);
     if (!current || chunk.score > current.score) best.set(chunk.id, chunk);
   }
-  return [...best.values()].sort((x, y) => y.score - x.score).slice(0, MAX_CHUNKS);
+  return [...best.values()].toSorted((x, y) => y.score - x.score).slice(0, MAX_CHUNKS);
 }
 
 export interface AdaptiveRetrieval {

@@ -463,7 +463,7 @@ export async function globFiles(rootDir, pattern) {
     }
   };
   await walk(rootDir, parts);
-  return results.sort();
+  return results.toSorted();
 }
 
 /**
@@ -680,7 +680,7 @@ async function main() {
   // Persist the committed chunk-ID manifest used for future prune and --check,
   // but only when the id set actually changed: `generatedAt` otherwise changes
   // on every run and produces an empty bot commit per CI run.
-  const sortedIds = [...currentIds].sort();
+  const sortedIds = [...currentIds].toSorted();
   const idsUnchanged = previousIds.length === sortedIds.length && sortedIds.every((id, i) => previousIds[i] === id);
   if (!idsUnchanged) {
     await writeFile(

@@ -15,7 +15,7 @@ const STACK_ITEMS = ["TypeScript", "React", "Astro", "Node.js", "Python", "FastA
 
 const projects = (await getCollection("projects"))
   .filter((p) => p.data.featured)
-  .sort((a, b) => a.data.order - b.data.order)
+  .toSorted((a, b) => a.data.order - b.data.order)
   .map((p) => ({
     slug: p.data.slug,
     title: p.data[lang].title,
@@ -27,7 +27,7 @@ const projects = (await getCollection("projects"))
 
 const notes = (await getCollection("notes"))
   .filter((n) => n.data.lang === lang && !n.data.draft)
-  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .toSorted((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
   .map((n) => ({
     slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
     title: n.data.title,

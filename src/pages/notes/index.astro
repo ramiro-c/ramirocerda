@@ -9,7 +9,7 @@ const lang = "es";
 const t = useTranslations(lang);
 const notes = (await getCollection("notes"))
   .filter((note) => note.data.lang === lang && !note.data.draft)
-  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .toSorted((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
   .map((note) => ({
     slug: note.data.slug || note.id.replace(/^(es|en)\//, ""),
     title: note.data.title,

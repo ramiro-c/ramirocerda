@@ -104,7 +104,7 @@ export function buildRouterState(message: string, history: HistoryTurn[] | undef
 
 /** Previous user turn + latest message, whitespace-normalized and capped. null without a previous user turn. */
 export function contextualQuery(message: string, history: HistoryTurn[] | undefined): string | null {
-  const previous = [...(history ?? [])].reverse().find((t) => t.role === "user")?.content;
+  const previous = (history ?? []).toReversed().find((t) => t.role === "user")?.content;
   if (!previous) return null;
   const joined = `${previous} ${message}`.replace(/\s+/g, " ").trim();
   return joined.slice(-MAX_QUERY_CHARS);

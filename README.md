@@ -24,7 +24,8 @@ Uses **Bun** (`bun.lock`; workspace list in `package.json`).
 - `bun run dev` — Astro dev server
 - `bun run build` — build into `dist/`
 - `bun run preview` — preview production build
-- `bun run lint` — oxlint across site, worker and scripts
+- `bun run lint` — oxlint across site, worker and scripts (blocking)
+- `bun run format` — Prettier across the repo; `bun run format:check` verifies
 
 ## Botardo
 

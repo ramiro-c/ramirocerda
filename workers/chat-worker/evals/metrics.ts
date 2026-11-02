@@ -195,11 +195,11 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
   const abstention = (pred: (c: EvalCase) => boolean) =>
     ratio(withCase.filter(({ r, c }) => pred(c) && r.abstained !== null).map(({ r }) => r.abstained === true));
   const unanswerable = (c: EvalCase) => c.expected.answerable === false;
-  const lat = rs.map((r) => r.latencyMs).sort((a, b) => a - b);
+  const lat = rs.map((r) => r.latencyMs).toSorted((a, b) => a - b);
   const routerLat = rs
     .map((r) => r.routerMs)
     .filter((x): x is number => typeof x === "number")
-    .sort((a, b) => a - b);
+    .toSorted((a, b) => a - b);
 
   const perQuery = Object.fromEntries(
     Object.keys(rs[0]?.counters ?? {}).map((k) => [

@@ -95,7 +95,7 @@ describe("routeMessage", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toBe(DEFAULT_DECISION_ENDPOINT);
     const body = calls.router[0];
-    expect(Object.keys(body).sort()).toEqual(["model", "questions", "state"]);
+    expect(Object.keys(body).toSorted()).toEqual(["model", "questions", "state"]);
     expect(body.model).toBe(DEFAULT_DECISION_MODEL);
     expect(body.state).toEqual({ conversation: history, latest_message: "¿y está disponible para un freelance?" });
     expect(body.questions).toEqual({

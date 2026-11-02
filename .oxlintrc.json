@@ -1,12 +1,22 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "categories": {
+    // Both categories are blocking: a PR fails if either reports anything.
     "correctness": "error",
-    "suspicious": "warn"
+    "suspicious": "error"
   },
   "rules": {
     // Object rest destructuring is used to omit fields; the omitted names count
     // as used (this is the ESLint flag of the same name).
-    "no-unused-vars": ["error", { "ignoreRestSiblings": true, "argsIgnorePattern": "^_" }]
+    "no-unused-vars": ["error", { "ignoreRestSiblings": true, "argsIgnorePattern": "^_" }],
+
+    // Loose equality is never intentional here.
+    "eqeqeq": "error",
+
+    // Off: the rule wants every function that closes over nothing hoisted to
+    // module scope. It reports 21 sites that are all correct as written (helper
+    // closures inside factories, test callbacks) and hoisting them would only
+    // move code away from its single caller.
+    "unicorn/consistent-function-scoping": "off"
   }
 }

@@ -9,6 +9,8 @@
     "chat:populate": "node workers/chat-worker/scripts/populate-index.mjs",
     "chat:stats": "node workers/chat-worker/scripts/chat-stats.mjs",
     "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "site:stats": "node scripts/site-stats.mjs",
     "links": "node scripts/check-links.mjs",
     "chat:eval": "bun run --filter ramirocerda-chat-worker eval"
@@ -20,6 +22,8 @@
   },
   "devDependencies": {
     "oxlint": "^1.90.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-astro": "^1.1.2",
     "typescript": "^5.8.0"
   },
   "workspaces": [

@@ -1,5 +1,7 @@
-# Repo-wide lint gate (oxlint). Blocks PRs and pushes to main on lint errors;
-# style warnings are visible but non-blocking.
+# Repo-wide code-quality gate. Both checks block PRs and pushes to main:
+# oxlint reports correctness/suspicious findings, Prettier owns layout.
+# Kept as a standalone workflow instead of a step inside site-links.yml: this
+# gates the whole repo (site, worker, scripts) and runs without a site build.
 name: lint
 
 on:
@@ -26,5 +28,4 @@ jobs:
 
       - run: bun run lint
 
-# Kept as a standalone workflow instead of a step inside site-links.yml: lint
-# gates the whole repo (site, worker, scripts) and runs without a site build.
+      - run: bun run format:check

@@ -22,8 +22,15 @@
 
 ## Operations
 
-- Lint (whole repo, site + worker + scripts): `bun run lint` (oxlint; errors
-  block CI via `.github/workflows/lint.yml`, style warnings don't).
+- Lint (whole repo, site + worker + scripts): `bun run lint` (oxlint). Both the
+  `correctness` and `suspicious` categories are errors, so any finding fails CI
+  via `.github/workflows/lint.yml`. `unicorn/consistent-function-scoping` is
+  deliberately off — see the comment in `.oxlintrc.json`.
+
+- Format: `bun run format` writes, `bun run format:check` verifies. Prettier owns
+  all layout (oxlint has no formatting rules). CI blocks on `format:check`, so run
+  `bun run format` before pushing. Config lives in `.prettierrc.json`
+  (`printWidth: 120`, `prettier-plugin-astro` for `.astro`).
 
 - RAG KB populate: `bun run chat:populate` from the repo root (see
   `workers/chat-worker/DEPLOY.md` for the full runbook).

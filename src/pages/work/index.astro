@@ -8,7 +8,7 @@ import { useTranslations } from "../../i18n/utils";
 const lang = "es";
 const t = useTranslations(lang);
 const projects = (await getCollection("projects"))
-  .sort((a, b) => a.data.order - b.data.order)
+  .toSorted((a, b) => a.data.order - b.data.order)
   .map((project) => ({
     slug: project.data.slug,
     title: project.data[lang].title,

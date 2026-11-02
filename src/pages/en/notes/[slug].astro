@@ -15,7 +15,7 @@ export async function getStaticPaths() {
       .map(async (note) => {
         const otherNotes = notes
           .filter((n) => n.data.lang === "en" && !n.data.draft && n.id !== note.id)
-          .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+          .toSorted((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
           .slice(0, 3)
           .map((n) => ({
             slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),

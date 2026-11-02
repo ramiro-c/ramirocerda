@@ -177,7 +177,7 @@ const structuredData = {
             const wrap = document.createElement("div");
             wrap.className = "mermaid-diagram";
             wrap.innerHTML =
-              '<div class="diagram-desktop">' + htmlD + "</div>" + '<div class="diagram-mobile">' + htmlM + "</div>";
+              '<div class="diagram-desktop">' + htmlD + '</div><div class="diagram-mobile">' + htmlM + "</div>";
             wrap.setAttribute("role", "button");
             wrap.setAttribute("tabindex", "0");
             wrap.setAttribute("aria-label", document.documentElement.dataset.mermaidExpand || "");

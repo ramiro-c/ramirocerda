@@ -247,7 +247,7 @@ export async function runAdaptivePipeline(opts: {
         : { p: retrieval.verdict.probability }),
       judge_threshold: config.judgeSufficientThreshold,
       would_research: retrieval.verdict.kind === "insufficient",
-      alternate: decision.alternateQuery ? true : false,
+      alternate: Boolean(decision.alternateQuery),
       model_tier: retrieval.judgeTrace?.tier ?? "none",
       ...(retrieval.judgeTrace?.primaryError ? { primary_error: retrieval.judgeTrace.primaryError } : {}),
       fallback: retrieval.judgeTrace?.fallback ?? "off",

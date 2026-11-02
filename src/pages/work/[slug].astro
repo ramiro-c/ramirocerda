@@ -12,7 +12,7 @@ export async function getStaticPaths() {
       .filter(
         (n) => n.data.lang === "es" && !n.data.draft && (n.data.relatedProjects || []).includes(project.data.slug),
       )
-      .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+      .toSorted((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
       .map((n) => ({
         slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
         title: n.data.title,

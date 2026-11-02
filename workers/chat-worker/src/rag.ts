@@ -169,7 +169,7 @@ async function rerankOrder(
     // chunks keep their dense score on the wire.
     return candidates
       .map((candidate, index) => ({ candidate, rerank: scores[index] as number }))
-      .sort((a, b) => b.rerank - a.rerank)
+      .toSorted((a, b) => b.rerank - a.rerank)
       .map(({ candidate }) => candidate);
   } catch (error) {
     // A silent fail-open hides a dead reranker behind dense order; the event

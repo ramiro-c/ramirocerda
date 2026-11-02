@@ -32,7 +32,7 @@ export function initReveal(): void {
       const crossing = entries
         .filter((entry) => entry.isIntersecting)
         .map((entry) => entry.target as HTMLElement)
-        .sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
+        .toSorted((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
       crossing.forEach((word, i) => {
         word.style.transitionDelay = `${i * 60}ms`;
         word.classList.add("is-lit");

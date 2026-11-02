@@ -349,11 +349,11 @@ const config = {
         const script = document.createElement("script");
         script.src = TURNSTILE_SRC;
         script.async = true;
-        script.onload = () => resolve(turnstile() ?? null);
-        script.onerror = () => {
+        script.addEventListener("load", () => resolve(turnstile() ?? null));
+        script.addEventListener("error", () => {
           turnstileLoading = null;
           resolve(null);
-        };
+        });
         document.head.appendChild(script);
       });
       return turnstileLoading;

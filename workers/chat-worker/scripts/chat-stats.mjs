@@ -109,7 +109,7 @@ async function runInvocations(accountId, apiToken, days, fetchImpl = fetch) {
       perDay.set(day, entry);
     }
   }
-  return [...perDay.values()].sort((a, b) => (a.day < b.day ? 1 : -1));
+  return [...perDay.values()].toSorted((a, b) => (a.day < b.day ? 1 : -1));
 }
 
 /** Default aggregates. Every statement carries a lower time bound because the API requires one. */

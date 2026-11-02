@@ -184,7 +184,7 @@ export async function run(distDir, { external = false, log = console.log } = {})
       const r = results.get(url);
       const verdict = externalVerdict(r);
       const status = r.status || r.error;
-      const pagesList = [...use.pages].sort().join(", ");
+      const pagesList = [...use.pages].toSorted().join(", ");
       if (verdict === "broken") broken.push({ page: pagesList, href: url, status: String(status) });
       if (verdict === "warn") warnings.push({ page: pagesList, href: url, status: String(status) });
     }
