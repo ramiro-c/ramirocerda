@@ -58,7 +58,15 @@ function snippet(chunk: RetrievedChunk): string {
   const text = typeof chunk.metadata?.text === "string" ? chunk.metadata.text : "";
   const normalized = text.replace(/\s+/g, " ");
   if (normalized.length > JUDGE_SNIPPET_CHARS) {
-    console.log(JSON.stringify({ ts: new Date().toISOString(), event: "chat.judge_snippet_truncated", section, chars: normalized.length, cap: JUDGE_SNIPPET_CHARS }));
+    console.log(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        event: "chat.judge_snippet_truncated",
+        section,
+        chars: normalized.length,
+        cap: JUDGE_SNIPPET_CHARS,
+      }),
+    );
   }
   return `[${section}] ${normalized.slice(0, JUDGE_SNIPPET_CHARS)}`;
 }
@@ -73,11 +81,16 @@ export async function judgeSufficiency(
   config: AdaptiveConfig,
 ): Promise<{ verdict: JudgeVerdict; usage?: DecisionUsage; trace?: DecisionTrace }> {
   if (!config.decision) return { verdict: { kind: "skipped" } };
-  const result = await askDecision(config.decision, buildJudgeState(question, chunks), { sufficient: SUFFICIENT_QUESTION });
+  const result = await askDecision(config.decision, buildJudgeState(question, chunks), {
+    sufficient: SUFFICIENT_QUESTION,
+  });
   if (!result.ok) return { verdict: { kind: "error", reason: result.reason }, trace: result.trace };
   const answer = result.answers.sufficient;
   if (answer?.type !== "noul") {
-    return { verdict: { kind: "error", reason: "invalid_shape" }, trace: { ...result.trace, tier: "none", model: null } };
+    return {
+      verdict: { kind: "error", reason: "invalid_shape" },
+      trace: { ...result.trace, tier: "none", model: null },
+    };
   }
   const probability = answer.noul;
   const threshold = config.judgeSufficientThreshold ?? NOUL_YES;

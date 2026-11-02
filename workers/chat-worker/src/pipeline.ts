@@ -59,7 +59,12 @@ export function routerStatusCode(decision: RouteDecision): number {
   return decision.via === "not_configured" ? 2 : 1;
 }
 /** 0 skipped, 1 sufficient, 2 insufficient, 3 judge error. */
-export const VERDICT_CODE: Record<JudgeVerdict["kind"], number> = { skipped: 0, sufficient: 1, insufficient: 2, error: 3 };
+export const VERDICT_CODE: Record<JudgeVerdict["kind"], number> = {
+  skipped: 0,
+  sufficient: 1,
+  insufficient: 2,
+  error: 3,
+};
 
 export type PipelineReply =
   | { kind: "off_topic"; reply: string }
@@ -94,7 +99,8 @@ export type PipelineLogger = (event: string, data?: Record<string, unknown>) => 
 
 function smalltalkMessages(history: HistoryTurn[] | undefined, message: string): ChatMessage[] {
   const messages: ChatMessage[] = [{ role: "system", content: `${IDENTITY_PROMPT}\n\n${SMALLTALK_INSTRUCTION}` }];
-  for (const entry of (history ?? []).slice(-HISTORY_TURNS)) messages.push({ role: entry.role, content: entry.content });
+  for (const entry of (history ?? []).slice(-HISTORY_TURNS))
+    messages.push({ role: entry.role, content: entry.content });
   messages.push({ role: "user", content: message });
   return messages;
 }
@@ -236,7 +242,9 @@ export async function runAdaptivePipeline(opts: {
   if (retrieval.verdict.kind !== "skipped") {
     log("chat.rag_judge", {
       verdict: retrieval.verdict.kind,
-      ...(retrieval.verdict.kind === "error" ? { reason: retrieval.verdict.reason } : { p: retrieval.verdict.probability }),
+      ...(retrieval.verdict.kind === "error"
+        ? { reason: retrieval.verdict.reason }
+        : { p: retrieval.verdict.probability }),
       judge_threshold: config.judgeSufficientThreshold,
       would_research: retrieval.verdict.kind === "insufficient",
       alternate: decision.alternateQuery ? true : false,

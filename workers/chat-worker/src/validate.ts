@@ -31,7 +31,9 @@ function isHistoryRole(role: unknown): role is HistoryRole {
  */
 export function validateAskBody(
   body: unknown,
-): { ok: true; value: Omit<ValidatedAskRequest, "sessionId"> & { sessionId?: string } } | { ok: false; error: AskValidationError } {
+):
+  | { ok: true; value: Omit<ValidatedAskRequest, "sessionId"> & { sessionId?: string } }
+  | { ok: false; error: AskValidationError } {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
     return {
       ok: false,
@@ -86,9 +88,7 @@ export function validateAskBody(
   }
 
   const sessionId =
-    typeof record.sessionId === "string" && record.sessionId.trim().length > 0
-      ? record.sessionId.trim()
-      : undefined;
+    typeof record.sessionId === "string" && record.sessionId.trim().length > 0 ? record.sessionId.trim() : undefined;
 
   let history: Array<{ role: HistoryRole; content: string }> = [];
   if (record.history !== undefined) {
@@ -108,9 +108,7 @@ export function validateAskBody(
 }
 
 /** Keep only valid turns, enforce per-message and total length caps, max 10 entries. */
-export function trimHistory(
-  raw: unknown[],
-): Array<{ role: HistoryRole; content: string }> {
+export function trimHistory(raw: unknown[]): Array<{ role: HistoryRole; content: string }> {
   const valid: Array<{ role: HistoryRole; content: string }> = [];
 
   for (const entry of raw) {

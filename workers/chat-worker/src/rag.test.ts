@@ -29,14 +29,12 @@ function ragEnv(
     vars?: Record<string, string>;
   } = {},
 ) {
-  const run = vi
-    .fn()
-    .mockImplementation(async (model: string) => {
-      if (model === "@cf/baai/bge-m3") return { data: [[0.1, 0.2, 0.3]] };
-      if (opts.rerankError) throw opts.rerankError;
-      const raw = opts.rerankResult ?? { response: [] };
-      return raw as { data?: unknown; response?: unknown };
-    });
+  const run = vi.fn().mockImplementation(async (model: string) => {
+    if (model === "@cf/baai/bge-m3") return { data: [[0.1, 0.2, 0.3]] };
+    if (opts.rerankError) throw opts.rerankError;
+    const raw = opts.rerankResult ?? { response: [] };
+    return raw as { data?: unknown; response?: unknown };
+  });
   const query = vi.fn(async (_vector: number[], _opts: { topK: number }) => ({
     matches: opts.matches ?? [],
   }));
@@ -62,7 +60,13 @@ describe("retrieveChunks with the reranker", () => {
     const { env, run, query } = ragEnv({
       on: true,
       matches,
-      rerankResult: { response: [{ id: 2, score: 9e-4 }, { id: 0, score: 1e-6 }, { id: 1, score: 5e-7 }] },
+      rerankResult: {
+        response: [
+          { id: 2, score: 9e-4 },
+          { id: 0, score: 1e-6 },
+          { id: 1, score: 5e-7 },
+        ],
+      },
     });
     const result = await retrieveChunks("¿Qué estudió Ramiro?", env);
     expect(result.map((c) => c.id)).toEqual(["kb-educacion-cc", "kb-overview-aa", "kb-note-bb"]);
@@ -115,7 +119,12 @@ describe("retrieveChunks with the reranker", () => {
       const { env: ok } = ragEnv({
         on: true,
         matches,
-        rerankResult: { response: [{ id: 1, score: 9e-4 }, { id: 0, score: 1e-6 }] },
+        rerankResult: {
+          response: [
+            { id: 1, score: 9e-4 },
+            { id: 0, score: 1e-6 },
+          ],
+        },
       });
       await retrieveChunks("q", ok);
       expect(log.mock.calls.some((c) => String(c[0]).includes("chat.rerank_fallback"))).toBe(false);
@@ -172,7 +181,10 @@ describe("filterChunks (D3)", () => {
   });
 
   it("caps injected chunks at MAX_CHUNKS (6)", () => {
-    const result = filterChunks([0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3].map((score) => match(score)), 0.3);
+    const result = filterChunks(
+      [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3].map((score) => match(score)),
+      0.3,
+    );
     expect(result).toHaveLength(MAX_CHUNKS);
     expect(MAX_CHUNKS).toBe(6);
   });
@@ -204,7 +216,13 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
 
   it("injects the last 10 history turns when more are provided (R6)", () => {
     const history = Array.from({ length: 12 }, (_, i) => turn(i % 2 === 0 ? "user" : "assistant", i));
-    const messages = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "es", history, message: "¿Dónde trabajás?" });
+    const messages = buildRagPrompt({
+      identityPrompt: IDENTITY,
+      chunks: [match(0.6)],
+      language: "es",
+      history,
+      message: "¿Dónde trabajás?",
+    });
     expect(messages).toHaveLength(12); // system + 10 history + user
     expect(messages[1].content).toBe("turn 2"); // first 2 turns sliced off
     expect(messages[messages.length - 1]).toEqual({ role: "user", content: "¿Dónde trabajás?" });
@@ -212,13 +230,27 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
 
   it("includes all turns when fewer than 10 exist (R6)", () => {
     const history = [turn("user", 1), turn("assistant", 2), turn("user", 3)];
-    const messages = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "es", history, message: "hola" });
+    const messages = buildRagPrompt({
+      identityPrompt: IDENTITY,
+      chunks: [match(0.6)],
+      language: "es",
+      history,
+      message: "hola",
+    });
     expect(messages).toHaveLength(5); // system + 3 history + user
   });
 
   it("injects retrieved chunk text as the only factual context (R2/R3)", () => {
-    const chunk = { ...match(0.6), metadata: { section: "Experiencia", text: "En LDP trabaja como Tech Lead hands-on." } };
-    const messages = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [chunk], language: "en", message: "Where do you work?" });
+    const chunk = {
+      ...match(0.6),
+      metadata: { section: "Experiencia", text: "En LDP trabaja como Tech Lead hands-on." },
+    };
+    const messages = buildRagPrompt({
+      identityPrompt: IDENTITY,
+      chunks: [chunk],
+      language: "en",
+      message: "Where do you work?",
+    });
     const system = messages[0].content;
     expect(system).toContain("En LDP trabaja como Tech Lead hands-on.");
     expect(system).toContain("=== CONTEXTO RECUPERADO");
@@ -226,8 +258,10 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
   });
 
   it("adds the firm language instruction (R4, D7)", () => {
-    const es = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "es", message: "hola" })[0].content;
-    const en = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "en", message: "hi" })[0].content;
+    const es = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "es", message: "hola" })[0]
+      .content;
+    const en = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "en", message: "hi" })[0]
+      .content;
     expect(es).toContain("IDIOMA OBLIGATORIO (regla firme, no opcional)");
     expect(es).toContain("español rioplatense");
     expect(en).toContain("MANDATORY LANGUAGE RULE (firm, not optional)");
@@ -242,7 +276,12 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
   });
 
   it("marks empty retrieval and keeps the no-invent guardrail (R2/R8)", () => {
-    const messages = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [], language: "es", message: "contame un chiste" });
+    const messages = buildRagPrompt({
+      identityPrompt: IDENTITY,
+      chunks: [],
+      language: "es",
+      message: "contame un chiste",
+    });
     const system = messages[0].content;
     expect(system).toContain("(sin contexto recuperado)");
     expect(system).toContain("basate EXCLUSIVAMENTE en el CONTEXTO RECUPERADO");
@@ -261,14 +300,23 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
         urlAlt: "/en/notes/factory-engineering",
       },
     };
-    const system = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [chunk], language: "es", message: "¿qué onda factory engineering?" })[0]
-      .content;
+    const system = buildRagPrompt({
+      identityPrompt: IDENTITY,
+      chunks: [chunk],
+      language: "es",
+      message: "¿qué onda factory engineering?",
+    })[0].content;
     expect(system).toContain("nota: /notes/factory-engineering");
     expect(system).toContain("/en/notes/factory-engineering");
   });
 
   it("omits the note label for chunks that are not a note", () => {
-    const messages = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "es", message: "¿Quién sos?" });
+    const messages = buildRagPrompt({
+      identityPrompt: IDENTITY,
+      chunks: [match(0.6)],
+      language: "es",
+      message: "¿Quién sos?",
+    });
     expect(messages[0].content).not.toContain("nota:");
   });
 

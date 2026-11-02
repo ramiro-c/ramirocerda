@@ -51,11 +51,7 @@ interface Env extends AdaptiveEnvVars, LeadEnv {
     }>;
   };
   ANALYTICS?: {
-    writeDataPoint: (event: {
-      blobs?: string[];
-      doubles?: number[];
-      indexes?: string[];
-    }) => void;
+    writeDataPoint: (event: { blobs?: string[]; doubles?: number[]; indexes?: string[] }) => void;
   };
   OPENCODE_GO_API_KEY: string;
   TOP_K: string;
@@ -135,11 +131,7 @@ function corsHeaders(origin: string | null): HeadersInit {
   return headers;
 }
 
-function jsonResponse(
-  status: number,
-  payload: Record<string, unknown>,
-  origin: string | null,
-): Response {
+function jsonResponse(status: number, payload: Record<string, unknown>, origin: string | null): Response {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
@@ -195,7 +187,10 @@ function okReply(reply: string, offerContact: boolean, origin: string | null): R
   });
 }
 
-const RATE_LIMITED_BODY = { error: "Demasiadas consultas. Esperá un momento y volvé a intentar.", code: "RATE_LIMITED" };
+const RATE_LIMITED_BODY = {
+  error: "Demasiadas consultas. Esperá un momento y volvé a intentar.",
+  code: "RATE_LIMITED",
+};
 const MODEL_ERROR_BODY = { error: "Ocurrió un error al procesar tu consulta. Intentá de nuevo.", code: "MODEL_ERROR" };
 
 /** Opt-in streaming: only clients that ask for SSE get it; everything else keeps the JSON contract. */
@@ -364,13 +359,7 @@ export default {
       );
     }
     if (pathname === "/lead") {
-      return handleLead(
-        request,
-        env,
-        ctx,
-        (status, payload) => jsonResponse(status, payload, origin),
-        log,
-      );
+      return handleLead(request, env, ctx, (status, payload) => jsonResponse(status, payload, origin), log);
     }
     if (pathname !== "/ask") {
       log("request.invalid", { reason: "path_not_found", path: pathname });
@@ -417,13 +406,7 @@ export default {
         });
         return handleRagStream(message, history, env, id, origin, ctx);
       }
-      return await handleRag(
-        message,
-        history,
-        env,
-        id,
-        origin,
-      );
+      return await handleRag(message, history, env, id, origin);
     } catch (err) {
       // Check for rate limit errors
       const errorMessage = err instanceof Error ? err.message : String(err);

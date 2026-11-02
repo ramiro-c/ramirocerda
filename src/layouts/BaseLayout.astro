@@ -60,10 +60,7 @@ const structuredData = {
         addressLocality: "Buenos Aires",
         addressCountry: "AR",
       },
-      sameAs: [
-        "https://github.com/ramiro-c",
-        "https://www.linkedin.com/in/cerdaramiro/",
-      ],
+      sameAs: ["https://github.com/ramiro-c", "https://www.linkedin.com/in/cerdaramiro/"],
     },
   ],
 };
@@ -79,18 +76,16 @@ const structuredData = {
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/rc.png" />
-    {
-      isNotFound ? (
-        <meta name="robots" content="noindex" />
-      ) : (
-        <>
-          <link rel="canonical" href={canonicalURL} />
-          <link rel="alternate" hreflang="es" href={esURL} />
-          <link rel="alternate" hreflang="en" href={enURL} />
-          <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
-        </>
-      )
-    }
+    {isNotFound ? (
+      <meta name="robots" content="noindex" />
+    ) : (
+      <>
+        <link rel="canonical" href={canonicalURL} />
+        <link rel="alternate" hreflang="es" href={esURL} />
+        <link rel="alternate" hreflang="en" href={enURL} />
+        <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
+      </>
+    )}
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ramiro Cerdá" />
@@ -110,7 +105,6 @@ const structuredData = {
     <meta name="twitter:image" content={new URL("/og.png", Astro.site)} />
 
     <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -128,7 +122,9 @@ const structuredData = {
         try {
           var id = localStorage.getItem(keys.visitorId);
           if (!id || !/^[A-Za-z0-9-]{1,64}$/.test(id)) {
-            id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+            id = crypto.randomUUID
+              ? crypto.randomUUID()
+              : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
             localStorage.setItem(keys.visitorId, id);
           }
           var count = parseInt(localStorage.getItem(keys.visitCount) || "0", 10) || 0;
@@ -156,9 +152,7 @@ const structuredData = {
       const mermaidBlocks = document.querySelectorAll('pre[data-language="mermaid"]');
       if (mermaidBlocks.length) {
         try {
-          const { default: mermaid } = await import(
-            "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
-          );
+          const { default: mermaid } = await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs");
           mermaid.initialize({ startOnLoad: false, theme: "neutral" });
           for (const block of mermaidBlocks) {
             const code = block.querySelector("code");
@@ -183,8 +177,7 @@ const structuredData = {
             const wrap = document.createElement("div");
             wrap.className = "mermaid-diagram";
             wrap.innerHTML =
-              '<div class="diagram-desktop">' + htmlD + "</div>" +
-              '<div class="diagram-mobile">' + htmlM + "</div>";
+              '<div class="diagram-desktop">' + htmlD + "</div>" + '<div class="diagram-mobile">' + htmlM + "</div>";
             wrap.setAttribute("role", "button");
             wrap.setAttribute("tabindex", "0");
             wrap.setAttribute("aria-label", document.documentElement.dataset.mermaidExpand || "");
@@ -210,19 +203,35 @@ const structuredData = {
         const overlay = document.createElement("div");
         overlay.className = "mermaid-overlay";
         overlay.innerHTML =
-          '<button type="button" class="mermaid-overlay-close" aria-label="' + (document.documentElement.dataset.mermaidClose || "") + '">&times;</button>' +
-          '<div class="mermaid-overlay-body">' + svgHtml + "</div>";
+          '<button type="button" class="mermaid-overlay-close" aria-label="' +
+          (document.documentElement.dataset.mermaidClose || "") +
+          '">&times;</button>' +
+          '<div class="mermaid-overlay-body">' +
+          svgHtml +
+          "</div>";
         document.body.appendChild(overlay);
         document.body.style.overflow = "hidden";
-        const close = () => { overlay.remove(); document.body.style.overflow = ""; };
+        const close = () => {
+          overlay.remove();
+          document.body.style.overflow = "";
+        };
         overlay.querySelector(".mermaid-overlay-close").addEventListener("click", close);
-        overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
-        document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } });
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) close();
+        });
+        document.addEventListener("keydown", function esc(e) {
+          if (e.key === "Escape") {
+            close();
+            document.removeEventListener("keydown", esc);
+          }
+        });
       }
     </script>
   </head>
   <body>
-    <a class="skip-link button-sm" href="#main">{t("nav.skip")}</a>
+    <a class="skip-link button-sm" href="#main">
+      {t("nav.skip")}
+    </a>
     <slot name="header" />
     <main id="main" class="site-shell">
       <slot />

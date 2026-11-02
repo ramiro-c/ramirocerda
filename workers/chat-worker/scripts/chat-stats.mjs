@@ -80,7 +80,7 @@ async function runSql(accountId, apiToken, sql, fetchImpl = fetch) {
   if (!res.ok) throw new Error(`SQL request failed (${res.status}): ${await res.text()}`);
 
   const payload = await res.json();
-  return Array.isArray(payload) ? payload : payload.data ?? [];
+  return Array.isArray(payload) ? payload : (payload.data ?? []);
 }
 
 async function runInvocations(accountId, apiToken, days, fetchImpl = fetch) {
@@ -133,7 +133,8 @@ function defaultQueries(days) {
       sql: `SELECT double5 AS route, COUNT(*) AS n, avg(double6) AS avg_iterations, avg(double7) AS rewritten_rate, avg(double8) AS avg_router_ms, avg(double9) AS offer_contact_rate, avg(double12) AS avg_judge_ms FROM ${TABLE} WHERE timestamp >= ${since} GROUP BY double5 ORDER BY n DESC`,
     },
     {
-      title: "Router status (0 llm, 1 fallback after error, 2 not configured) and judge verdict (0 skipped, 1 sufficient, 2 insufficient, 3 error)",
+      title:
+        "Router status (0 llm, 1 fallback after error, 2 not configured) and judge verdict (0 skipped, 1 sufficient, 2 insufficient, 3 error)",
       sql: `SELECT double10 AS router_status, double11 AS judge_verdict, COUNT(*) AS n, sum(CASE WHEN double9 = 1 THEN 1 ELSE 0 END) AS offer_contact FROM ${TABLE} WHERE timestamp >= ${since} GROUP BY double10, double11 ORDER BY n DESC`,
     },
     {
@@ -149,7 +150,9 @@ function defaultQueries(days) {
 
 function printRows(rows) {
   if (!Array.isArray(rows) || rows.length === 0) {
-    console.log("(no rows — an unknown dataset returns 0 rows silently, so this alone does not prove the dataset is empty; cross-check the invocations section)");
+    console.log(
+      "(no rows — an unknown dataset returns 0 rows silently, so this alone does not prove the dataset is empty; cross-check the invocations section)",
+    );
     return;
   }
   const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))];
@@ -166,7 +169,9 @@ async function main() {
   // Dedicated analytics token first (least privilege); broad API token as fallback.
   const apiToken = process.env.CLOUDFLARE_ANALYTICS_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
   if (!accountId || !apiToken) {
-    console.error("CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN (or CLOUDFLARE_ANALYTICS_TOKEN) are required (root .env is auto-loaded).");
+    console.error(
+      "CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN (or CLOUDFLARE_ANALYTICS_TOKEN) are required (root .env is auto-loaded).",
+    );
     process.exitCode = 1;
     return;
   }

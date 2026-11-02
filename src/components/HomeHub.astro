@@ -11,16 +11,7 @@ interface Props {
 const { lang } = Astro.props;
 const t = useTranslations(lang);
 
-const STACK_ITEMS = [
-  "TypeScript",
-  "React",
-  "Astro",
-  "Node.js",
-  "Python",
-  "FastAPI",
-  "PostgreSQL",
-  "Cloudflare",
-];
+const STACK_ITEMS = ["TypeScript", "React", "Astro", "Node.js", "Python", "FastAPI", "PostgreSQL", "Cloudflare"];
 
 const projects = (await getCollection("projects"))
   .filter((p) => p.data.featured)
@@ -41,7 +32,8 @@ const notes = (await getCollection("notes"))
     slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
     title: n.data.title,
     description: n.data.description,
-    dateStr: n.data.pubDate.toLocaleDateString(lang === "es" ? "es-AR" : "en-US", { timeZone: "UTC",
+    dateStr: n.data.pubDate.toLocaleDateString(lang === "es" ? "es-AR" : "en-US", {
+      timeZone: "UTC",
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -50,29 +42,35 @@ const notes = (await getCollection("notes"))
 ---
 
 <div class="hub">
-  <span class="band-num mono caption-4" aria-hidden="true">04</span>
+  <span class="band-num mono caption-4" aria-hidden="true">
+    04
+  </span>
   <div class="hub-main">
     <p class="label caption-3">{t("home.workLabel")}</p>
     <ul class="pj-rail">
-      {
-        projects.map((p) => (
-          <li>
-            <a href={getLocalizedPath(lang, `/work/${p.slug}/`)}>
-              <span class="date pj-meta caption-4">
-                {p.status && <span class="status">{t(`status.${p.status}`)}</span>}
-                {p.status && <span class="dot" aria-hidden="true">{" · "}</span>}
-                {p.kind && t(`kind.${p.kind}`)}
-                {p.year && `${p.status || p.kind ? " · " : ""}${p.year}`}
-              </span>
-              <span class="pj-title title-3">{p.title}</span>
-              <span class="summary body-6">{p.summary}</span>
-            </a>
-          </li>
-        ))
-      }
+      {projects.map((p) => (
+        <li>
+          <a href={getLocalizedPath(lang, `/work/${p.slug}/`)}>
+            <span class="date pj-meta caption-4">
+              {p.status && <span class="status">{t(`status.${p.status}`)}</span>}
+              {p.status && (
+                <span class="dot" aria-hidden="true">
+                  {" · "}
+                </span>
+              )}
+              {p.kind && t(`kind.${p.kind}`)}
+              {p.year && `${p.status || p.kind ? " · " : ""}${p.year}`}
+            </span>
+            <span class="pj-title title-3">{p.title}</span>
+            <span class="summary body-6">{p.summary}</span>
+          </a>
+        </li>
+      ))}
     </ul>
     <p class="rail-more">
-      <a class="more-link body-4" href={getLocalizedPath(lang, "/work/")}>{t("home.workAll")} →</a>
+      <a class="more-link body-4" href={getLocalizedPath(lang, "/work/")}>
+        {t("home.workAll")} →
+      </a>
     </p>
   </div>
   <aside class="hub-rail">
@@ -93,22 +91,30 @@ const notes = (await getCollection("notes"))
       </ul>
     )}
     <p class="rail-more">
-      <a class="more-link body-4" href={getLocalizedPath(lang, "/notes/")}>{t("nav.notes")} →</a>
+      <a class="more-link body-4" href={getLocalizedPath(lang, "/notes/")}>
+        {t("nav.notes")} →
+      </a>
     </p>
   </aside>
 </div>
 
 <div class="intro">
-  <span class="band-num mono caption-4" aria-hidden="true">05</span>
+  <span class="band-num mono caption-4" aria-hidden="true">
+    05
+  </span>
   <div>
     <p class="label caption-3">{t("home.aboutLabel")}</p>
     <p class="about-text body-3">{t("home.aboutText")}</p>
-    <a class="more-link body-4" href={getLocalizedPath(lang, "/about/")}>{t("nav.about")} →</a>
+    <a class="more-link body-4" href={getLocalizedPath(lang, "/about/")}>
+      {t("nav.about")} →
+    </a>
   </div>
   <div>
     <p class="label caption-3">{t("home.stackLabel")}</p>
     <ul class="stack-list">
-      {STACK_ITEMS.map((tech) => <li class="tag caption-4">{tech}</li>)}
+      {STACK_ITEMS.map((tech) => (
+        <li class="tag caption-4">{tech}</li>
+      ))}
     </ul>
   </div>
 </div>

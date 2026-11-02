@@ -44,10 +44,7 @@ export interface VectorizeMatch {
 
 interface RagBindings {
   AI: {
-    run: (
-      model: string,
-      input: unknown,
-    ) => Promise<{ data?: unknown; shape?: unknown; response?: unknown }>;
+    run: (model: string, input: unknown) => Promise<{ data?: unknown; shape?: unknown; response?: unknown }>;
   };
   VECTORIZE: {
     query: (
@@ -150,7 +147,7 @@ async function rerankOrder(
       top_k: candidates.length,
     });
     const entries = Array.isArray((result as { response?: unknown }).response)
-      ? ((result as { response: unknown[] }).response)
+      ? (result as { response: unknown[] }).response
       : [];
     if (entries.length !== candidates.length) throw new Error("reranker response size mismatch");
     const scores: (number | undefined)[] = Array.from({ length: candidates.length });
@@ -229,9 +226,7 @@ export function buildRagPrompt(opts: {
   const contextText =
     chunks.length === 0
       ? "(sin contexto recuperado)"
-      : chunks
-          .map((chunk, i) => `${chunkHeader(chunk, i, siteOrigin)}\n${chunk.metadata?.text ?? ""}`)
-          .join("\n\n");
+      : chunks.map((chunk, i) => `${chunkHeader(chunk, i, siteOrigin)}\n${chunk.metadata?.text ?? ""}`).join("\n\n");
 
   const systemContent = [
     identityPrompt,

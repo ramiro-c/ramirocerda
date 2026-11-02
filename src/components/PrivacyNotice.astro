@@ -12,7 +12,8 @@ const { lang } = Astro.props;
 const copy = {
   es: {
     title: "Privacidad",
-    intro: "Esta web no usa cookies de terceros, píxeles de publicidad ni trackers externos. Esto es todo lo que guarda o recibe:",
+    intro:
+      "Esta web no usa cookies de terceros, píxeles de publicidad ni trackers externos. Esto es todo lo que guarda o recibe:",
     sections: [
       {
         h: "En tu navegador",
@@ -34,7 +35,8 @@ const copy = {
   },
   en: {
     title: "Privacy",
-    intro: "This site uses no third party cookies, ad pixels, or external trackers. This is everything it stores or receives:",
+    intro:
+      "This site uses no third party cookies, ad pixels, or external trackers. This is everything it stores or receives:",
     sections: [
       {
         h: "In your browser",
@@ -60,14 +62,12 @@ const copy = {
 <article class="privacy">
   <h1 class="heading-1">{copy.title}</h1>
   <p class="intro body-2">{copy.intro}</p>
-  {
-    copy.sections.map((s) => (
-      <section>
-        <h2 class="heading-6">{s.h}</h2>
-        <p class="body-3">{s.p}</p>
-      </section>
-    ))
-  }
+  {copy.sections.map((s) => (
+    <section>
+      <h2 class="heading-6">{s.h}</h2>
+      <p class="body-3">{s.p}</p>
+    </section>
+  ))}
 </article>
 
 <style>

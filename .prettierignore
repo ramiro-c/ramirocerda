@@ -1,0 +1,19 @@
+# Dependencies and build output
+node_modules/
+.astro/
+dist/
+.vercel/
+
+# Lockfiles are generated, never hand-formatted
+bun.lock
+pnpm-lock.yaml
+
+# Generated / data artifacts
+workers/chat-worker/vectorize-manifest.json
+
+# Prose and historical records: formatting them would churn diffs without
+# improving code review, and the plans under docs/ are dated snapshots.
+odd/
+docs/
+public/
+*.md

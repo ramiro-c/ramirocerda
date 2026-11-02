@@ -11,7 +11,8 @@ function sse(blocks, { hangAfter = false } = {}) {
         new ReadableStream({
           start(c) {
             for (const b of blocks) c.enqueue(enc.encode(b));
-            if (hangAfter) init.signal.addEventListener("abort", () => c.error(new DOMException("aborted", "AbortError")));
+            if (hangAfter)
+              init.signal.addEventListener("abort", () => c.error(new DOMException("aborted", "AbortError")));
             else c.close();
           },
         }),
@@ -35,7 +36,12 @@ test("streams meta, deltas and done", async () => {
   const result = await askBotardo({
     url: "x",
     payload: {},
-    fetchImpl: sse([ev("meta", { offerContact: true }), ev("delta", { text: "Ho" }), ev("delta", { text: "la " }), ev("done", { reply: "Hola", offerContact: true })]),
+    fetchImpl: sse([
+      ev("meta", { offerContact: true }),
+      ev("delta", { text: "Ho" }),
+      ev("delta", { text: "la " }),
+      ev("done", { reply: "Hola", offerContact: true }),
+    ]),
     onMeta: (m) => metas.push(m),
     onDelta: (_t, soFar) => parts.push(soFar),
   });
@@ -51,7 +57,10 @@ test("falls back to the JSON contract", async () => {
 
 test("maps JSON and SSE errors to codes", async () => {
   const r429 = () => Promise.resolve(Response.json({ error: "x", code: "RATE_LIMITED" }, { status: 429 }));
-  await assert.rejects(askBotardo({ url: "x", payload: {}, fetchImpl: r429 }), (e) => e instanceof BotardoError && e.code === "RATE_LIMITED");
+  await assert.rejects(
+    askBotardo({ url: "x", payload: {}, fetchImpl: r429 }),
+    (e) => e instanceof BotardoError && e.code === "RATE_LIMITED",
+  );
   const r500 = () => Promise.resolve(new Response("boom", { status: 502 }));
   await assert.rejects(askBotardo({ url: "x", payload: {}, fetchImpl: r500 }), (e) => e.code === "SERVER");
   const sseErr = sse([ev("meta", { offerContact: false }), ev("error", { code: "MODEL_ERROR", error: "x" })]);
@@ -61,13 +70,22 @@ test("maps JSON and SSE errors to codes", async () => {
 });
 
 test("times out before the first byte", async () => {
-  const hang = (_u, init) => new Promise((_, rej) => init.signal.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError"))));
-  await assert.rejects(askBotardo({ url: "x", payload: {}, fetchImpl: hang, firstTokenMs: 10 }), (e) => e.code === "TIMEOUT");
+  const hang = (_u, init) =>
+    new Promise((_, rej) =>
+      init.signal.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError"))),
+    );
+  await assert.rejects(
+    askBotardo({ url: "x", payload: {}, fetchImpl: hang, firstTokenMs: 10 }),
+    (e) => e.code === "TIMEOUT",
+  );
 });
 
 test("times out an idle stream after the first token", async () => {
   const stalled = sse([ev("meta", { offerContact: false }), ev("delta", { text: "Ho" })], { hangAfter: true });
-  await assert.rejects(askBotardo({ url: "x", payload: {}, fetchImpl: stalled, firstTokenMs: 1000, idleMs: 10 }), (e) => e.code === "TIMEOUT");
+  await assert.rejects(
+    askBotardo({ url: "x", payload: {}, fetchImpl: stalled, firstTokenMs: 1000, idleMs: 10 }),
+    (e) => e.code === "TIMEOUT",
+  );
 });
 
 test("network failures are not timeouts", async () => {

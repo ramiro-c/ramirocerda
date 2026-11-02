@@ -25,12 +25,7 @@ const offer = landing[lang].botardoOffer;
       d="M20 15.5a2 2 0 0 1-2 2H8l-4 3v-3H6a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"
       fill="currentColor"
     />
-    <path
-      d="M8 9.5h8M8 12.5h5.5"
-      stroke="var(--bg)"
-      stroke-width="1.5"
-      stroke-linecap="round"
-    />
+    <path d="M8 9.5h8M8 12.5h5.5" stroke="var(--bg)" stroke-width="1.5" stroke-linecap="round" />
   </svg>
 </button>
 
@@ -53,10 +48,16 @@ const offer = landing[lang].botardoOffer;
 >
   <header class="botardo-header">
     <div class="botardo-header-title">
-      <span class="botardo-mark caption-3" aria-hidden="true">RC</span>
-      <span id="botardoTitle" class="botardo-title title-4">Botardo</span>
+      <span class="botardo-mark caption-3" aria-hidden="true">
+        RC
+      </span>
+      <span id="botardoTitle" class="botardo-title title-4">
+        Botardo
+      </span>
     </div>
-    <button class="botardo-close" type="button" aria-label={t("botardo.close")}>✕</button>
+    <button class="botardo-close" type="button" aria-label={t("botardo.close")}>
+      ✕
+    </button>
   </header>
 
   <div class="botardo-messages" role="log" aria-live="polite" aria-relevant="additions">
@@ -72,7 +73,9 @@ const offer = landing[lang].botardoOffer;
   </div>
 
   <form class="botardo-inputbar" novalidate>
-    <label class="sr-only" for="botardoInput">{t("botardo.inputLabel")}</label>
+    <label class="sr-only" for="botardoInput">
+      {t("botardo.inputLabel")}
+    </label>
     <input
       class="botardo-input"
       id="botardoInput"
@@ -97,8 +100,7 @@ const offer = landing[lang].botardoOffer;
   // Production worker by default. For local testing run `wrangler dev --remote`
   // in workers/chat-worker and start the site with
   // PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 pnpm dev
-  const WORKER_URL =
-    import.meta.env.PUBLIC_BOTARDO_WORKER_URL ?? "https://ramirocerda-chat.rami992009.workers.dev";
+  const WORKER_URL = import.meta.env.PUBLIC_BOTARDO_WORKER_URL ?? "https://ramirocerda-chat.rami992009.workers.dev";
 
   // Stable per-conversation ID for OpenCode Go (x-opencode-session): reused
   // across messages in the same tab so the upstream can route and cache.
@@ -199,11 +201,7 @@ const offer = landing[lang].botardoOffer;
     }
   }
 
-  const TRUSTED_LINK_HOSTS = new Set([
-    "ramirocerda.com.ar",
-    "www.ramirocerda.com.ar",
-    "ramirocerda.vercel.app",
-  ]);
+  const TRUSTED_LINK_HOSTS = new Set(["ramirocerda.com.ar", "www.ramirocerda.com.ar", "ramirocerda.vercel.app"]);
 
   const modal = document.getElementById("botardoDialog");
   const islandButton = document.querySelector("[data-botardo-island]");

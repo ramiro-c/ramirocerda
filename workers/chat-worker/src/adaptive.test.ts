@@ -61,7 +61,12 @@ function makeRequest(message: string, history: Array<{ role: string; content: st
   });
 }
 
-async function ask(env: unknown, message: string, script: FetchScript, history: Array<{ role: string; content: string }> = []) {
+async function ask(
+  env: unknown,
+  message: string,
+  script: FetchScript,
+  history: Array<{ role: string; content: string }> = [],
+) {
   const stub = stubFetch(script);
   const res = await worker.fetch(makeRequest(message, history), env as never);
   return { res, body: (await res.json()) as Record<string, unknown>, ...stub };
@@ -79,7 +84,7 @@ describe("adaptive RAG through handleRag", () => {
     vi.unstubAllGlobals();
   });
 
-  it("with DECISION_MODEL=\"\" behaves like the linear pipeline: no decision call, raw query, offerContact false", async () => {
+  it('with DECISION_MODEL="" behaves like the linear pipeline: no decision call, raw query, offerContact false', async () => {
     const { env, query, run, datapoints } = makeEnv({ rounds: [[strong]], configured: false });
     const { res, body, calls } = await ask(env, "¿Dónde trabaja?", {});
     expect(res.status).toBe(200);
@@ -102,7 +107,10 @@ describe("adaptive RAG through handleRag", () => {
 
   it("smalltalk: one short generation, no judge; the parallel search is dropped from the prompt", async () => {
     const { env, query, run, datapoints } = makeEnv();
-    const { body, calls } = await ask(env, "hola!", { router: [routerAnswer("smalltalk")], generation: "¡Hola! Soy Botardo." });
+    const { body, calls } = await ask(env, "hola!", {
+      router: [routerAnswer("smalltalk")],
+      generation: "¡Hola! Soy Botardo.",
+    });
     expect(body).toEqual({ reply: "¡Hola! Soy Botardo.", offerContact: false });
     // The raw-message search runs in parallel with the router and is discarded.
     expect(query).toHaveBeenCalledTimes(1);
@@ -161,7 +169,10 @@ describe("adaptive RAG through handleRag", () => {
     const { body, calls } = await ask(
       env,
       "¿Está disponible para un proyecto freelance?",
-      { router: [{ status: 400 }, routerAnswer("search", { hire: 0.95, needsHistory: 0.1 })], judge: ["hang", judgeAnswer(0.9)] },
+      {
+        router: [{ status: 400 }, routerAnswer("search", { hire: 0.95, needsHistory: 0.1 })],
+        judge: ["hang", judgeAnswer(0.9)],
+      },
       history,
     );
     expect(body).toEqual({ reply: "Respuesta", offerContact: true });
@@ -187,11 +198,20 @@ describe("adaptive RAG through handleRag", () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const base = makeEnv({ rounds: [[strong]] });
     const env = { ...base.env, OPENCODE_GO_API_KEY: "go-key" };
-    const { body, run } = { ...(await ask(env, "quiero contratarlo", { router: [{ status: 500 }, { status: 500 }] })), run: base.run };
+    const { body, run } = {
+      ...(await ask(env, "quiero contratarlo", { router: [{ status: 500 }, { status: 500 }] })),
+      run: base.run,
+    };
     expect(body).toEqual({ reply: "Respuesta", offerContact: false });
     expect(run.mock.calls[0][1]).toEqual({ text: ["quiero contratarlo"] });
     const routeLog = logSpy.mock.calls.map(([line]) => JSON.parse(String(line))).find((e) => e.event === "chat.route");
-    expect(routeLog).toMatchObject({ route: "search", via: "http_500", model_tier: "none", model: null, fallback: "failed" });
+    expect(routeLog).toMatchObject({
+      route: "search",
+      via: "http_500",
+      model_tier: "none",
+      model: null,
+      fallback: "failed",
+    });
     expect(base.datapoints[0]?.blobs?.[3]).toBe("none");
   });
 
@@ -224,7 +244,9 @@ describe("adaptive RAG through handleRag", () => {
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { env } = makeEnv({ rounds: [[strong]] }); // OPENCODE_GO_API_KEY: "secret-key", no extra secret
-    const { body, calls, fetchMock } = await ask(env, "¿Dónde trabaja?", { router: [{ status: 503 }, routerAnswer("search")] });
+    const { body, calls, fetchMock } = await ask(env, "¿Dónde trabaja?", {
+      router: [{ status: 503 }, routerAnswer("search")],
+    });
     expect(body.reply).toBe("Respuesta");
     expect(calls.router.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
     expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
@@ -245,7 +267,12 @@ describe("adaptive RAG through handleRag", () => {
     expect(calls.router).toHaveLength(1);
     expect(calls.decisionHeaders.every((h) => h.Authorization === undefined)).toBe(true);
     const routeLog = logSpy.mock.calls.map(([line]) => JSON.parse(String(line))).find((e) => e.event === "chat.route");
-    expect(routeLog).toMatchObject({ via: "http_500", model_tier: "none", primary_error: "http_500", fallback: "skipped_no_key" });
+    expect(routeLog).toMatchObject({
+      via: "http_500",
+      model_tier: "none",
+      primary_error: "http_500",
+      fallback: "skipped_no_key",
+    });
   });
 
   it("a rejected key shows as fallback failed with the free and paid errors in chat.route", async () => {
@@ -254,20 +281,31 @@ describe("adaptive RAG through handleRag", () => {
     const { body } = await ask(env, "quiero contratarlo", { router: [{ status: 400 }, { status: 401 }] });
     expect(body).toEqual({ reply: "Respuesta", offerContact: false });
     const routeLog = logSpy.mock.calls.map(([line]) => JSON.parse(String(line))).find((e) => e.event === "chat.route");
-    expect(routeLog).toMatchObject({ via: "http_401", model_tier: "none", primary_error: "http_400", fallback: "failed" });
+    expect(routeLog).toMatchObject({
+      via: "http_401",
+      model_tier: "none",
+      primary_error: "http_400",
+      fallback: "failed",
+    });
   });
 
   it("propagates offerContact on canned replies too (off_topic and no_info)", async () => {
-    const offTopic = await ask(makeEnv().env, "¿me ayudás con un script?", { router: [routerAnswer("off_topic", { hire: 0.7 })] });
+    const offTopic = await ask(makeEnv().env, "¿me ayudás con un script?", {
+      router: [routerAnswer("off_topic", { hire: 0.7 })],
+    });
     expect(offTopic.body).toEqual({ reply: OFF_TOPIC_REPLY.es, offerContact: true });
     vi.unstubAllGlobals();
-    const noInfo = await ask(makeEnv({ rounds: [[]] }).env, "¿Cuál es su tarifa?", { router: [routerAnswer("search", { hire: 0.88 })] });
+    const noInfo = await ask(makeEnv({ rounds: [[]] }).env, "¿Cuál es su tarifa?", {
+      router: [routerAnswer("search", { hire: 0.88 })],
+    });
     expect(noInfo.body).toEqual({ reply: NO_INFO_REPLY.es, offerContact: true });
   });
 
   it("falls back to search with the raw message and offerContact false when the router fails", async () => {
     const { env, run, datapoints } = makeEnv({ rounds: [[strong]] });
-    const { body, calls } = await ask(env, "¿Quiero contratarlo, cómo hago?", { router: [{ text: "definitely hiring!" }] });
+    const { body, calls } = await ask(env, "¿Quiero contratarlo, cómo hago?", {
+      router: [{ text: "definitely hiring!" }],
+    });
     expect(body).toEqual({ reply: "Respuesta", offerContact: false });
     expect(run.mock.calls[0][1]).toEqual({ text: ["¿Quiero contratarlo, cómo hago?"] });
     expect(calls.judge).toHaveLength(0);

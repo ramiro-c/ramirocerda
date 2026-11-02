@@ -98,7 +98,15 @@ async function main(): Promise<void> {
   let bindings: Pick<PipelineEnv, "AI" | "VECTORIZE">;
   // Decision config: wrangler vars, overridable from the environment (key only from the environment).
   const decisionVars: Record<string, string> = {};
-  for (const k of ["DECISION_ENDPOINT", "DECISION_MODEL", "DECISION_FALLBACK_MODEL", "DECISION_INTEGRATION_ID", "DECISION_TIMEOUT_MS", "DECISION_MIN_CONFIDENCE", "MAX_RETRIEVAL_ITERATIONS"]) {
+  for (const k of [
+    "DECISION_ENDPOINT",
+    "DECISION_MODEL",
+    "DECISION_FALLBACK_MODEL",
+    "DECISION_INTEGRATION_ID",
+    "DECISION_TIMEOUT_MS",
+    "DECISION_MIN_CONFIDENCE",
+    "MAX_RETRIEVAL_ITERATIONS",
+  ]) {
     const v = process.env[k];
     if (v !== undefined) decisionVars[k] = v;
   }
@@ -109,7 +117,9 @@ async function main(): Promise<void> {
     const required = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "OPENCODE_GO_API_KEY"];
     const missing = required.filter((k) => !process.env[k]?.trim());
     if (missing.length > 0) {
-      console.error(`Missing ${missing.join(", ")}. Export them (or use the root .env / .dev.vars), or run with --offline.`);
+      console.error(
+        `Missing ${missing.join(", ")}. Export them (or use the root .env / .dev.vars), or run with --offline.`,
+      );
       process.exit(2);
     }
     bindings = realBindings({
@@ -126,7 +136,10 @@ async function main(): Promise<void> {
   if (!auth.paidFallback) decisionVars.DECISION_FALLBACK_MODEL = "";
   const apiKey = auth.apiKey ?? "offline";
 
-  const envVars = { ...vars, ...decisionVars, OPENCODE_GO_API_KEY: apiKey } as unknown as Omit<PipelineEnv, "AI" | "VECTORIZE">;
+  const envVars = { ...vars, ...decisionVars, OPENCODE_GO_API_KEY: apiKey } as unknown as Omit<
+    PipelineEnv,
+    "AI" | "VECTORIZE"
+  >;
   // Same Jev judge config for every pipeline and run, independent of DECISION_MODEL (see evalJudgeConfig).
   const jev = evalJudgeConfig({ ...process.env, apiKey: mode === "real" ? apiKey : null });
   const results: CaseResult[] = [];
@@ -145,7 +158,10 @@ async function main(): Promise<void> {
         const backend = offline ? { kind: "offline" as const, mockRouter } : { kind: mode as "decision" | "real" };
         const { value, counters } = await instrument(envVars, bindings, backend, async (env) =>
           pipeline === "linear"
-            ? { kind: "linear" as const, run: await runLinearPipeline({ message: c.message, history: c.history, env, sessionId }) }
+            ? {
+                kind: "linear" as const,
+                run: await runLinearPipeline({ message: c.message, history: c.history, env, sessionId }),
+              }
             : {
                 kind: "adaptive" as const,
                 run: await runAdaptivePipeline({ message: c.message, history: c.history, env, sessionId }),
@@ -188,7 +204,8 @@ async function main(): Promise<void> {
           pipeline,
           route: value.kind === "adaptive" ? value.run.decision.route : null,
           routeVia: value.kind === "adaptive" ? value.run.decision.via : null,
-          routerMs: value.kind === "adaptive" && value.run.decision.via !== "not_configured" ? value.run.routerMs : null,
+          routerMs:
+            value.kind === "adaptive" && value.run.decision.via !== "not_configured" ? value.run.routerMs : null,
           offerContact: value.kind === "adaptive" ? value.run.offerContact : false,
           // Adaptive prefetches the literal message in parallel with the router, so Vectorize is
           // always hit; whether it "searched" is the router's decision to use retrieval.

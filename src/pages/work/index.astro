@@ -38,44 +38,44 @@ const groups = trackIds
     <p class="label caption-3">01 / {t("work.title")}</p>
     <h1 class="heading-1">{t("work.title")}</h1>
 
-    {
-      groups.map((group) => (
-        <section class="track">
-          <div class="track-head">
-            <h2 class="track-title caption-3">{group.title}</h2>
-            <p class="track-note caption-5">{group.note}</p>
-          </div>
-          <ul class="cat">
-            {group.items.map((item, i) => (
-              <li>
-                <a href={`/work/${item.slug}/`}>
-                  <span class="row-head">
-                    <span class="num mono caption-4">{String(i + 1).padStart(2, "0")}</span>
-                    <span class="meta mono caption-5">
-                      {item.status && <span class="status caption-3">{t(`status.${item.status}`)}</span>}
-                      {item.status && item.kind && <span class="dot">·</span>}
-                      {item.kind && <span class="kind">{t(`kind.${item.kind}`)}</span>}
-                      {(item.status || item.kind) && item.year && <span class="dot">·</span>}
-                      {item.year && <span class="year">{item.year}</span>}
-                    </span>
+    {groups.map((group) => (
+      <section class="track">
+        <div class="track-head">
+          <h2 class="track-title caption-3">{group.title}</h2>
+          <p class="track-note caption-5">{group.note}</p>
+        </div>
+        <ul class="cat">
+          {group.items.map((item, i) => (
+            <li>
+              <a href={`/work/${item.slug}/`}>
+                <span class="row-head">
+                  <span class="num mono caption-4">{String(i + 1).padStart(2, "0")}</span>
+                  <span class="meta mono caption-5">
+                    {item.status && <span class="status caption-3">{t(`status.${item.status}`)}</span>}
+                    {item.status && item.kind && <span class="dot">·</span>}
+                    {item.kind && <span class="kind">{t(`kind.${item.kind}`)}</span>}
+                    {(item.status || item.kind) && item.year && <span class="dot">·</span>}
+                    {item.year && <span class="year">{item.year}</span>}
                   </span>
-                  <span class="title title-1">{item.title}</span>
-                  <span class="summary body-6">{item.summary}</span>
-                  {item.tags && item.tags.length > 0 && (
-                    <span class="tags">
-                      {item.tags.map((tag) => (
-                        <span class="tag caption-4">{tag}</span>
-                      ))}
-                    </span>
-                  )}
-                  <span class="go body-3" aria-hidden="true">→</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))
-    }
+                </span>
+                <span class="title title-1">{item.title}</span>
+                <span class="summary body-6">{item.summary}</span>
+                {item.tags && item.tags.length > 0 && (
+                  <span class="tags">
+                    {item.tags.map((tag) => (
+                      <span class="tag caption-4">{tag}</span>
+                    ))}
+                  </span>
+                )}
+                <span class="go body-3" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
   </section>
 
   <SiteFooter slot="footer" lang={lang} />

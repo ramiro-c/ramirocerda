@@ -66,15 +66,14 @@ describe("chat usage analytics data points", () => {
     });
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ choices: [{ message: { content: "Respuesta" } }] }), { status: 200 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ choices: [{ message: { content: "Respuesta" } }] }), { status: 200 }),
+        ),
     );
 
-    const res = await worker.fetch(
-      makeRequest("¿Qué proyectos hizo Ramiro?", "conv-123"),
-      env as never,
-    );
+    const res = await worker.fetch(makeRequest("¿Qué proyectos hizo Ramiro?", "conv-123"), env as never);
     expect(res.status).toBe(200);
     expect(datapoints).toHaveLength(1);
 
@@ -94,10 +93,7 @@ describe("chat usage analytics data points", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const res = await worker.fetch(
-      makeRequest("What is the capital of France?", "conv-noise"),
-      env as never,
-    );
+    const res = await worker.fetch(makeRequest("What is the capital of France?", "conv-noise"), env as never);
     expect(res.status).toBe(200);
     expect(fetchMock).not.toHaveBeenCalled();
     const body = await res.json();
@@ -138,9 +134,11 @@ describe("chat usage analytics data points", () => {
     const { env, datapoints } = makeEnv({ matches: [], generationContent: "Ok" });
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ choices: [{ message: { content: "Ok" } }] }), { status: 200 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ choices: [{ message: { content: "Ok" } }] }), { status: 200 }),
+        ),
     );
 
     await worker.fetch(makeRequest("Hola"), env as never);
@@ -171,9 +169,7 @@ describe("note links handed to the model", () => {
     });
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ choices: [{ message: { content: "Ok" } }] }), { status: 200 }),
-      );
+      .mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: "Ok" } }] }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     await worker.fetch(makeRequest("que onda la factory"), env as never);
@@ -213,10 +209,7 @@ describe("request gates", () => {
 
   it("returns 400 for oversized messages", async () => {
     const { env } = makeEnv({});
-    const res = await worker.fetch(
-      makeRequest("x".repeat(2000)),
-      env as never,
-    );
+    const res = await worker.fetch(makeRequest("x".repeat(2000)), env as never);
     expect(res.status).toBe(400);
   });
 });

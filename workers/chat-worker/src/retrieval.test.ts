@@ -27,7 +27,13 @@ function makeEnv(opts: { rounds: Array<Array<{ id: string; score: number }>>; ve
     return Promise.resolve({ matches: matches.map((m) => ({ ...m, metadata: { text: m.id, section: "Stack" } })) });
   });
   const run = vi.fn().mockResolvedValue({ data: [[0.1, 0.2]] });
-  const env = { AI: { run }, VECTORIZE: { query }, EMBEDDING_MODEL: "@cf/baai/bge-m3", TOP_K: "5", SIMILARITY_THRESHOLD: "0.30" };
+  const env = {
+    AI: { run },
+    VECTORIZE: { query },
+    EMBEDDING_MODEL: "@cf/baai/bge-m3",
+    TOP_K: "5",
+    SIMILARITY_THRESHOLD: "0.30",
+  };
   return { env, query, run };
 }
 
@@ -70,7 +76,11 @@ describe("buildJudgeState", () => {
     // that stops at 350 hides it, the judge answers "insufficient" on a retrieval that
     // was already correct, and the merge cap can then throw the good chunk away.
     const filler = "relleno ".repeat(120);
-    const long = { id: "perf", score: 0.5, metadata: { section: "Experiencia", text: `${filler}logrando 75-90% de mejora en tiempos de respuesta` } };
+    const long = {
+      id: "perf",
+      score: 0.5,
+      metadata: { section: "Experiencia", text: `${filler}logrando 75-90% de mejora en tiempos de respuesta` },
+    };
     const state = buildJudgeState("¿Qué mejoras de performance logró?", [long]);
     expect(state.snippets[0]).toContain("75-90% de mejora");
   });
@@ -82,7 +92,11 @@ describe("retrieveAdaptive", () => {
     const { env, query } = makeEnv({ rounds: [[chunk("a", 0.6)]] });
     const result = await retrieveAdaptive(followUp, env, config);
     expect(query).toHaveBeenCalledTimes(1);
-    expect(result).toMatchObject({ iterations: 1, queries: ["¿y cursos?"], verdict: { kind: "sufficient", probability: 0.91 } });
+    expect(result).toMatchObject({
+      iterations: 1,
+      queries: ["¿y cursos?"],
+      verdict: { kind: "sufficient", probability: 0.91 },
+    });
     expect(result.judgeUsage).toEqual({ inputTokens: 550, outputTokens: 3 });
     expect(calls.judge[0]).toEqual({
       model: DEFAULT_DECISION_MODEL,
@@ -161,7 +175,11 @@ describe("retrieveAdaptive", () => {
   it("judge: free fails, paid jev-1.13 with Bearer answers (one retry only)", async () => {
     const { calls } = stubFetch({ judge: [{ status: 503 }, judgeAnswer(0.9)] });
     const { env, query } = makeEnv({ rounds: [[chunk("weak", 0.33)]] });
-    const result = await retrieveAdaptive(followUp, env, readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "k" }));
+    const result = await retrieveAdaptive(
+      followUp,
+      env,
+      readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "k" }),
+    );
     expect(calls.judge.map((b) => b.model)).toEqual(["jev-1.13-free", "jev-1.13"]);
     expect(calls.decisionHeaders.map((h) => h.Authorization)).toEqual([undefined, "Bearer k"]);
     expect(result.verdict).toEqual({ kind: "sufficient", probability: 0.9 });
@@ -172,7 +190,11 @@ describe("retrieveAdaptive", () => {
   it("judge: free and paid both fail, keeps search 1", async () => {
     const { calls } = stubFetch({ judge: [{ status: 400 }, { error: new TypeError("fetch failed") }] });
     const { env, query } = makeEnv({ rounds: [[chunk("weak", 0.33)]] });
-    const result = await retrieveAdaptive(followUp, env, readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "k" }));
+    const result = await retrieveAdaptive(
+      followUp,
+      env,
+      readAdaptiveConfig({ ...DECISION_VARS, OPENCODE_GO_API_KEY: "k" }),
+    );
     expect(calls.judge).toHaveLength(2);
     expect(result.verdict).toEqual({ kind: "error", reason: "network" });
     expect(result.judgeTrace).toMatchObject({ tier: "none", primaryError: "http_400", fallback: "failed" });
@@ -189,7 +211,10 @@ describe("retrieveAdaptive", () => {
 
   it("propagates a first-search failure (same MODEL_ERROR path as before)", async () => {
     stubFetch();
-    const env = { ...makeEnv({ rounds: [[]] }).env, VECTORIZE: { query: vi.fn().mockRejectedValue(new Error("down")) } };
+    const env = {
+      ...makeEnv({ rounds: [[]] }).env,
+      VECTORIZE: { query: vi.fn().mockRejectedValue(new Error("down")) },
+    };
     await expect(retrieveAdaptive(followUp, env, config)).rejects.toThrow("down");
   });
 });

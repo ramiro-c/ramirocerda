@@ -13,7 +13,9 @@ describe("gen-bench helpers", () => {
   });
 
   it("reads reasoning tokens from OpenAI- and Responses-style usage", () => {
-    expect(readUsage({ prompt_tokens: 900, completion_tokens: 120, completion_tokens_details: { reasoning_tokens: 40 } })).toEqual({
+    expect(
+      readUsage({ prompt_tokens: 900, completion_tokens: 120, completion_tokens_details: { reasoning_tokens: 40 } }),
+    ).toEqual({
       promptTokens: 900,
       completionTokens: 120,
       reasoningTokens: 40,

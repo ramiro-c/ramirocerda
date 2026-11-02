@@ -43,7 +43,8 @@ interface AbstentionFixture {
   abstains: boolean;
 }
 
-const pct = (a: Agreement) => (a.total ? `${a.agree}/${a.total} (${Math.round((100 * a.agree) / a.total)}%)` : "n/a (0 graded)");
+const pct = (a: Agreement) =>
+  a.total ? `${a.agree}/${a.total} (${Math.round((100 * a.agree) / a.total)}%)` : "n/a (0 graded)";
 
 async function main(): Promise<void> {
   const fixtures = JSON.parse(readFileSync(path.join(EVAL_DIR, "judge-fixtures.json"), "utf8")) as {
@@ -59,19 +60,27 @@ async function main(): Promise<void> {
   const answerPairs: Array<{ label: boolean; verdict: boolean | null }> = [];
   for (const f of fixtures.claimSupport) {
     const snippets = f.snippets.map((s) => `[${s.section}] ${s.text}`);
-    const checks = await judgeClaims(jev, f.claims.map((c) => c.text), snippets);
+    const checks = await judgeClaims(
+      jev,
+      f.claims.map((c) => c.text),
+      snippets,
+    );
     checks.forEach((check, i) => claimRows.push({ fixture: f.id, label: f.claims[i].supported, check }));
     // Two answers per fixture: only the supported claims (should pass) and all claims (should fail).
     answerPairs.push({ label: true, verdict: answerFaithful(checks.filter((_, i) => f.claims[i].supported)) });
     answerPairs.push({ label: false, verdict: answerFaithful(checks) });
-    console.error(`[claims] ${f.id}: ${checks.map((c) => (c.p === null ? `err:${c.error}` : c.p.toFixed(2))).join(" ")}`);
+    console.error(
+      `[claims] ${f.id}: ${checks.map((c) => (c.p === null ? `err:${c.error}` : c.p.toFixed(2))).join(" ")}`,
+    );
   }
 
   const absRows: Array<{ fixture: AbstentionFixture; check: AbstentionCheck }> = [];
   for (const f of fixtures.abstention) {
     const check = await judgeAbstention(jev, f.question, f.reply);
     absRows.push({ fixture: f, check });
-    console.error(`[abstention] ${f.id}: ${check.abstained === null ? `err:${check.error}` : `${check.abstained} (${check.confidence})`}`);
+    console.error(
+      `[abstention] ${f.id}: ${check.abstained === null ? `err:${check.error}` : `${check.abstained} (${check.confidence})`}`,
+    );
   }
 
   const claimAgreement = agreement(claimRows.map((r) => ({ label: r.label, verdict: r.check.supported })));
@@ -119,7 +128,19 @@ async function main(): Promise<void> {
   writeFileSync(`${base}.md`, report);
   writeFileSync(
     `${base}.json`,
-    JSON.stringify({ mode: "fixture", judge: { model: jev.model, fallbackModel: jev.fallbackModel }, claimAgreement, answerAgreement, absAgreement, claimRows, absRows }, null, 2),
+    JSON.stringify(
+      {
+        mode: "fixture",
+        judge: { model: jev.model, fallbackModel: jev.fallbackModel },
+        claimAgreement,
+        answerAgreement,
+        absAgreement,
+        claimRows,
+        absRows,
+      },
+      null,
+      2,
+    ),
   );
   console.error(`Wrote ${base}.md and ${base}.json`);
 }

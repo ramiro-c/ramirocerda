@@ -248,7 +248,10 @@ describe("globFiles", () => {
   it("expands ** across nested dirs and skips hidden dirs and non-matching extensions", async () => {
     await makeFixture();
     const files = await globFiles(tempRoot, "src/content/notes/**/*.md");
-    expect(files).toEqual([path.join(tempRoot, "src/content/notes/en/b.md"), path.join(tempRoot, "src/content/notes/es/a.md")]);
+    expect(files).toEqual([
+      path.join(tempRoot, "src/content/notes/en/b.md"),
+      path.join(tempRoot, "src/content/notes/es/a.md"),
+    ]);
     await rm(tempRoot, { recursive: true, force: true });
   });
 });
@@ -270,10 +273,7 @@ describe("loadKBChunks", () => {
     const root = await mkdtemp(path.join(tmpdir(), "botardo-kb-test-"));
     try {
       await mkdir(path.join(root, "kb"), { recursive: true });
-      await writeFile(
-        path.join(root, "kb", "kb.mjs"),
-        `export const KNOWLEDGE_BASE = "## Overview\\n- dato\\n";\n`,
-      );
+      await writeFile(path.join(root, "kb", "kb.mjs"), `export const KNOWLEDGE_BASE = "## Overview\\n- dato\\n";\n`);
       await mkdir(path.join(root, "src", "content", "notes"), { recursive: true });
       await writeFile(
         path.join(root, "src", "content", "notes", "n1.md"),
@@ -408,7 +408,7 @@ en:
   });
 
   it("derives the slug from the file path when frontmatter omits it", () => {
-    const chunks = buildProjectChunks("---\nes:\n  title: \"Solo título\"\n---", {
+    const chunks = buildProjectChunks('---\nes:\n  title: "Solo título"\n---', {
       filePath: "src/content/projects/deslizado.md",
     });
     expect(chunks).toHaveLength(1);
@@ -418,7 +418,7 @@ en:
 
   it("returns zero chunks without frontmatter or localized blocks", () => {
     expect(buildProjectChunks("# Not frontmatter\n\nbody")).toEqual([]);
-    expect(buildProjectChunks("---\nyear: \"2026\"\n---")).toEqual([]);
+    expect(buildProjectChunks('---\nyear: "2026"\n---')).toEqual([]);
   });
 
   it("tolerates a closing --- at EOF without a trailing newline", () => {
@@ -442,8 +442,7 @@ en:
         // Every localized block must actually be populated (this is the bug
         // that silently dropped all projects from the index).
         expect(chunk.text.length, slug).toBeGreaterThan(300);
-        const pageLine =
-          chunk.lang === "es" ? `**Página:** /work/${slug}` : `**Page:** /en/work/${slug}`;
+        const pageLine = chunk.lang === "es" ? `**Página:** /work/${slug}` : `**Page:** /en/work/${slug}`;
         expect(chunk.text, slug).toContain(pageLine);
         expect(chunk.url, slug).toBe(chunk.lang === "es" ? `/work/${slug}` : `/en/work/${slug}`);
         expect(chunk.urlAlt, slug).toBe(chunk.lang === "es" ? `/en/work/${slug}` : `/work/${slug}`);

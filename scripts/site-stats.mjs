@@ -112,7 +112,9 @@ function parseArgs(argv) {
 async function main() {
   const apiToken = process.env.VERCEL_TOKEN;
   if (!apiToken) {
-    console.error("VERCEL_TOKEN is required. Create one at https://vercel.com/account/tokens (access to the team that owns the project) and add VERCEL_TOKEN=... to the root .env.");
+    console.error(
+      "VERCEL_TOKEN is required. Create one at https://vercel.com/account/tokens (access to the team that owns the project) and add VERCEL_TOKEN=... to the root .env.",
+    );
     process.exitCode = 1;
     return;
   }

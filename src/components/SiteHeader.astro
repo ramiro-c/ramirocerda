@@ -29,19 +29,15 @@ const isCurrent = (href: string) => path === href || path === href.replace(/\/$/
 
 <header class="nav-root">
   <div class="nav-bar">
-    <a class="brand title-4" href={getLocalizedPath(lang, "/")}>ramirocerda</a>
+    <a class="brand title-4" href={getLocalizedPath(lang, "/")}>
+      ramirocerda
+    </a>
     <nav class="nav-links" aria-label="Primary">
-      {
-        links.map((link) => (
-          <a
-            href={link.href}
-            class="nav-link title-4"
-            aria-current={isCurrent(link.href) ? "page" : undefined}
-          >
-            {link.label}
-          </a>
-        ))
-      }
+      {links.map((link) => (
+        <a href={link.href} class="nav-link title-4" aria-current={isCurrent(link.href) ? "page" : undefined}>
+          {link.label}
+        </a>
+      ))}
     </nav>
     <LanguageToggle lang={lang} />
     <button
@@ -62,18 +58,16 @@ const isCurrent = (href: string) => path === href || path === href.replace(/\/$/
 
 <div class="nav-panel" id="navPanel" data-nav-panel hidden>
   <nav class="panel-links" aria-label="Primary">
-    {
-      links.map((link, i) => (
-        <a
-          href={link.href}
-          class="panel-link heading-4"
-          style={`--i:${i}`}
-          aria-current={isCurrent(link.href) ? "page" : undefined}
-        >
-          {link.label}
-        </a>
-      ))
-    }
+    {links.map((link, i) => (
+      <a
+        href={link.href}
+        class="panel-link heading-4"
+        style={`--i:${i}`}
+        aria-current={isCurrent(link.href) ? "page" : undefined}
+      >
+        {link.label}
+      </a>
+    ))}
   </nav>
   <div class="panel-lang">
     <LanguageToggle lang={lang} />
@@ -256,10 +250,7 @@ const isCurrent = (href: string) => path === href || path === href.replace(/\/$/
     const setOpen = (open: boolean) => {
       toggle.classList.toggle("is-open", open);
       toggle.setAttribute("aria-expanded", String(open));
-      toggle.setAttribute(
-        "aria-label",
-        (open ? toggle.dataset.labelClose : toggle.dataset.labelOpen) ?? "",
-      );
+      toggle.setAttribute("aria-label", (open ? toggle.dataset.labelClose : toggle.dataset.labelOpen) ?? "");
       document.body.style.overflow = open ? "hidden" : "";
       window.clearTimeout(hideTimer);
 

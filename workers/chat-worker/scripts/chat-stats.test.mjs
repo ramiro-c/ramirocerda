@@ -4,10 +4,11 @@ import { describe, expect, it } from "vitest";
 
 import { DATASET, defaultQueries, runInvocations, runSql } from "./chat-stats.mjs";
 
-const jsonResponse = (payload) => new Response(JSON.stringify(payload), {
-  status: 200,
-  headers: { "content-type": "application/json" },
-});
+const jsonResponse = (payload) =>
+  new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
 
 describe("runSql", () => {
   it("queries the unified SQL API with the account scope in the body", async () => {
@@ -64,9 +65,18 @@ describe("runInvocations", () => {
             accounts: [
               {
                 workersInvocationsAdaptive: [
-                  { dimensions: { date: "2026-10-15", scriptName: "ramirocerda-chat" }, sum: { requests: 10, errors: 1 } },
-                  { dimensions: { date: "2026-10-15", scriptName: "ramirocerda-chat" }, sum: { requests: 5, errors: 0 } },
-                  { dimensions: { date: "2026-09-21", scriptName: "ramirocerda-chat" }, sum: { requests: 10, errors: 0 } },
+                  {
+                    dimensions: { date: "2026-10-15", scriptName: "ramirocerda-chat" },
+                    sum: { requests: 10, errors: 1 },
+                  },
+                  {
+                    dimensions: { date: "2026-10-15", scriptName: "ramirocerda-chat" },
+                    sum: { requests: 5, errors: 0 },
+                  },
+                  {
+                    dimensions: { date: "2026-09-21", scriptName: "ramirocerda-chat" },
+                    sum: { requests: 10, errors: 0 },
+                  },
                 ],
               },
             ],

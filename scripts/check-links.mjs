@@ -22,7 +22,11 @@ const ATTR_RE = /\s(?:href|src)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
 const ID_RE = /\s(?:id|name)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
 
 const decodeEntities = (s) =>
-  s.replace(/&amp;/g, "&").replace(/&#38;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  s
+    .replace(/&amp;/g, "&")
+    .replace(/&#38;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
 
 export function extractLinks(html) {
   // Ignore <link rel="preconnect|dns-prefetch"> targets: they are origins, not pages.
@@ -155,7 +159,8 @@ export async function run(distDir, { external = false, log = console.log } = {})
         continue;
       }
       if (c.hash && target.endsWith(".html")) {
-        if (!idCache.has(target)) idCache.set(target, extractIds(pages.get(target) ?? (await readFile(target, "utf8"))));
+        if (!idCache.has(target))
+          idCache.set(target, extractIds(pages.get(target) ?? (await readFile(target, "utf8"))));
         if (!idCache.get(target).has(decodeURIComponent(c.hash))) {
           broken.push({ page: pagePath, href, status: `missing anchor #${c.hash}` });
         }
@@ -185,7 +190,9 @@ export async function run(distDir, { external = false, log = console.log } = {})
     }
   }
 
-  log(`Checked ${pages.size} pages, ${externalUses.size} unique external URLs${external ? "" : " (not fetched, pass --external)"}.`);
+  log(
+    `Checked ${pages.size} pages, ${externalUses.size} unique external URLs${external ? "" : " (not fetched, pass --external)"}.`,
+  );
   for (const w of warnings) log(`WARN  ${w.status}  ${w.href}  (on ${w.page})`);
   for (const b of broken) log(`BROKEN  ${b.status}  ${b.href}  (on ${b.page})`);
   log(broken.length ? `${broken.length} broken link(s).` : "No broken links.");

@@ -55,30 +55,37 @@ const faqSchema = {
       <p class="reassurance caption-2">{c.cta.reassurance}</p>
     </div>
     <p class="secondary-actions">
-      <a class="cta-link" href="#casos" data-cta-id="cases" data-cta-position="hero">{c.cta.cases}</a>
-      <button class="cta-link" type="button" data-open-botardo data-cta-id="botardo" data-cta-position="hero">{c.cta.botardo}</button>
+      <a class="cta-link" href="#casos" data-cta-id="cases" data-cta-position="hero">
+        {c.cta.cases}
+      </a>
+      <button class="cta-link" type="button" data-open-botardo data-cta-id="botardo" data-cta-position="hero">
+        {c.cta.botardo}
+      </button>
     </p>
 
     <div class="hero-proof">
-    <p class="proof-claim body-2">{c.hero.proof}</p>
-    {
-      logos.length > 0 && (
+      <p class="proof-claim body-2">{c.hero.proof}</p>
+      {logos.length > 0 && (
         <p class="proof-logos caption-4">
           <span class="proof-label">{c.proof.workedWith}</span>
           {logos.map((logo) => (
-            <span class:list={["logo-name", { "is-placeholder": !logo.confirmed }]} title={logo.confirmed ? undefined : "TODO: confirm before publishing (dev only)"}>
+            <span
+              class:list={["logo-name", { "is-placeholder": !logo.confirmed }]}
+              title={logo.confirmed ? undefined : "TODO: confirm before publishing (dev only)"}
+            >
               {logo.name}
             </span>
           ))}
         </p>
-      )
-    }
-    <p class="status-chip caption-4">
-      <span class="chip-dot" aria-hidden="true"></span>
-      {t("home.statusAvailable")}
-      <span class="chip-sep" aria-hidden="true">·</span>
-      {t("home.location")}
-    </p>
+      )}
+      <p class="status-chip caption-4">
+        <span class="chip-dot" aria-hidden="true"></span>
+        {t("home.statusAvailable")}
+        <span class="chip-sep" aria-hidden="true">
+          ·
+        </span>
+        {t("home.location")}
+      </p>
     </div>
   </div>
 
@@ -108,60 +115,81 @@ const faqSchema = {
       />
     </picture>
     <figcaption class="hero-credit caption-5">
-      <a
-        class="hero-credit-link"
-        href="https://www.eso.org/public/images/potw2618a/"
-        rel="noopener"
-        target="_blank">{c.hero.visualCredit}</a><span class="hero-credit-sep">·</span><span>{c.hero.visualCreditNote}</span>
+      <a class="hero-credit-link" href="https://www.eso.org/public/images/potw2618a/" rel="noopener" target="_blank">
+        {c.hero.visualCredit}
+      </a>
+      <span class="hero-credit-sep">·</span>
+      <span>{c.hero.visualCreditNote}</span>
     </figcaption>
   </figure>
 </section>
 
 <section class="band demo reveal" aria-labelledby="demoTitle">
-  <span class="band-num mono caption-4" aria-hidden="true">01</span>
+  <span class="band-num mono caption-4" aria-hidden="true">
+    01
+  </span>
   <p class="label caption-3">{c.demo.label}</p>
-  <h2 class="heading-2 section-title" id="demoTitle">{c.demo.title}</h2>
+  <h2 class="heading-2 section-title" id="demoTitle">
+    {c.demo.title}
+  </h2>
   <p class="section-body body-3">{c.demo.body}</p>
   <div class="demo-actions">
-    <button class="cta-secondary body-5" type="button" data-open-botardo data-cta-id="botardo" data-cta-position="demo">{c.cta.botardo}</button>
-    {
-      c.demo.prompts.map((prompt, i) => (
-        <button class="prompt-chip body-5" type="button" data-open-botardo data-botardo-prompt={prompt} data-cta-id="botardo_prompt" data-cta-position={`demo-${i + 1}`}>
-          {prompt}
-        </button>
-      ))
-    }
+    <button class="cta-secondary body-5" type="button" data-open-botardo data-cta-id="botardo" data-cta-position="demo">
+      {c.cta.botardo}
+    </button>
+    {c.demo.prompts.map((prompt, i) => (
+      <button
+        class="prompt-chip body-5"
+        type="button"
+        data-open-botardo
+        data-botardo-prompt={prompt}
+        data-cta-id="botardo_prompt"
+        data-cta-position={`demo-${i + 1}`}
+      >
+        {prompt}
+      </button>
+    ))}
   </div>
 </section>
 
 <section class="band cases reveal" id="casos" aria-labelledby="casesTitle">
-  <span class="band-num mono caption-4" aria-hidden="true">02</span>
+  <span class="band-num mono caption-4" aria-hidden="true">
+    02
+  </span>
   <p class="label caption-3">{c.cases.label}</p>
-  <h2 class="heading-2 section-title" id="casesTitle">{c.cases.title}</h2>
+  <h2 class="heading-2 section-title" id="casesTitle">
+    {c.cases.title}
+  </h2>
   <ol class="case-list">
-    {
-      c.cases.items.map((item, i) => (
-        <li class="case">
-          <span class="case-num mono caption-4" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-          <div class="case-main">
-            <p class="case-label caption-3">{item.label}</p>
-            <h3 class="case-title title-1">{item.title}</h3>
-            <p class="case-result body-3">{item.result}</p>
-          </div>
-          {item.href && (
-            /^https?:\/\//.test(item.href) ? (
-              <a class="cta-link case-link" href={item.href} target="_blank" rel="noreferrer" data-cta-id="case_site" data-cta-position={item.id}>
-                {c.cases.visit}
-              </a>
-            ) : (
-              <a class="cta-link case-link" href={item.href} data-cta-id="case" data-cta-position={item.id}>
-                {c.cases.more}
-              </a>
-            )
-          )}
-        </li>
-      ))
-    }
+    {c.cases.items.map((item, i) => (
+      <li class="case">
+        <span class="case-num mono caption-4" aria-hidden="true">
+          {String(i + 1).padStart(2, "0")}
+        </span>
+        <div class="case-main">
+          <p class="case-label caption-3">{item.label}</p>
+          <h3 class="case-title title-1">{item.title}</h3>
+          <p class="case-result body-3">{item.result}</p>
+        </div>
+        {item.href &&
+          (/^https?:\/\//.test(item.href) ? (
+            <a
+              class="cta-link case-link"
+              href={item.href}
+              target="_blank"
+              rel="noreferrer"
+              data-cta-id="case_site"
+              data-cta-position={item.id}
+            >
+              {c.cases.visit}
+            </a>
+          ) : (
+            <a class="cta-link case-link" href={item.href} data-cta-id="case" data-cta-position={item.id}>
+              {c.cases.more}
+            </a>
+          ))}
+      </li>
+    ))}
   </ol>
   <div class="cta-row">
     <PrimaryCta lang={lang} position="cases" />
@@ -192,30 +220,34 @@ const faqSchema = {
 
 <section class="tagline" aria-label={c.tagline}>
   <p class="heading-1 tagline-text" data-tagline aria-hidden="true">
-    {
-      taglineWords.map((word, i) => (
-        <>
-          <span class="tagline-word" data-index={i}>{word}</span>{" "}
-        </>
-      ))
-    }
+    {taglineWords.map((word, i) => (
+      <>
+        <span class="tagline-word" data-index={i}>
+          {word}
+        </span>{" "}
+      </>
+    ))}
   </p>
 </section>
 
 <section class="band faq reveal" aria-labelledby="faqTitle">
-  <span class="band-num mono caption-4" aria-hidden="true">03</span>
+  <span class="band-num mono caption-4" aria-hidden="true">
+    03
+  </span>
   <p class="label caption-3">{c.faq.label}</p>
-  <h2 class="heading-2 section-title" id="faqTitle">{c.faq.title}</h2>
+  <h2 class="heading-2 section-title" id="faqTitle">
+    {c.faq.title}
+  </h2>
   <dl class="faq-list">
-    {
-      c.faq.items.map((item, i) => (
-        <div class="faq-item">
-          <span class="faq-num mono caption-4" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-          <dt class="body-1">{item.q}</dt>
-          <dd class="body-3">{item.a}</dd>
-        </div>
-      ))
-    }
+    {c.faq.items.map((item, i) => (
+      <div class="faq-item">
+        <span class="faq-num mono caption-4" aria-hidden="true">
+          {String(i + 1).padStart(2, "0")}
+        </span>
+        <dt class="body-1">{item.q}</dt>
+        <dd class="body-3">{item.a}</dd>
+      </div>
+    ))}
   </dl>
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 </section>
@@ -223,14 +255,18 @@ const faqSchema = {
 <HomeHub lang={lang} />
 
 <section class="final reveal" aria-labelledby="finalTitle">
-  <h2 class="heading-1 final-title" id="finalTitle">{c.final.title}</h2>
+  <h2 class="heading-1 final-title" id="finalTitle">
+    {c.final.title}
+  </h2>
   <p class="section-body body-3">{c.final.body}</p>
   <div class="hero-actions">
     <PrimaryCta lang={lang} position="final" />
     <p class="reassurance caption-2">{c.cta.reassurance}</p>
   </div>
   <p class="secondary-actions">
-    <a class="cta-link" href={getLocalizedPath(lang, "/work/")} data-cta-id="work" data-cta-position="final">{t("cta.work")}</a>
+    <a class="cta-link" href={getLocalizedPath(lang, "/work/")} data-cta-id="work" data-cta-position="final">
+      {t("cta.work")}
+    </a>
   </p>
 </section>
 
@@ -305,8 +341,7 @@ const faqSchema = {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      padding: var(--space-900) var(--space-700) var(--space-800)
-        var(--hero-gutter);
+      padding: var(--space-900) var(--space-700) var(--space-800) var(--hero-gutter);
     }
     .hero-visual {
       display: grid;
@@ -629,8 +664,7 @@ const faqSchema = {
   .final {
     width: 100vw;
     margin-left: calc(50% - 50vw);
-    padding: var(--space-900) max(var(--space-300), calc((100vw - var(--shell-w)) / 2))
-      var(--space-900);
+    padding: var(--space-900) max(var(--space-300), calc((100vw - var(--shell-w)) / 2)) var(--space-900);
     background-color: var(--surface);
     border-top: 1px solid var(--border);
   }

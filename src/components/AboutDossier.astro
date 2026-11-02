@@ -35,7 +35,9 @@ const labels = {
 
     <div class="personal">
       <p class="section-label caption-3">{labels.personalLabel}</p>
-      {copy.personal.map((paragraph) => <p class="personal-p body-3">{paragraph}</p>)}
+      {copy.personal.map((paragraph) => (
+        <p class="personal-p body-3">{paragraph}</p>
+      ))}
     </div>
 
     <figure class="personal-photo">
@@ -65,33 +67,29 @@ const labels = {
 
     <p class="section-label roles-label caption-3">{labels.rolesLabel}</p>
     <ul class="d-rows">
-      {
-        copy.roles.map((role, i) => (
-          <li>
-            <span class="row-head">
-              <span class="num mono caption-4">{String(i + 1).padStart(2, "0")}</span>
-              <span class="role body-1">{role}</span>
-            </span>
-          </li>
-        ))
-      }
+      {copy.roles.map((role, i) => (
+        <li>
+          <span class="row-head">
+            <span class="num mono caption-4">{String(i + 1).padStart(2, "0")}</span>
+            <span class="role body-1">{role}</span>
+          </span>
+        </li>
+      ))}
     </ul>
   </div>
 
   <section class="d-skills">
     <p class="section-label caption-3">{labels.skillsLabel}</p>
     <ul class="skill-idx">
-      {
-        copy.skills.map((group, i) => (
-          <li>
-            <span class="idx-head">
-              <span class="num mono caption-4">{String(i + 1).padStart(2, "0")}</span>
-              <span class="skill-label body-4">{group.label}</span>
-            </span>
-            <span class="skill-items body-6">{group.items}</span>
-          </li>
-        ))
-      }
+      {copy.skills.map((group, i) => (
+        <li>
+          <span class="idx-head">
+            <span class="num mono caption-4">{String(i + 1).padStart(2, "0")}</span>
+            <span class="skill-label body-4">{group.label}</span>
+          </span>
+          <span class="skill-items body-6">{group.items}</span>
+        </li>
+      ))}
       <li>
         <span class="idx-head">
           <span class="num mono caption-4">{String(copy.skills.length + 1).padStart(2, "0")}</span>

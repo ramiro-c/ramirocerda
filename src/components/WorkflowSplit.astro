@@ -24,31 +24,29 @@ const returns: Record<number, string> = {
 <div class="split" data-wf-c>
   <div class="s-rows">
     <ul class="c-rows">
-      {
-        nodes.map((node, i) => (
-          <li>
-            <button
-              type="button"
-              class="c-row"
-              data-wf-row={node.id}
-              data-wf-title={node.panelTitle}
-              data-wf-body={node.panelBody}
-              data-wf-hitl={node.isHitl ? "1" : ""}
-            >
-              <span class="num mono caption-4">{node.number}</span>
-              <span class="label body-1">{node.label}</span>
-              {node.isHitl && <span class="pill caption-3">{hitlLabel}</span>}
-              <span class="arrow">→</span>
-            </button>
-            {returns[i] && <p class="c-return mono caption-5">{returns[i]}</p>}
-            <div class="row-detail">
-              <p class="d-title title-1">{node.panelTitle}</p>
-              <p class="d-body body-6">{node.panelBody}</p>
-              {node.isHitl && <span class="pill caption-3">{hitlLabel}</span>}
-            </div>
-          </li>
-        ))
-      }
+      {nodes.map((node, i) => (
+        <li>
+          <button
+            type="button"
+            class="c-row"
+            data-wf-row={node.id}
+            data-wf-title={node.panelTitle}
+            data-wf-body={node.panelBody}
+            data-wf-hitl={node.isHitl ? "1" : ""}
+          >
+            <span class="num mono caption-4">{node.number}</span>
+            <span class="label body-1">{node.label}</span>
+            {node.isHitl && <span class="pill caption-3">{hitlLabel}</span>}
+            <span class="arrow">→</span>
+          </button>
+          {returns[i] && <p class="c-return mono caption-5">{returns[i]}</p>}
+          <div class="row-detail">
+            <p class="d-title title-1">{node.panelTitle}</p>
+            <p class="d-body body-6">{node.panelBody}</p>
+            {node.isHitl && <span class="pill caption-3">{hitlLabel}</span>}
+          </div>
+        </li>
+      ))}
     </ul>
   </div>
 
@@ -60,7 +58,9 @@ const returns: Record<number, string> = {
     <div class="panel-content" data-wf-content hidden>
       <p class="p-title title-1" data-wf-out-title></p>
       <p class="p-body body-6" data-wf-out-body></p>
-      <span class="pill caption-3" data-wf-out-hitl hidden>{hitlLabel}</span>
+      <span class="pill caption-3" data-wf-out-hitl hidden>
+        {hitlLabel}
+      </span>
     </div>
   </aside>
 </div>

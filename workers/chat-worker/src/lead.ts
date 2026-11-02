@@ -124,11 +124,7 @@ export function validateLeadBody(
 
 export const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
-export async function verifyTurnstile(
-  token: string,
-  secret: string,
-  remoteIp: string | null,
-): Promise<boolean> {
+export async function verifyTurnstile(token: string, secret: string, remoteIp: string | null): Promise<boolean> {
   try {
     const res = await fetch(TURNSTILE_VERIFY_URL, {
       method: "POST",
@@ -276,9 +272,7 @@ export async function sendLeadEmails(lead: StoredLead, cfg: LeadMailConfig): Pro
   const addresses = { notifyTo: cfg.notifyTo, from: cfg.from };
 
   try {
-    outcome.notification = (await sendResend(cfg.apiKey, buildNotificationEmail(lead, addresses)))
-      ? "sent"
-      : "failed";
+    outcome.notification = (await sendResend(cfg.apiKey, buildNotificationEmail(lead, addresses))) ? "sent" : "failed";
   } catch {
     outcome.notification = "failed";
   }
@@ -411,9 +405,7 @@ export async function handleLead(
       lang: lead.lang,
       path: null,
       createdAt: lead.createdAt,
-    }).catch((err) =>
-      log("event.store_error", { error_message: err instanceof Error ? err.message : String(err) }),
-    ),
+    }).catch((err) => log("event.store_error", { error_message: err instanceof Error ? err.message : String(err) })),
   ]);
   if (ctx) {
     ctx.waitUntil(background);

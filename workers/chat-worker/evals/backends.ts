@@ -84,7 +84,11 @@ export function realBindings(opts: { accountId: string; apiToken: string; indexN
       headers: { Authorization: `Bearer ${opts.apiToken}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const json = (await res.json().catch(() => null)) as { success?: boolean; result?: unknown; errors?: unknown } | null;
+    const json = (await res.json().catch(() => null)) as {
+      success?: boolean;
+      result?: unknown;
+      errors?: unknown;
+    } | null;
     if (!res.ok || !json?.success) {
       throw new Error(`Cloudflare ${pathname} failed (${res.status}): ${JSON.stringify(json?.errors ?? json)}`);
     }
@@ -125,9 +129,12 @@ function mockDecision(questions: Record<string, unknown>, mock: MockRouterAnswer
     sufficient: { type: "noul", noul: 0 },
   };
   const answers = Object.fromEntries(Object.keys(questions).map((k) => [k, all[k]]));
-  return new Response(JSON.stringify({ model: "offline-mock", answers, usage: { input_tokens: 0, output_tokens: 0 } }), {
-    status: 200,
-  });
+  return new Response(
+    JSON.stringify({ model: "offline-mock", answers, usage: { input_tokens: 0, output_tokens: 0 } }),
+    {
+      status: 200,
+    },
+  );
 }
 
 /**
@@ -171,7 +178,12 @@ export async function instrument<T>(
       else if ("sufficient" in questions) counters.judgeCalls += 1;
       if (mode.kind === "offline") return mockDecision(questions, mode.mockRouter);
       const res = await originalFetch(input, init);
-      const u = decisionUsageOf(await res.clone().json().catch(() => null));
+      const u = decisionUsageOf(
+        await res
+          .clone()
+          .json()
+          .catch(() => null),
+      );
       counters.decisionTokensIn += u.in;
       counters.decisionTokensOut += u.out;
       return res;
@@ -180,7 +192,12 @@ export async function instrument<T>(
       counters.generationCalls += 1;
       if (stubGeneration) return completion("(offline stub)");
       const res = await originalFetch(input, init);
-      const u = chatUsageOf(await res.clone().json().catch(() => null));
+      const u = chatUsageOf(
+        await res
+          .clone()
+          .json()
+          .catch(() => null),
+      );
       counters.genTokensIn += u.in;
       counters.genTokensOut += u.out;
       return res;

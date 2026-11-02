@@ -94,7 +94,10 @@ describe("generateReply (D8/D9, R5/R7)", () => {
       code: "MODEL_ERROR",
     });
 
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: "   " } }] })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse(200, { choices: [{ message: { content: "   " } }] })),
+    );
     expect(await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 1 })).toEqual({
       status: 500,
       code: "MODEL_ERROR",
@@ -117,7 +120,14 @@ describe("generateReply (D8/D9, R5/R7)", () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(503, {}));
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 2, backoffMs: 5 });
+    const result = await generateReply({
+      endpoint: "e",
+      apiKey: "k",
+      model: "m",
+      messages,
+      maxAttempts: 2,
+      backoffMs: 5,
+    });
     expect(result).toEqual({ status: 500, code: "MODEL_ERROR", upstream: 503 });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -160,12 +170,21 @@ describe("generateReply (D8/D9, R5/R7)", () => {
   });
 
   it("flags the reply as truncated when the larger budget still runs out", async () => {
-    const fetchMock = vi.fn().mockImplementation(() =>
-      jsonResponse(200, { choices: [{ message: { content: "respuesta cortada" }, finish_reason: "length" }] }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() =>
+        jsonResponse(200, { choices: [{ message: { content: "respuesta cortada" }, finish_reason: "length" }] }),
+      );
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await generateReply({ endpoint: "e", apiKey: "k", model: "m", messages, maxAttempts: 4, backoffMs: 5 });
+    const result = await generateReply({
+      endpoint: "e",
+      apiKey: "k",
+      model: "m",
+      messages,
+      maxAttempts: 4,
+      backoffMs: 5,
+    });
 
     expect(result).toEqual({ status: 200, content: "respuesta cortada", truncated: true });
     // One bump only: 1024 -> 2048, never unbounded growth.

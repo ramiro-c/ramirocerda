@@ -42,53 +42,102 @@ const config = {
 <dialog class="contact-sheet" id="contactDialog" aria-labelledby="contactTitle" data-config={JSON.stringify(config)}>
   <div class="contact-inner">
     <header class="contact-head">
-      <h2 id="contactTitle" class="heading-4">{f.title}</h2>
+      <h2 id="contactTitle" class="heading-4">
+        {f.title}
+      </h2>
       <button type="button" class="contact-close" data-close-contact aria-label={f.close}>
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"
-          ><path d="M6 6l12 12M18 6L6 18"></path></svg
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
         >
+          <path d="M6 6l12 12M18 6L6 18"></path>
+        </svg>
       </button>
     </header>
     <p class="contact-lede body-3">{f.lede}</p>
 
-    {
-      TURNSTILE_SITE_KEY ? (
-        <form class="contact-form" id="contactForm" novalidate>
-          <div class="field">
-            <label class="title-4" for="contactName">{f.name}</label>
-            <input id="contactName" name="name" type="text" autocomplete="name" maxlength="100" required aria-describedby="contactNameError" />
-            <p class="field-error body-6" id="contactNameError" hidden />
-          </div>
-          <div class="field">
-            <label class="title-4" for="contactEmail">{f.email}</label>
-            <input id="contactEmail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required aria-describedby="contactEmailError" />
-            <p class="field-error body-6" id="contactEmailError" hidden />
-          </div>
-          <div class="field">
-            <label class="title-4" for="contactMessage">{f.message}</label>
-            <textarea id="contactMessage" name="message" rows="5" minlength="10" maxlength="2000" required placeholder={f.messagePlaceholder} aria-describedby="contactMessageError"></textarea>
-            <p class="field-error body-6" id="contactMessageError" hidden />
-          </div>
-          {/* Honeypot: hidden from people and assistive tech; bots fill it. */}
-          <div class="hp" aria-hidden="true">
-            <label class="title-4" for="contactWebsite">Website</label>
-            <input id="contactWebsite" name="website" type="text" tabindex="-1" autocomplete="off" />
-          </div>
-          <div class="turnstile-slot" id="contactTurnstile" />
-          <button type="submit" class="cta-primary contact-submit" id="contactSubmit">{f.submit}</button>
-          <p class="contact-privacy caption-5">
-            {f.privacy} <a href={getLocalizedPath(lang, "/privacy/")}>{landing[lang].notice.link}</a>
-          </p>
-          <p class="contact-status body-3" id="contactStatus" role="status" aria-live="polite" hidden />
-        </form>
-      ) : (
-        <p class="contact-fallback">
-          <a class="cta-primary" href={`mailto:${CONTACT_EMAIL}`} data-cta-id="email" data-cta-position="contact-fallback">
-            {CONTACT_EMAIL}
-          </a>
+    {TURNSTILE_SITE_KEY ? (
+      <form class="contact-form" id="contactForm" novalidate>
+        <div class="field">
+          <label class="title-4" for="contactName">
+            {f.name}
+          </label>
+          <input
+            id="contactName"
+            name="name"
+            type="text"
+            autocomplete="name"
+            maxlength="100"
+            required
+            aria-describedby="contactNameError"
+          />
+          <p class="field-error body-6" id="contactNameError" hidden />
+        </div>
+        <div class="field">
+          <label class="title-4" for="contactEmail">
+            {f.email}
+          </label>
+          <input
+            id="contactEmail"
+            name="email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            maxlength="254"
+            required
+            aria-describedby="contactEmailError"
+          />
+          <p class="field-error body-6" id="contactEmailError" hidden />
+        </div>
+        <div class="field">
+          <label class="title-4" for="contactMessage">
+            {f.message}
+          </label>
+          <textarea
+            id="contactMessage"
+            name="message"
+            rows="5"
+            minlength="10"
+            maxlength="2000"
+            required
+            placeholder={f.messagePlaceholder}
+            aria-describedby="contactMessageError"
+          ></textarea>
+          <p class="field-error body-6" id="contactMessageError" hidden />
+        </div>
+        {/* Honeypot: hidden from people and assistive tech; bots fill it. */}
+        <div class="hp" aria-hidden="true">
+          <label class="title-4" for="contactWebsite">
+            Website
+          </label>
+          <input id="contactWebsite" name="website" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+        <div class="turnstile-slot" id="contactTurnstile" />
+        <button type="submit" class="cta-primary contact-submit" id="contactSubmit">
+          {f.submit}
+        </button>
+        <p class="contact-privacy caption-5">
+          {f.privacy} <a href={getLocalizedPath(lang, "/privacy/")}>{landing[lang].notice.link}</a>
         </p>
-      )
-    }
+        <p class="contact-status body-3" id="contactStatus" role="status" aria-live="polite" hidden />
+      </form>
+    ) : (
+      <p class="contact-fallback">
+        <a
+          class="cta-primary"
+          href={`mailto:${CONTACT_EMAIL}`}
+          data-cta-id="email"
+          data-cta-position="contact-fallback"
+        >
+          {CONTACT_EMAIL}
+        </a>
+      </p>
+    )}
   </div>
 </dialog>
 

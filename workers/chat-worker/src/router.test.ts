@@ -30,7 +30,9 @@ afterEach(() => {
 
 describe("parseAnswer / parseDecisionResponse (strict System One validation)", () => {
   it("accepts a valid choice and a valid noul", () => {
-    expect(parseAnswer(ROUTE_QUESTION, { type: "choice", choice: "search", confidence: 0.8, probabilities: {} })).toEqual({
+    expect(
+      parseAnswer(ROUTE_QUESTION, { type: "choice", choice: "search", confidence: 0.8, probabilities: {} }),
+    ).toEqual({
       type: "choice",
       choice: "search",
       confidence: 0.8,
@@ -67,7 +69,9 @@ describe("parseAnswer / parseDecisionResponse (strict System One validation)", (
       route: { type: "choice", choice: "smalltalk", confidence: 1 },
       hire_intent: { type: "noul", noul: 0.1 },
     };
-    expect(parseDecisionResponse(questions, { answers, usage: { input_tokens: 541, output_tokens: 3 } })?.usage).toEqual({
+    expect(
+      parseDecisionResponse(questions, { answers, usage: { input_tokens: 541, output_tokens: 3 } })?.usage,
+    ).toEqual({
       inputTokens: 541,
       outputTokens: 3,
     });
@@ -81,7 +85,12 @@ describe("routeMessage", () => {
   it("makes ONE System One request with the real wire shape (model, state, typed questions), anonymous by default", async () => {
     const { calls, fetchMock } = stubFetch({ router: [routerAnswer("search", { hire: 0.98, needsHistory: 0.1 })] });
     const decision = await routeMessage("¿y está disponible para un freelance?", history, config);
-    expect(decision).toMatchObject({ route: "search", hireIntent: true, query: "¿y está disponible para un freelance?", via: "llm" });
+    expect(decision).toMatchObject({
+      route: "search",
+      hireIntent: true,
+      query: "¿y está disponible para un freelance?",
+      via: "llm",
+    });
     expect(decision.usage).toEqual({ inputTokens: 550, outputTokens: 3 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toBe(DEFAULT_DECISION_ENDPOINT);
@@ -89,7 +98,11 @@ describe("routeMessage", () => {
     expect(Object.keys(body).sort()).toEqual(["model", "questions", "state"]);
     expect(body.model).toBe(DEFAULT_DECISION_MODEL);
     expect(body.state).toEqual({ conversation: history, latest_message: "¿y está disponible para un freelance?" });
-    expect(body.questions).toEqual({ route: ROUTE_QUESTION, hire_intent: HIRE_INTENT_QUESTION, needs_history: NEEDS_HISTORY_QUESTION });
+    expect(body.questions).toEqual({
+      route: ROUTE_QUESTION,
+      hire_intent: HIRE_INTENT_QUESTION,
+      needs_history: NEEDS_HISTORY_QUESTION,
+    });
     const headers = calls.decisionHeaders[0];
     expect(headers["Content-Type"]).toBe("application/json");
     expect(headers["User-Agent"]).toBe(DECISION_USER_AGENT);
@@ -126,7 +139,10 @@ describe("routeMessage", () => {
   it("keeps the raw message for standalone follow-ups, with the contextual query as the alternate", async () => {
     stubFetch({ router: [routerAnswer("search", { needsHistory: 0.12 })] });
     const decision = await routeMessage("¿Qué stack usa?", history, config);
-    expect(decision).toMatchObject({ query: "¿Qué stack usa?", alternateQuery: "¿Dónde trabaja Ramiro? ¿Qué stack usa?" });
+    expect(decision).toMatchObject({
+      query: "¿Qué stack usa?",
+      alternateQuery: "¿Dónde trabaja Ramiro? ¿Qué stack usa?",
+    });
   });
 
   it("uses the raw message and no alternate for non-search routes", async () => {
@@ -145,7 +161,13 @@ describe("routeMessage", () => {
     const { fetchMock } = stubFetch();
     for (const vars of [DECISION_OFF, { DECISION_ENDPOINT: "  " }]) {
       const decision = await routeMessage("hola", undefined, readAdaptiveConfig(vars));
-      expect(decision).toEqual({ route: "search", hireIntent: false, query: "hola", alternateQuery: null, via: "not_configured" });
+      expect(decision).toEqual({
+        route: "search",
+        hireIntent: false,
+        query: "hola",
+        alternateQuery: null,
+        via: "not_configured",
+      });
     }
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -164,7 +186,13 @@ describe("routeMessage", () => {
   ] as const)("falls back to search / raw message / no hire intent on %j", async (answer, via) => {
     const { calls } = stubFetch({ router: [answer] });
     const decision = await routeMessage("quiero contratarlo", history, config);
-    expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "quiero contratarlo", alternateQuery: null, via });
+    expect(decision).toMatchObject({
+      route: "search",
+      hireIntent: false,
+      query: "quiero contratarlo",
+      alternateQuery: null,
+      via,
+    });
     // No OPENCODE_GO_API_KEY in `config`: the paid retry is skipped, a single call is made.
     expect(calls.router).toHaveLength(1);
     expect(decision.trace?.tier).toBe("none");
@@ -186,7 +214,12 @@ describe("routeMessage: free then paid fallback", () => {
     expect(calls.router).toHaveLength(1);
     expect(calls.router[0].model).toBe("jev-1.13-free");
     expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
-    expect(decision.trace).toEqual({ tier: "free", model: "jev-1.13-free", primaryError: null, fallback: "not_needed" });
+    expect(decision.trace).toEqual({
+      tier: "free",
+      model: "jev-1.13-free",
+      primaryError: null,
+      fallback: "not_needed",
+    });
   });
 
   it.each<[ScriptedAnswer, string]>([
@@ -214,18 +247,27 @@ describe("routeMessage: free then paid fallback", () => {
   it("free and paid both fail: search with the raw message, offerContact false", async () => {
     const { calls } = stubFetch({ router: [{ status: 500 }, "hang"] });
     const decision = await routeMessage("quiero contratarlo", history, paidConfig);
-    expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "quiero contratarlo", alternateQuery: null, via: "timeout" });
+    expect(decision).toMatchObject({
+      route: "search",
+      hireIntent: false,
+      query: "quiero contratarlo",
+      alternateQuery: null,
+      via: "timeout",
+    });
     expect(calls.router).toHaveLength(2);
     expect(decision.trace).toEqual({ tier: "none", model: null, primaryError: "http_500", fallback: "failed" });
   });
 
-  it.each(["http_401", "http_402"] as const)("paid answers %s (key rejected / no balance): safe default, both errors traced", async (paidError) => {
-    const status = Number(paidError.slice(5));
-    stubFetch({ router: [{ status: 400 }, { status }] });
-    const decision = await routeMessage("hola", undefined, paidConfig);
-    expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "hola", via: paidError });
-    expect(decision.trace).toEqual({ tier: "none", model: null, primaryError: "http_400", fallback: "failed" });
-  });
+  it.each(["http_401", "http_402"] as const)(
+    "paid answers %s (key rejected / no balance): safe default, both errors traced",
+    async (paidError) => {
+      const status = Number(paidError.slice(5));
+      stubFetch({ router: [{ status: 400 }, { status }] });
+      const decision = await routeMessage("hola", undefined, paidConfig);
+      expect(decision).toMatchObject({ route: "search", hireIntent: false, query: "hola", via: paidError });
+      expect(decision.trace).toEqual({ tier: "none", model: null, primaryError: "http_400", fallback: "failed" });
+    },
+  );
 
   it("no OPENCODE_GO_API_KEY: skips the paid call", async () => {
     const { calls } = stubFetch({ router: [{ status: 500 }, routerAnswer("smalltalk")] });
@@ -260,7 +302,10 @@ describe("routeMessage: free then paid fallback", () => {
 
 describe("router state", () => {
   it("keeps only the last 4 history turns, truncated to 400 chars", () => {
-    const long = Array.from({ length: 6 }, (_, i) => ({ role: "user" as const, content: `turno ${i} ${"x".repeat(500)}` }));
+    const long = Array.from({ length: 6 }, (_, i) => ({
+      role: "user" as const,
+      content: `turno ${i} ${"x".repeat(500)}`,
+    }));
     const state = buildRouterState("nuevo", long);
     expect(state.conversation).toHaveLength(4);
     expect(state.conversation[0].content.startsWith("turno 2")).toBe(true);

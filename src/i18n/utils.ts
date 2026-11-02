@@ -37,7 +37,5 @@ export function switchLangPath(currentPath: string, nextLang: Lang): string {
     return rest ? `/${rest}${currentPath.endsWith("/") ? "/" : ""}` : "/";
   }
 
-  return rest
-    ? `/${nextLang}/${rest}${currentPath.endsWith("/") ? "/" : ""}`
-    : `/${nextLang}/`;
+  return rest ? `/${nextLang}/${rest}${currentPath.endsWith("/") ? "/" : ""}` : `/${nextLang}/`;
 }

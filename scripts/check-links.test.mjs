@@ -22,7 +22,10 @@ test("extractLinks ignores preconnect origins", () => {
 test("run flags missing pages and anchors, passes valid ones", async () => {
   const dist = await mkdtemp(path.join(tmpdir(), "links-"));
   await mkdir(path.join(dist, "en"), { recursive: true });
-  await writeFile(path.join(dist, "index.html"), '<a href="/en/">en</a><a href="#casos">c</a><section id="casos"></section><a href="/nope/">x</a><a href="/en/#missing">m</a>');
+  await writeFile(
+    path.join(dist, "index.html"),
+    '<a href="/en/">en</a><a href="#casos">c</a><section id="casos"></section><a href="/nope/">x</a><a href="/en/#missing">m</a>',
+  );
   await writeFile(path.join(dist, "en", "index.html"), '<a href="/">es</a>');
   const { broken } = await run(dist, { log: () => {} });
   assert.deepEqual(

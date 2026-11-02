@@ -142,49 +142,56 @@ export const landing: Record<Lang, LandingCopy> = {
           href: "https://www.ldptech.ai/",
           label: "Tech lead",
           title: "Libro de Pases (LDP), plataforma de fútbol",
-          result: "Entré por la app móvil y hoy lidero el desarrollo full stack. Hice refactors de búsqueda que bajaron la latencia más del 75%. Sumé monitoreo de errores y performance, tests y CI.",
+          result:
+            "Entré por la app móvil y hoy lidero el desarrollo full stack. Hice refactors de búsqueda que bajaron la latencia más del 75%. Sumé monitoreo de errores y performance, tests y CI.",
         },
         {
           id: "kano",
           href: "https://kano.studio/",
           label: "Colaboración",
           title: "Kano Studio, landing y diagnóstico interactivo",
-          result: "Con el equipo de Kano hice el sistema de diseño, la versión en dos idiomas y el SEO. También corregí los problemas de accesibilidad que marcó una auditoría.",
+          result:
+            "Con el equipo de Kano hice el sistema de diseño, la versión en dos idiomas y el SEO. También corregí los problemas de accesibilidad que marcó una auditoría.",
         },
         {
           id: "avellana",
           href: "https://avellana.store/",
           label: "Colaboración",
           title: "Avellana, app para comprar ropa en Av. Avellaneda",
-          result: "App gratuita para Android e iOS. Compara precios de ropa de mujer entre los locales de Av. Avellaneda en Buenos Aires, guarda favoritos y arma el recorrido más corto.",
+          result:
+            "App gratuita para Android e iOS. Compara precios de ropa de mujer entre los locales de Av. Avellaneda en Buenos Aires, guarda favoritos y arma el recorrido más corto.",
         },
         {
           id: "lactaria",
           href: "/work/lactaria/",
           label: "Freelance",
           title: "LactarIA, apoyo en lactancia materna",
-          result: "App de salud con un chatbot de IA que responde desde un banco de preguntas curado. Tuvo un piloto cerrado con 50 madres.",
+          result:
+            "App de salud con un chatbot de IA que responde desde un banco de preguntas curado. Tuvo un piloto cerrado con 50 madres.",
         },
         {
           id: "mundial-2026",
           href: "/work/mundial-2026/",
           label: "Producto",
           title: "Mundial 2026, la app para seguir el torneo",
-          result: "Muestra grupos, fixture en tu huso horario, cuadro eliminatorio, mapa de sedes y guía de TV por país. Cruza datos históricos entre selecciones. Está online.",
+          result:
+            "Muestra grupos, fixture en tu huso horario, cuadro eliminatorio, mapa de sedes y guía de TV por país. Cruza datos históricos entre selecciones. Está online.",
         },
         {
           id: "agent-general",
           href: "/work/agent-general/",
           label: "IA en producción",
           title: "Agent General, asistente de producto",
-          result: "Un agente raíz reparte el trabajo entre subagentes de dominio y responde con los permisos de cada usuario. Lo evalúo con casos reales, sin un modelo que haga de juez.",
+          result:
+            "Un agente raíz reparte el trabajo entre subagentes de dominio y responde con los permisos de cada usuario. Lo evalúo con casos reales, sin un modelo que haga de juez.",
         },
         {
           id: "freelance",
           href: "/about/",
           label: "Freelance",
           title: "Software de gestión para negocios",
-          result: "Hice sistemas de gestión multi rubro en DevGAM (PHP, JS, MySQL) y un sistema de trámites administrativos para la UTN FRLP (Laravel, Vue).",
+          result:
+            "Hice sistemas de gestión multi rubro en DevGAM (PHP, JS, MySQL) y un sistema de trámites administrativos para la UTN FRLP (Laravel, Vue).",
         },
       ],
     },
@@ -296,49 +303,56 @@ export const landing: Record<Lang, LandingCopy> = {
           href: "https://www.ldptech.ai/",
           label: "Tech lead",
           title: "Libro de Pases (LDP), football platform",
-          result: "I joined on the mobile app and now lead full stack development. I did search refactors that cut latency by more than 75%. I added error and performance monitoring, tests, and CI.",
+          result:
+            "I joined on the mobile app and now lead full stack development. I did search refactors that cut latency by more than 75%. I added error and performance monitoring, tests, and CI.",
         },
         {
           id: "kano",
           href: "https://kano.studio/",
           label: "Collaboration",
           title: "Kano Studio, landing and interactive diagnostic",
-          result: "With the Kano team I built the design system, the bilingual version, and the SEO. I also fixed the accessibility issues an audit flagged.",
+          result:
+            "With the Kano team I built the design system, the bilingual version, and the SEO. I also fixed the accessibility issues an audit flagged.",
         },
         {
           id: "avellana",
           href: "https://avellana.store/",
           label: "Collaboration",
           title: "Avellana, an app to shop for clothes on Av. Avellaneda",
-          result: "A free app for Android and iOS. It compares women's clothing prices across the shops on Av. Avellaneda in Buenos Aires, saves favorites, and plans the shortest route.",
+          result:
+            "A free app for Android and iOS. It compares women's clothing prices across the shops on Av. Avellaneda in Buenos Aires, saves favorites, and plans the shortest route.",
         },
         {
           id: "lactaria",
           href: "/en/work/lactaria/",
           label: "Freelance",
           title: "LactarIA, breastfeeding support",
-          result: "A health app with an AI chatbot that answers from a curated question bank. It ran a closed pilot with 50 mothers.",
+          result:
+            "A health app with an AI chatbot that answers from a curated question bank. It ran a closed pilot with 50 mothers.",
         },
         {
           id: "mundial-2026",
           href: "/en/work/mundial-2026/",
           label: "Product",
           title: "Mundial 2026, the app to follow the tournament",
-          result: "It shows groups, fixtures in your time zone, the knockout bracket, a venue map, and a TV guide by country. It cross references historical data between teams. It is live.",
+          result:
+            "It shows groups, fixtures in your time zone, the knockout bracket, a venue map, and a TV guide by country. It cross references historical data between teams. It is live.",
         },
         {
           id: "agent-general",
           href: "/en/work/agent-general/",
           label: "AI in production",
           title: "Agent General, product assistant",
-          result: "A root agent splits the work across domain sub agents and answers with each user's permissions. I evaluate it on real cases, with no model acting as judge.",
+          result:
+            "A root agent splits the work across domain sub agents and answers with each user's permissions. I evaluate it on real cases, with no model acting as judge.",
         },
         {
           id: "freelance",
           href: "/en/about/",
           label: "Freelance",
           title: "Management software for businesses",
-          result: "I built multi industry management systems at DevGAM (PHP, JS, MySQL) and an administrative workflow system for UTN FRLP (Laravel, Vue).",
+          result:
+            "I built multi industry management systems at DevGAM (PHP, JS, MySQL) and an administrative workflow system for UTN FRLP (Laravel, Vue).",
         },
       ],
     },

@@ -35,7 +35,8 @@
 import type { DecisionConfig } from "./config";
 import { isFreeTierExhausted, noteFreeTierExhausted } from "./breaker";
 
-export type DecisionFailure = "timeout" | "network" | `http_${number}` | "invalid_json" | "invalid_shape" | "free_skipped";
+export type DecisionFailure =
+  "timeout" | "network" | `http_${number}` | "invalid_json" | "invalid_shape" | "free_skipped";
 
 export interface ChoiceQuestion {
   type: "choice";
@@ -50,9 +51,7 @@ export interface NoulQuestion {
 
 export type DecisionQuestion = ChoiceQuestion | NoulQuestion;
 
-export type DecisionAnswer =
-  | { type: "choice"; choice: string; confidence: number }
-  | { type: "noul"; noul: number };
+export type DecisionAnswer = { type: "choice"; choice: string; confidence: number } | { type: "noul"; noul: number };
 
 export interface DecisionUsage {
   inputTokens: number;
@@ -83,8 +82,7 @@ export type DecisionResult =
   | { ok: false; reason: DecisionFailure; trace: DecisionTrace };
 
 type AttemptResult =
-  | { ok: true; answers: Record<string, DecisionAnswer>; usage: DecisionUsage }
-  | { ok: false; reason: DecisionFailure };
+  { ok: true; answers: Record<string, DecisionAnswer>; usage: DecisionUsage } | { ok: false; reason: DecisionFailure };
 
 export const DECISION_USER_AGENT = "botardo-decision/1.0";
 
@@ -207,20 +205,33 @@ export async function askDecision(
   }
 
   if (!config.fallbackModel) {
-    return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_model" } };
+    return {
+      ok: false,
+      reason: primaryError,
+      trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_model" },
+    };
   }
   const fallbackIsFree = isFreeModel(config.fallbackModel);
   const fallbackKey = fallbackIsFree ? null : config.apiKey;
 
   // Skip a free fallback when the breaker is tripped or the operator disabled it.
   if (fallbackKey === null && (config.freeDisabled || isFreeTierExhausted(now))) {
-    return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "free_skipped" } };
+    return {
+      ok: false,
+      reason: primaryError,
+      trace: { tier: "none", model: null, primaryError, fallback: "free_skipped" },
+    };
   }
   if (!fallbackIsFree && !config.apiKey) {
-    return { ok: false, reason: primaryError, trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_key" } };
+    return {
+      ok: false,
+      reason: primaryError,
+      trace: { tier: "none", model: null, primaryError, fallback: "skipped_no_key" },
+    };
   }
   const fallback = await attempt(config, config.fallbackModel, fallbackKey, state, questions);
-  if (!fallback.ok && fallback.reason === "http_429" && fallbackIsFree) noteFreeTierExhausted(now, config.freeCooldownMs);
+  if (!fallback.ok && fallback.reason === "http_429" && fallbackIsFree)
+    noteFreeTierExhausted(now, config.freeCooldownMs);
   if (fallback.ok) {
     return {
       ...fallback,

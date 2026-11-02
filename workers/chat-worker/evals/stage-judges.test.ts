@@ -13,7 +13,10 @@ import {
 const jev = evalJudgeConfig({ apiKey: null });
 
 function decisionResponse(answers: Record<string, unknown>): Response {
-  return new Response(JSON.stringify({ model: "jev-1.13-free", answers, usage: { input_tokens: 10, output_tokens: 1 } }), { status: 200 });
+  return new Response(
+    JSON.stringify({ model: "jev-1.13-free", answers, usage: { input_tokens: 10, output_tokens: 1 } }),
+    { status: 200 },
+  );
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -37,7 +40,9 @@ describe("stage judges", () => {
   it("asks Jev one noul per claim with the generation chunks in the state", async () => {
     const fetchMock = vi.fn().mockResolvedValue(decisionResponse({ supported: { type: "noul", noul: 0.2 } }));
     vi.stubGlobal("fetch", fetchMock);
-    const snippets = claimSnippets([{ id: "kb-x-1", score: 0.8, metadata: { section: "Stack", text: "React  y\nNode" } }]);
+    const snippets = claimSnippets([
+      { id: "kb-x-1", score: 0.8, metadata: { section: "Stack", text: "React  y\nNode" } },
+    ]);
     const check = await judgeClaim(jev, "Usa Rust.", snippets);
     expect(check).toMatchObject({ supported: false, p: 0.2, tier: "free" });
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
@@ -62,9 +67,21 @@ describe("stage judges", () => {
   });
 
   it("maps the abstention choice and surfaces judge failures", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(decisionResponse({ abstention: { type: "choice", choice: "abstains", confidence: 0.93 } })));
-    expect(await judgeAbstention(jev, "¿Edad?", "No tengo ese dato.")).toMatchObject({ abstained: true, confidence: 0.93, via: "judge" });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(decisionResponse({ abstention: { type: "choice", choice: "maybe", confidence: 0.5 } })));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(decisionResponse({ abstention: { type: "choice", choice: "abstains", confidence: 0.93 } })),
+    );
+    expect(await judgeAbstention(jev, "¿Edad?", "No tengo ese dato.")).toMatchObject({
+      abstained: true,
+      confidence: 0.93,
+      via: "judge",
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(decisionResponse({ abstention: { type: "choice", choice: "maybe", confidence: 0.5 } })),
+    );
     expect(await judgeAbstention(jev, "¿Edad?", "30")).toMatchObject({ abstained: null, via: "error" });
   });
 

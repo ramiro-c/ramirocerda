@@ -20,7 +20,12 @@ export async function getStaticPaths() {
           .map((n) => ({
             slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
             title: n.data.title,
-            dateStr: n.data.pubDate.toLocaleDateString("en-US", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" }),
+            dateStr: n.data.pubDate.toLocaleDateString("en-US", {
+              timeZone: "UTC",
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }),
           }));
         const relatedProjectSlugs = note.data.relatedProjects || [];
         const projects = (await getCollection("projects"))
@@ -48,7 +53,12 @@ const { Content } = await render(note);
   <SiteHeader slot="header" lang={lang} />
 
   <article class="note">
-    <p class="label caption-3"><a class="crumb" href={getLocalizedPath(lang, "/notes/")}>{t("notes.back")}</a> / {note.data.lang.toUpperCase()}</p>
+    <p class="label caption-3">
+      <a class="crumb" href={getLocalizedPath(lang, "/notes/")}>
+        {t("notes.back")}
+      </a>{" "}
+      / {note.data.lang.toUpperCase()}
+    </p>
     <h1 class="heading-1">{note.data.title}</h1>
     <p class="summary body-3">{note.data.description}</p>
     <div class="content">
@@ -63,7 +73,9 @@ const { Content } = await render(note);
             <li>
               <a href={getLocalizedPath(lang, `/work/${p.slug}/`)}>
                 <span class="rel-title title-3">{p.title}</span>
-                <span class="arrow" aria-hidden="true">→</span>
+                <span class="arrow" aria-hidden="true">
+                  →
+                </span>
               </a>
             </li>
           ))}
@@ -80,7 +92,9 @@ const { Content } = await render(note);
               <a href={getLocalizedPath(lang, `/notes/${n.slug}/`)}>
                 <span class="rel-date mono caption-4">{n.dateStr}</span>
                 <span class="rel-title title-3">{n.title}</span>
-                <span class="arrow" aria-hidden="true">→</span>
+                <span class="arrow" aria-hidden="true">
+                  →
+                </span>
               </a>
             </li>
           ))}

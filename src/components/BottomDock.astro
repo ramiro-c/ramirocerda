@@ -28,17 +28,24 @@ const copy = landing[lang];
       {copy.notice.text}
       <a href={getLocalizedPath(lang, "/privacy/")}>{copy.notice.link}</a>
     </p>
-    <button type="button" class="dock-dismiss button-xsm" data-dismiss-notice>{copy.notice.dismiss}</button>
+    <button type="button" class="dock-dismiss button-xsm" data-dismiss-notice>
+      {copy.notice.dismiss}
+    </button>
   </div>
   <nav class="dock-bar" aria-label={copy.dock.label} data-dock-cta>
     <PrimaryCta lang={lang} position="dock" compact />
-    {
-      WHATSAPP_URL && (
-        <a class="dock-whatsapp cta-link" href={WHATSAPP_URL} target="_blank" rel="noopener" data-cta-id="whatsapp" data-cta-position="dock">
-          {copy.cta.whatsapp}
-        </a>
-      )
-    }
+    {WHATSAPP_URL && (
+      <a
+        class="dock-whatsapp cta-link"
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener"
+        data-cta-id="whatsapp"
+        data-cta-position="dock"
+      >
+        {copy.cta.whatsapp}
+      </a>
+    )}
   </nav>
 </div>
 
@@ -219,9 +226,9 @@ const copy = landing[lang];
   // margin clears the floating navigation.
   const pageAnchor = document.querySelector("main h1");
   if (notice && pageAnchor && "IntersectionObserver" in window) {
-    new IntersectionObserver(
-      ([entry]) => notice.classList.toggle("is-away", !entry.isIntersecting),
-      { threshold: 0, rootMargin: "-96px 0px 0px 0px" },
-    ).observe(pageAnchor);
+    new IntersectionObserver(([entry]) => notice.classList.toggle("is-away", !entry.isIntersecting), {
+      threshold: 0,
+      rootMargin: "-96px 0px 0px 0px",
+    }).observe(pageAnchor);
   }
 </script>

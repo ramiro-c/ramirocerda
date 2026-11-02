@@ -33,10 +33,7 @@ const MANIFEST_PATH = path.join(WORKER_DIR, "vectorize-manifest.json");
 // Optional convenience: auto-load a gitignored `.env` from the repo root when no
 // CLOUDFLARE_API_TOKEN is already exported. Explicit env vars always win.
 if (!process.env.CLOUDFLARE_API_TOKEN) {
-  for (const candidate of [
-    path.join(ROOT_DIR, ".env"),
-    path.join(process.cwd(), ".env"),
-  ]) {
+  for (const candidate of [path.join(ROOT_DIR, ".env"), path.join(process.cwd(), ".env")]) {
     try {
       process.loadEnvFile(candidate);
       break;
@@ -49,7 +46,6 @@ if (!process.env.CLOUDFLARE_API_TOKEN) {
 const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const EMBED_BATCH_SIZE = 16;
 const INDEX_NAME = process.env.VECTORIZE_INDEX ?? "botardo-kb";
-
 
 /**
  * Peel the raw YAML frontmatter content (between the leading --- markers) out
@@ -72,7 +68,10 @@ function fieldOf(block, key) {
   const m = block.match(re);
   if (!m) return "";
   const value = m[1].trim();
-  if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+  if (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
+  ) {
     return value.slice(1, -1).replace(/\s+/g, " ").trim();
   }
   return value;
@@ -188,8 +187,24 @@ export function buildProjectChunks(md, opts = {}) {
     const stack = listOf(block, "stack");
     const labels =
       lang === "es"
-        ? { problem: "Problema", what: "Qué hice", highlights: "Destacados", stack: "Stack", repo: "Repositorio", demo: "Demo", page: "Página" }
-        : { problem: "Problem", what: "What I did", highlights: "Highlights", stack: "Stack", repo: "Repository", demo: "Demo", page: "Page" };
+        ? {
+            problem: "Problema",
+            what: "Qué hice",
+            highlights: "Destacados",
+            stack: "Stack",
+            repo: "Repositorio",
+            demo: "Demo",
+            page: "Página",
+          }
+        : {
+            problem: "Problem",
+            what: "What I did",
+            highlights: "Highlights",
+            stack: "Stack",
+            repo: "Repository",
+            demo: "Demo",
+            page: "Page",
+          };
 
     const lines = [`# ${title || slug}`];
     if (summary) lines.push("", summary);
@@ -255,7 +270,11 @@ export function stripFrontmatter(md) {
  */
 export function isDraftNote(md) {
   const { frontmatter } = stripFrontmatter(md);
-  return String(frontmatter?.draft ?? "").trim().toLowerCase() === "true";
+  return (
+    String(frontmatter?.draft ?? "")
+      .trim()
+      .toLowerCase() === "true"
+  );
 }
 
 /**
@@ -328,7 +347,13 @@ export function chunkKB(kbText, opts = {}) {
   // content is never silently dropped.
   if (chunks.length === 0 && pendingParents.length > 0) {
     const text = pendingParents.join("\n").trimEnd();
-    chunks.push({ heading: text.split("\n")[0].replace(/^#+\s*/, "").slice(0, 80), text });
+    chunks.push({
+      heading: text
+        .split("\n")[0]
+        .replace(/^#+\s*/, "")
+        .slice(0, 80),
+      text,
+    });
   }
 
   return chunks.map((c, idx) => ({
@@ -581,9 +606,7 @@ async function main() {
     return;
   }
   if (!dryRun && !check && !apiToken) {
-    console.error(
-      "CLOUDFLARE_API_TOKEN is required unless running with --dry-run or --check (no network modes).",
-    );
+    console.error("CLOUDFLARE_API_TOKEN is required unless running with --dry-run or --check (no network modes).");
     process.exitCode = 1;
     return;
   }
@@ -603,7 +626,10 @@ async function main() {
 
   if (check) {
     const manifestIds = await readManifestIds();
-    const { missing, stale } = diffIds(chunks.map((c) => c.id), manifestIds);
+    const { missing, stale } = diffIds(
+      chunks.map((c) => c.id),
+      manifestIds,
+    );
     if (missing.length === 0 && stale.length === 0) {
       console.log(`Manifest in sync: ${manifestIds.length} chunk ids match current sources.`);
       return;
@@ -655,8 +681,7 @@ async function main() {
   // but only when the id set actually changed: `generatedAt` otherwise changes
   // on every run and produces an empty bot commit per CI run.
   const sortedIds = [...currentIds].sort();
-  const idsUnchanged =
-    previousIds.length === sortedIds.length && sortedIds.every((id, i) => previousIds[i] === id);
+  const idsUnchanged = previousIds.length === sortedIds.length && sortedIds.every((id, i) => previousIds[i] === id);
   if (!idsUnchanged) {
     await writeFile(
       MANIFEST_PATH,

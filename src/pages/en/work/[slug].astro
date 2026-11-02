@@ -10,16 +10,18 @@ export async function getStaticPaths() {
   return projects.map((project) => {
     const relatedNotes = allNotes
       .filter(
-        (n) =>
-          n.data.lang === "en" &&
-          !n.data.draft &&
-          (n.data.relatedProjects || []).includes(project.data.slug),
+        (n) => n.data.lang === "en" && !n.data.draft && (n.data.relatedProjects || []).includes(project.data.slug),
       )
       .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
       .map((n) => ({
         slug: n.data.slug || n.id.replace(/^(es|en)\//, ""),
         title: n.data.title,
-        dateStr: n.data.pubDate.toLocaleDateString("en-US", { timeZone: "UTC", day: "2-digit", month: "short", year: "numeric" }),
+        dateStr: n.data.pubDate.toLocaleDateString("en-US", {
+          timeZone: "UTC",
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
       }));
     return {
       params: { slug: project.data.slug },
@@ -47,14 +49,27 @@ const links = [
   <SiteHeader slot="header" lang={lang} />
 
   <article class="case-study">
-    <p class="label caption-3"><a class="crumb" href={getLocalizedPath(lang, backPath)}>{t("work.back")}</a> / {project.data.slug}</p>
+    <p class="label caption-3">
+      <a class="crumb" href={getLocalizedPath(lang, backPath)}>
+        {t("work.back")}
+      </a>{" "}
+      / {project.data.slug}
+    </p>
     <h1 class="heading-1">{data.title}</h1>
 
     <p class="meta mono caption-5">
       {project.data.kind && <span class="kind">{t(`kind.${project.data.kind}`)}</span>}
-      {project.data.status && project.data.kind && <span class="dot" aria-hidden="true">·</span>}
+      {project.data.status && project.data.kind && (
+        <span class="dot" aria-hidden="true">
+          ·
+        </span>
+      )}
       {project.data.status && <span class="status caption-3">{t(`status.${project.data.status}`)}</span>}
-      {(project.data.status || project.data.kind) && project.data.year && <span class="dot" aria-hidden="true">·</span>}
+      {(project.data.status || project.data.kind) && project.data.year && (
+        <span class="dot" aria-hidden="true">
+          ·
+        </span>
+      )}
       {project.data.year && <span class="year">{project.data.year}</span>}
     </p>
 
@@ -116,7 +131,9 @@ const links = [
               <a href={getLocalizedPath(lang, `/notes/${n.slug}/`)}>
                 <span class="rel-date mono caption-4">{n.dateStr}</span>
                 <span class="rel-title title-3">{n.title}</span>
-                <span class="arrow" aria-hidden="true">→</span>
+                <span class="arrow" aria-hidden="true">
+                  →
+                </span>
               </a>
             </li>
           ))}

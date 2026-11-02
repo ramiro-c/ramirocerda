@@ -10,17 +10,15 @@ const path = Astro.url.pathname;
 ---
 
 <nav class="lang" aria-label="Language">
-  {
-    (Object.keys(languages) as Lang[]).map((code) => (
-      <a
-        href={switchLangPath(path, code)}
-        aria-current={code === lang ? "page" : undefined}
-        class:list={["caption-3", { active: code === lang }]}
-      >
-        {code}
-      </a>
-    ))
-  }
+  {(Object.keys(languages) as Lang[]).map((code) => (
+    <a
+      href={switchLangPath(path, code)}
+      aria-current={code === lang ? "page" : undefined}
+      class:list={["caption-3", { active: code === lang }]}
+    >
+      {code}
+    </a>
+  ))}
 </nav>
 
 <style>

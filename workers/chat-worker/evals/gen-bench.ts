@@ -76,7 +76,9 @@ export function readUsage(raw: unknown): Usage {
   return {
     promptTokens: num(u.prompt_tokens ?? u.input_tokens),
     completionTokens: num(u.completion_tokens ?? u.output_tokens),
-    reasoningTokens: num(u.completion_tokens_details?.reasoning_tokens ?? u.output_tokens_details?.reasoning_tokens ?? u.reasoning_tokens),
+    reasoningTokens: num(
+      u.completion_tokens_details?.reasoning_tokens ?? u.output_tokens_details?.reasoning_tokens ?? u.reasoning_tokens,
+    ),
   };
 }
 
@@ -92,7 +94,12 @@ export interface Sample {
   error?: string;
 }
 
-async function runOnce(opts: { endpoint: string; apiKey: string; candidate: Candidate; messages: ChatMessage[] }): Promise<Sample> {
+async function runOnce(opts: {
+  endpoint: string;
+  apiKey: string;
+  candidate: Candidate;
+  messages: ChatMessage[];
+}): Promise<Sample> {
   const t0 = performance.now();
   let ttft: number | null = null;
   let reply = "";
@@ -120,7 +127,16 @@ async function runOnce(opts: { endpoint: string; apiKey: string; candidate: Cand
       signal: AbortSignal.timeout(60_000),
     });
     if (!res.ok || !res.body) {
-      return { status: res.status, ttftMs: null, totalMs: performance.now() - t0, reply: "", finishReason: null, usage, tokensPerSecond: null, error: (await res.text()).slice(0, 300) };
+      return {
+        status: res.status,
+        ttftMs: null,
+        totalMs: performance.now() - t0,
+        reply: "",
+        finishReason: null,
+        usage,
+        tokensPerSecond: null,
+        error: (await res.text()).slice(0, 300),
+      };
     }
     const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
     let buffer = "";
@@ -148,10 +164,20 @@ async function runOnce(opts: { endpoint: string; apiKey: string; candidate: Cand
     parseSseLines(buffer + "\n", onData);
     const totalMs = performance.now() - t0;
     const genMs = ttft === null ? null : totalMs - ttft;
-    const tokensPerSecond = usage.completionTokens && genMs && genMs > 0 ? (usage.completionTokens / genMs) * 1000 : null;
+    const tokensPerSecond =
+      usage.completionTokens && genMs && genMs > 0 ? (usage.completionTokens / genMs) * 1000 : null;
     return { status: 200, ttftMs: ttft, totalMs, reply, finishReason: finish, usage, tokensPerSecond };
   } catch (err) {
-    return { status: 0, ttftMs: ttft, totalMs: performance.now() - t0, reply, finishReason: finish, usage, tokensPerSecond: null, error: String(err) };
+    return {
+      status: 0,
+      ttftMs: ttft,
+      totalMs: performance.now() - t0,
+      reply,
+      finishReason: finish,
+      usage,
+      tokensPerSecond: null,
+      error: String(err),
+    };
   }
 }
 
@@ -195,14 +221,17 @@ async function main() {
     });
 
   if (process.argv.includes("--dry-run")) {
-    for (const c of cases) console.log(`${c.id}: ${c.chunks.length} chunks, ${JSON.stringify(c.messages).length} chars de prompt`);
+    for (const c of cases)
+      console.log(`${c.id}: ${c.chunks.length} chunks, ${JSON.stringify(c.messages).length} chars de prompt`);
     console.log(`Candidatos: ${candidates.map((c) => c.label).join(", ")}`);
     return;
   }
   loadLocalSecrets({ rootDir: ROOT_DIR, workerDir: WORKER_DIR });
   const apiKey: string = process.env.OPENCODE_GO_API_KEY?.trim() ?? "";
   if (!apiKey) {
-    console.error("OPENCODE_GO_API_KEY no está configurada (env o workers/chat-worker/.dev.vars). No se llamó a ningún modelo.");
+    console.error(
+      "OPENCODE_GO_API_KEY no está configurada (env o workers/chat-worker/.dev.vars). No se llamó a ningún modelo.",
+    );
     process.exit(2);
   }
   const judgeConfig = evalJudgeConfig({ apiKey });
@@ -215,7 +244,13 @@ async function main() {
         let faithful: boolean | null = null;
         let claims: unknown = null;
         if (judge && s.status === 200 && s.reply) {
-          const extracted = await extractClaims({ endpoint, apiKey, model: process.env.EVAL_JUDGE_MODEL ?? "deepseek-v4.1-flash", question: c.message, answer: s.reply });
+          const extracted = await extractClaims({
+            endpoint,
+            apiKey,
+            model: process.env.EVAL_JUDGE_MODEL ?? "deepseek-v4.1-flash",
+            question: c.message,
+            answer: s.reply,
+          });
           if (extracted.ok) {
             const checks = await judgeClaims(judgeConfig, extracted.claims, claimSnippets(c.chunks));
             faithful = answerFaithful(checks);
@@ -223,7 +258,9 @@ async function main() {
           }
         }
         samples.push({ caseId: c.id, run: r, ...s, faithful, claims });
-        console.log(`${candidate.label.padEnd(28)} ${c.id.padEnd(26)} ${s.status} ttft=${s.ttftMs?.toFixed(0) ?? "-"}ms total=${s.totalMs.toFixed(0)}ms tok/s=${s.tokensPerSecond?.toFixed(1) ?? "-"} out=${s.usage.completionTokens ?? "-"} reasoning=${s.usage.reasoningTokens ?? "-"}${judge ? ` faithful=${faithful}` : ""}`);
+        console.log(
+          `${candidate.label.padEnd(28)} ${c.id.padEnd(26)} ${s.status} ttft=${s.ttftMs?.toFixed(0) ?? "-"}ms total=${s.totalMs.toFixed(0)}ms tok/s=${s.tokensPerSecond?.toFixed(1) ?? "-"} out=${s.usage.completionTokens ?? "-"} reasoning=${s.usage.reasoningTokens ?? "-"}${judge ? ` faithful=${faithful}` : ""}`,
+        );
       }
     }
     const ok = samples.filter((s) => s.status === 200);
@@ -237,7 +274,12 @@ async function main() {
         tokensPerSecondP50: median(ok.map((s) => s.tokensPerSecond).filter((x): x is number => x !== null)),
         reasoningTokensP50: median(ok.map((s) => s.usage.reasoningTokens).filter((x): x is number => x !== null)),
         truncated: ok.filter((s) => s.finishReason === "length").length,
-        ...(judge ? { faithful: ok.filter((s) => s.faithful === true).length, unfaithful: ok.filter((s) => s.faithful === false).length } : {}),
+        ...(judge
+          ? {
+              faithful: ok.filter((s) => s.faithful === true).length,
+              unfaithful: ok.filter((s) => s.faithful === false).length,
+            }
+          : {}),
       },
       samples,
     });
@@ -246,7 +288,9 @@ async function main() {
   console.log("\nResumen (p50):");
   for (const r of results) {
     const s = r.summary;
-    console.log(`${r.candidate.label.padEnd(28)} ok ${s.ok}/${s.total}  TTFT ${s.ttftMsP50?.toFixed(0) ?? "-"} ms  total ${s.totalMsP50?.toFixed(0) ?? "-"} ms  ${s.tokensPerSecondP50?.toFixed(1) ?? "-"} tok/s  reasoning ${s.reasoningTokensP50 ?? "-"}  cortes ${s.truncated}${judge ? `  fieles ${s.faithful}/${s.ok}` : ""}`);
+    console.log(
+      `${r.candidate.label.padEnd(28)} ok ${s.ok}/${s.total}  TTFT ${s.ttftMsP50?.toFixed(0) ?? "-"} ms  total ${s.totalMsP50?.toFixed(0) ?? "-"} ms  ${s.tokensPerSecondP50?.toFixed(1) ?? "-"} tok/s  reasoning ${s.reasoningTokensP50 ?? "-"}  cortes ${s.truncated}${judge ? `  fieles ${s.faithful}/${s.ok}` : ""}`,
+    );
   }
   mkdirSync(path.join(EVAL_DIR, "results"), { recursive: true });
   const out = path.join(EVAL_DIR, "results", `gen-bench-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);

@@ -16,11 +16,7 @@ const t = useTranslations(lang);
 const tEn = useTranslations("en");
 ---
 
-<BaseLayout
-  lang={lang}
-  title={t("notfound.title")}
-  description={t("notfound.support")}
->
+<BaseLayout lang={lang} title={t("notfound.title")} description={t("notfound.support")}>
   <SiteHeader slot="header" lang={lang} />
 
   <section class="hero">
@@ -28,13 +24,17 @@ const tEn = useTranslations("en");
     <h1 class="heading-1">{t("notfound.title")}</h1>
     <p class="support body-3">{t("notfound.support")}</p>
     <div class="ctas">
-      <a class="cta-primary" href="/">{t("notfound.cta")}</a>
+      <a class="cta-primary" href="/">
+        {t("notfound.cta")}
+      </a>
     </div>
 
     <div class="en-fallback" lang="en">
       <p class="en-title title-1">{tEn("notfound.title")}</p>
       <p class="en-support body-6">{tEn("notfound.support")}</p>
-      <a class="cta-link" href="/en/">{tEn("notfound.cta")}</a>
+      <a class="cta-link" href="/en/">
+        {tEn("notfound.cta")}
+      </a>
     </div>
   </section>
 

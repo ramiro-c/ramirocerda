@@ -97,7 +97,12 @@ export async function askBotardo({
         data = null;
       }
       if (!response.ok) {
-        const code = data?.code === "RATE_LIMITED" || response.status === 429 ? "RATE_LIMITED" : data?.code === "MODEL_ERROR" ? "MODEL_ERROR" : "SERVER";
+        const code =
+          data?.code === "RATE_LIMITED" || response.status === 429
+            ? "RATE_LIMITED"
+            : data?.code === "MODEL_ERROR"
+              ? "MODEL_ERROR"
+              : "SERVER";
         throw new BotardoError(code, typeof data?.error === "string" ? data.error : code);
       }
       if (typeof data?.reply !== "string") throw new BotardoError("SERVER");

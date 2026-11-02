@@ -61,7 +61,10 @@ export interface CaseResult {
 }
 
 export function fold(text: string): string {
-  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 /** A chunk-id prefix matches "prefix" itself or "prefix-<hash>". */
@@ -140,7 +143,9 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
   const rs = results.filter((r) => r.pipeline === pipeline);
   const withCase = rs.map((r) => ({ r, c: byId.get(r.caseId)! })).filter((x) => x.c);
 
-  const decision = withCase.filter(({ c }) => c.expected.retrieve !== null).map(({ r, c }) => r.searched === c.expected.retrieve);
+  const decision = withCase
+    .filter(({ c }) => c.expected.retrieve !== null)
+    .map(({ r, c }) => r.searched === c.expected.retrieve);
   const route =
     pipeline === "adaptive"
       ? ratio(withCase.filter(({ c }) => c.expected.route !== null).map(({ r, c }) => r.route === c.expected.route))
@@ -148,7 +153,8 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
   const offer = withCase
     .filter(({ c }) => c.expected.offerContact !== null)
     .map(({ r, c }) => r.offerContact === c.expected.offerContact);
-  const fallbacks = pipeline === "adaptive" ? ratio(rs.filter((r) => r.routeVia !== null).map((r) => r.routeVia !== "llm")) : null;
+  const fallbacks =
+    pipeline === "adaptive" ? ratio(rs.filter((r) => r.routeVia !== null).map((r) => r.routeVia !== "llm")) : null;
   const recalls = withCase
     .filter(({ c }) => (c.expected.expectedChunks?.length ?? 0) > 0)
     .map(({ r, c }) => chunkRecall(c.expected.expectedChunks!, r.chunkIds));
@@ -170,7 +176,12 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
           errors: judged.filter((r) => r.verdict === "error").length,
           agreement: ratio(
             withCase
-              .filter(({ r, c }) => (r.verdict === "sufficient" || r.verdict === "insufficient") && c.expected.answerable !== null && c.category !== "followup")
+              .filter(
+                ({ r, c }) =>
+                  (r.verdict === "sufficient" || r.verdict === "insufficient") &&
+                  c.expected.answerable !== null &&
+                  c.category !== "followup",
+              )
               .map(({ r, c }) => (r.verdict === "sufficient") === c.expected.answerable),
           ),
           researches: ratio(searchedRs.map((r) => r.counters.vectorizeQueries >= 2)),
@@ -264,11 +275,27 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
     section("Router"),
     ["Casos", String(linear.cases), String(adaptive.cases)],
     ["Errores (excepción o 429/500)", String(linear.errors), String(adaptive.errors)],
-    ["Decisión de buscar correcta", fmtRatio(linear.retrievalDecision), routerDependent(fmtRatio(adaptive.retrievalDecision))],
+    [
+      "Decisión de buscar correcta",
+      fmtRatio(linear.retrievalDecision),
+      routerDependent(fmtRatio(adaptive.retrievalDecision)),
+    ],
     ["Ruta correcta (router Jev)", "n/a (sin router)", routerDependent(fmtRatio(adaptive.route))],
-    ["offerContact (hire_intent) correcto", fmtRatio(linear.offerContact), routerDependent(fmtRatio(adaptive.offerContact))],
-    ["Fallbacks del router (error, timeout, respuesta inválida)", "n/a", routerDependent(fmtRatio(adaptive.routerFallbacks))],
-    ["Latencia del router p50 / p95 (ms)", "n/a", decisionReal(rl ? `${Math.round(rl.p50)} / ${Math.round(rl.p95)}` : "n/a")],
+    [
+      "offerContact (hire_intent) correcto",
+      fmtRatio(linear.offerContact),
+      routerDependent(fmtRatio(adaptive.offerContact)),
+    ],
+    [
+      "Fallbacks del router (error, timeout, respuesta inválida)",
+      "n/a",
+      routerDependent(fmtRatio(adaptive.routerFallbacks)),
+    ],
+    [
+      "Latencia del router p50 / p95 (ms)",
+      "n/a",
+      decisionReal(rl ? `${Math.round(rl.p50)} / ${Math.round(rl.p95)}` : "n/a"),
+    ],
     section("1. Retrieval"),
     [
       "Recall de chunks esperados (promedio)",
@@ -278,7 +305,11 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
     ["Hit (al menos un chunk esperado)", real(fmtRatio(linear.hit)), real(fmtRatio(adaptive.hit))],
     ["Respuesta con el dato esperado", real(fmtRatio(linear.facts)), real(fmtRatio(adaptive.facts))],
     section("2. Suficiencia (juez Jev)"),
-    ["Veredictos suficiente / insuficiente / error", "n/a (sin juez)", real(suff ? `${suff.sufficient} / ${suff.insufficient} / ${suff.errors} (n=${suff.judged})` : "n/a")],
+    [
+      "Veredictos suficiente / insuficiente / error",
+      "n/a (sin juez)",
+      real(suff ? `${suff.sufficient} / ${suff.insufficient} / ${suff.errors} (n=${suff.judged})` : "n/a"),
+    ],
     ["Acuerdo del juez con la etiqueta answerable", "n/a (sin juez)", real(fmtRatio(suff?.agreement ?? null))],
     ["Re-búsquedas (2 searches)", "n/a (sin juez)", real(fmtRatio(suff?.researches ?? null))],
     section("3. Fidelidad (claims vs chunks)"),
@@ -289,18 +320,42 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
     ],
     ["Claims sin soporte / total (sin veredicto)", real(claimText(linear)), real(claimText(adaptive))],
     section("4. Abstención"),
-    ["Abstención correcta (answerable=false)", real(fmtRatio(linear.correctAbstention)), real(fmtRatio(adaptive.correctAbstention))],
-    ["Abstención correcta, near_miss (docs relevantes sin el dato)", real(fmtRatio(linear.nearMissAbstention)), real(fmtRatio(adaptive.nearMissAbstention))],
-    ["Abstención correcta, fuera del KB (out_of_kb y off-topic)", real(fmtRatio(linear.outOfKbAbstention)), real(fmtRatio(adaptive.outOfKbAbstention))],
-    ["Falsa abstención (answerable=true)", real(fmtRatio(linear.falseAbstention)), real(fmtRatio(adaptive.falseAbstention))],
+    [
+      "Abstención correcta (answerable=false)",
+      real(fmtRatio(linear.correctAbstention)),
+      real(fmtRatio(adaptive.correctAbstention)),
+    ],
+    [
+      "Abstención correcta, near_miss (docs relevantes sin el dato)",
+      real(fmtRatio(linear.nearMissAbstention)),
+      real(fmtRatio(adaptive.nearMissAbstention)),
+    ],
+    [
+      "Abstención correcta, fuera del KB (out_of_kb y off-topic)",
+      real(fmtRatio(linear.outOfKbAbstention)),
+      real(fmtRatio(adaptive.outOfKbAbstention)),
+    ],
+    [
+      "Falsa abstención (answerable=true)",
+      real(fmtRatio(linear.falseAbstention)),
+      real(fmtRatio(adaptive.falseAbstention)),
+    ],
     section("Costo y latencia"),
     [
       "Latencia p50 / p95 / media (ms)",
-      real(`${Math.round(linear.latency.p50)} / ${Math.round(linear.latency.p95)} / ${Math.round(linear.latency.mean)}`),
-      real(`${Math.round(adaptive.latency.p50)} / ${Math.round(adaptive.latency.p95)} / ${Math.round(adaptive.latency.mean)}`),
+      real(
+        `${Math.round(linear.latency.p50)} / ${Math.round(linear.latency.p95)} / ${Math.round(linear.latency.mean)}`,
+      ),
+      real(
+        `${Math.round(adaptive.latency.p50)} / ${Math.round(adaptive.latency.p95)} / ${Math.round(adaptive.latency.mean)}`,
+      ),
     ],
     ["Llamadas al router (Jev) por consulta", f1(linear.perQuery.routerCalls), f1(adaptive.perQuery.routerCalls)],
-    ["Llamadas al juez de suficiencia (Jev) por consulta", f1(linear.perQuery.judgeCalls), f1(adaptive.perQuery.judgeCalls)],
+    [
+      "Llamadas al juez de suficiencia (Jev) por consulta",
+      f1(linear.perQuery.judgeCalls),
+      f1(adaptive.perQuery.judgeCalls),
+    ],
     ["Llamadas de generación por consulta", f1(linear.perQuery.generationCalls), f1(adaptive.perQuery.generationCalls)],
     ["Embeddings por consulta", f1(linear.perQuery.embeddingCalls), f1(adaptive.perQuery.embeddingCalls)],
     ["Rerank por consulta", f1(linear.perQuery.rerankCalls), f1(adaptive.perQuery.rerankCalls)],

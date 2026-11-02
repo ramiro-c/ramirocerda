@@ -20,33 +20,31 @@ const { lang, position, compact = false } = Astro.props;
 const copy = landing[lang].cta;
 ---
 
-{
-  CAL_URL ? (
-    <a
-      class:list={["cta-primary", { "cta-compact": compact }]}
-      href={CAL_URL}
-      target="_blank"
-      rel="noopener"
-      data-cta-id="primary"
-      data-cta-position={position}
-    >
-      <span class="first-visit-only">{copy.primary}</span>
-      <span class="returning-only">{copy.primaryReturning}</span>
-    </a>
-  ) : (
-    <button
-      type="button"
-      class:list={["cta-primary", { "cta-compact": compact }]}
-      aria-haspopup="dialog"
-      data-open-contact="form"
-      data-cta-id="primary"
-      data-cta-position={position}
-    >
-      <span class="first-visit-only">{copy.primary}</span>
-      <span class="returning-only">{copy.primaryReturning}</span>
-    </button>
-  )
-}
+{CAL_URL ? (
+  <a
+    class:list={["cta-primary", { "cta-compact": compact }]}
+    href={CAL_URL}
+    target="_blank"
+    rel="noopener"
+    data-cta-id="primary"
+    data-cta-position={position}
+  >
+    <span class="first-visit-only">{copy.primary}</span>
+    <span class="returning-only">{copy.primaryReturning}</span>
+  </a>
+) : (
+  <button
+    type="button"
+    class:list={["cta-primary", { "cta-compact": compact }]}
+    aria-haspopup="dialog"
+    data-open-contact="form"
+    data-cta-id="primary"
+    data-cta-position={position}
+  >
+    <span class="first-visit-only">{copy.primary}</span>
+    <span class="returning-only">{copy.primaryReturning}</span>
+  </button>
+)}
 
 <style>
   .cta-compact {

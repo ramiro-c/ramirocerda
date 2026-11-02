@@ -55,9 +55,7 @@ export const DEFAULT_GENERATION_ATTEMPTS = 2;
 
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
 
-type AttemptOutcome =
-  | { kind: "done"; result: GenerateResult }
-  | { kind: "retry"; upstream?: number };
+type AttemptOutcome = { kind: "done"; result: GenerateResult } | { kind: "retry"; upstream?: number };
 
 async function attemptOnce(
   endpoint: string,
@@ -202,7 +200,16 @@ export function parseSseLines(buffer: string, onData: (data: string) => void): s
 }
 
 async function streamOnce(options: StreamOptions, maxTokens: number, timeoutMs: number): Promise<StreamAttempt> {
-  const { endpoint, apiKey, model, messages, temperature = 0, sessionId, userAgent = "botardo-web/1.0", onDelta } = options;
+  const {
+    endpoint,
+    apiKey,
+    model,
+    messages,
+    temperature = 0,
+    sessionId,
+    userAgent = "botardo-web/1.0",
+    onDelta,
+  } = options;
   const controller = new AbortController();
   // One watchdog re-armed on every chunk: bounds time-to-first-token and each idle gap.
   let timer = setTimeout(() => controller.abort(), timeoutMs);

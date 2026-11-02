@@ -123,9 +123,7 @@ function stubFetch(opts: { turnstileOk?: boolean; resend?: () => Promise<Respons
   const fetchMock = vi.fn((url: string | URL | Request, _init?: RequestInit) => {
     const href = String(url);
     if (href === TURNSTILE_VERIFY_URL) {
-      return Promise.resolve(
-        new Response(JSON.stringify({ success: opts.turnstileOk ?? true }), { status: 200 }),
-      );
+      return Promise.resolve(new Response(JSON.stringify({ success: opts.turnstileOk ?? true }), { status: 200 }));
     }
     if (href === RESEND_API_URL) {
       return opts.resend ? opts.resend() : Promise.resolve(new Response("{}", { status: 200 }));

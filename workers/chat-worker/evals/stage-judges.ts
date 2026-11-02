@@ -21,7 +21,12 @@
  * keyword routing anywhere: every verdict is a model answer.
  */
 
-import { DEFAULT_DECISION_ENDPOINT, DEFAULT_DECISION_FALLBACK_MODEL, DEFAULT_DECISION_MODEL, type DecisionConfig } from "../src/config";
+import {
+  DEFAULT_DECISION_ENDPOINT,
+  DEFAULT_DECISION_FALLBACK_MODEL,
+  DEFAULT_DECISION_MODEL,
+  type DecisionConfig,
+} from "../src/config";
 import { generateReply } from "../src/generate";
 import { askDecision, type ChoiceQuestion, type DecisionTrace, type NoulQuestion } from "../src/decision";
 import type { RetrievedChunk } from "../src/rag";
@@ -84,7 +89,8 @@ export function parseClaims(text: string): string[] | null {
   };
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
-  const parsed = tryParse(text.trim()) ?? (start >= 0 && end > start ? tryParse(text.slice(start, end + 1)) : undefined);
+  const parsed =
+    tryParse(text.trim()) ?? (start >= 0 && end > start ? tryParse(text.slice(start, end + 1)) : undefined);
   const claims = (parsed as { claims?: unknown } | undefined)?.claims;
   if (!Array.isArray(claims)) return null;
   return claims
@@ -194,12 +200,22 @@ export interface AbstentionCheck {
   error?: string;
 }
 
-export async function judgeAbstention(config: DecisionConfig, question: string, reply: string): Promise<AbstentionCheck> {
+export async function judgeAbstention(
+  config: DecisionConfig,
+  question: string,
+  reply: string,
+): Promise<AbstentionCheck> {
   const result = await askDecision(config, { question, reply }, { abstention: ABSTENTION_QUESTION });
   if (!result.ok) return { abstained: null, confidence: null, via: "error", tier: "none", error: result.reason };
   const answer = result.answers.abstention;
-  if (answer?.type !== "choice") return { abstained: null, confidence: null, via: "error", tier: "none", error: "invalid_shape" };
-  return { abstained: answer.choice === "abstains", confidence: answer.confidence, via: "judge", tier: result.trace.tier };
+  if (answer?.type !== "choice")
+    return { abstained: null, confidence: null, via: "error", tier: "none", error: "invalid_shape" };
+  return {
+    abstained: answer.choice === "abstains",
+    confidence: answer.confidence,
+    via: "judge",
+    tier: result.trace.tier,
+  };
 }
 
 // ---------- judge validation (fixtures) ----------

@@ -7,5 +7,7 @@
  * @returns {boolean}
  */
 export function shouldOfferContact(data) {
-  return typeof data === "object" && data !== null && /** @type {{ offerContact?: unknown }} */ (data).offerContact === true;
+  return (
+    typeof data === "object" && data !== null && /** @type {{ offerContact?: unknown }} */ (data).offerContact === true
+  );
 }

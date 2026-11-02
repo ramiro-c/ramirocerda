@@ -4,10 +4,24 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_GENERATION_ATTEMPTS, DEFAULT_GENERATION_TIMEOUT_MS, DEFAULT_MAX_TOKENS, generateReplyStream, parseSseLines } from "./generate";
+import {
+  DEFAULT_GENERATION_ATTEMPTS,
+  DEFAULT_GENERATION_TIMEOUT_MS,
+  DEFAULT_MAX_TOKENS,
+  generateReplyStream,
+  parseSseLines,
+} from "./generate";
 import worker from "./index";
 import { OFF_TOPIC_REPLY } from "./prompts";
-import { DECISION_VARS, GENERATION_ENDPOINT, readEvents, routerAnswer, sseResponse, stubFetch, type FetchScript } from "./test-utils";
+import {
+  DECISION_VARS,
+  GENERATION_ENDPOINT,
+  readEvents,
+  routerAnswer,
+  sseResponse,
+  stubFetch,
+  type FetchScript,
+} from "./test-utils";
 
 type Match = { id: string; score: number; metadata?: Record<string, unknown> };
 const strong: Match = { id: "kb-a", score: 0.62, metadata: { section: "Experiencia", text: "Ramiro trabaja en LDP." } };
@@ -87,7 +101,10 @@ describe("/ask over SSE", () => {
   it("maps a generation 429 to an error event (status stays 200 once streaming)", async () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     const { env } = makeEnv();
-    const { res, events } = await askStream(env, "¿Dónde trabaja?", { router: [routerAnswer("search")], generationStatus: 429 });
+    const { res, events } = await askStream(env, "¿Dónde trabaja?", {
+      router: [routerAnswer("search")],
+      generationStatus: 429,
+    });
     expect(res.status).toBe(200);
     expect(events.at(-1)).toMatchObject({ event: "error", data: { code: "RATE_LIMITED" } });
   });
@@ -130,7 +147,11 @@ describe("router and first search run in parallel", () => {
       const body = JSON.parse(String(init?.body));
       return new Promise<Response>((resolve) => {
         releaseRouter = () =>
-          resolve(new Response(JSON.stringify({ model: body.model, answers: (routerAnswer("search") as { answers: unknown }).answers })));
+          resolve(
+            new Response(
+              JSON.stringify({ model: body.model, answers: (routerAnswer("search") as { answers: unknown }).answers }),
+            ),
+          );
         setTimeout(() => {
           embeddedBeforeRouter = run.mock.calls.length > 0;
           releaseRouter();
@@ -158,7 +179,7 @@ describe("generateReplyStream", () => {
     const seen: string[] = [];
     const rest = parseSseLines('data: {"a":1}\ndata: {"b"', (d) => seen.push(d));
     expect(seen).toEqual(['{"a":1}']);
-    parseSseLines(rest + ':2}\n', (d) => seen.push(d));
+    parseSseLines(rest + ":2}\n", (d) => seen.push(d));
     expect(seen).toEqual(['{"a":1}', '{"b":2}']);
   });
 
@@ -169,7 +190,14 @@ describe("generateReplyStream", () => {
       .mockResolvedValueOnce(sseResponse(["Ho", "la"]));
     vi.stubGlobal("fetch", fetchMock);
     const deltas: string[] = [];
-    const result = await generateReplyStream({ endpoint: "e", apiKey: "k", model: "m", messages, backoffMs: 1, onDelta: (d) => deltas.push(d) });
+    const result = await generateReplyStream({
+      endpoint: "e",
+      apiKey: "k",
+      model: "m",
+      messages,
+      backoffMs: 1,
+      onDelta: (d) => deltas.push(d),
+    });
     expect(result).toEqual({ status: 200, content: "Hola" });
     expect(deltas).toEqual(["Ho", "la"]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -190,15 +218,26 @@ describe("generateReplyStream", () => {
         new Response(
           new ReadableStream({
             start(controller) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: "Ho" } }] })}\n\n`));
-              init?.signal?.addEventListener("abort", () => controller.error(new DOMException("aborted", "AbortError")));
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: "Ho" } }] })}\n\n`),
+              );
+              init?.signal?.addEventListener("abort", () =>
+                controller.error(new DOMException("aborted", "AbortError")),
+              );
             },
           }),
         ),
       ),
     );
     vi.stubGlobal("fetch", fetchMock);
-    const result = await generateReplyStream({ endpoint: "e", apiKey: "k", model: "m", messages, timeoutMs: 20, onDelta: () => {} });
+    const result = await generateReplyStream({
+      endpoint: "e",
+      apiKey: "k",
+      model: "m",
+      messages,
+      timeoutMs: 20,
+      onDelta: () => {},
+    });
     expect(result).toEqual({ status: 500, code: "MODEL_ERROR" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

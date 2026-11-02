@@ -121,7 +121,11 @@ export async function routeMessage(
 ): Promise<RouteDecision> {
   if (!config.decision) return fallbackDecision(message, "not_configured");
   const contextual = contextualQuery(message, history);
-  const result = await askDecision(config.decision, buildRouterState(message, history), routerQuestions(contextual !== null));
+  const result = await askDecision(
+    config.decision,
+    buildRouterState(message, history),
+    routerQuestions(contextual !== null),
+  );
   if (!result.ok) return fallbackDecision(message, result.reason, result.trace);
 
   const { route: routeAnswer, hire_intent: hireAnswer, needs_history: historyAnswer } = result.answers;
@@ -132,7 +136,8 @@ export async function routeMessage(
 
   // Skipping the KB is the risky direction: only trust a non-search route when the model is confident.
   const chosen = routeAnswer.choice as Route;
-  const route: Route = chosen !== "search" && routeAnswer.confidence < config.decision.minConfidence ? "search" : chosen;
+  const route: Route =
+    chosen !== "search" && routeAnswer.confidence < config.decision.minConfidence ? "search" : chosen;
   // The raw message is always the first search. On measured follow-ups the history-merged
   // query lost chunks the raw one finds (fu-es-merge 0/2 vs 2/2, fu-en-when-certs 0/1 vs 1/1)
   // and the judge rated both retrievals sufficient, so the wrong query had no safety net.
