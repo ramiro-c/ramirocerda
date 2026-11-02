@@ -520,7 +520,12 @@ const faqSchema = {
     grid-template-columns: var(--space-700) minmax(0, 1fr) auto;
     align-items: start;
     gap: var(--space-300);
-    padding: var(--space-400) 0;
+    /* The hover fill needs room around the text. The row carries horizontal
+       padding and pulls back by the same amount, so the copy stays aligned with
+       the heading above while the fill bleeds past it instead of touching the
+       letters. */
+    padding: var(--space-400) var(--space-300);
+    margin-inline: calc(var(--space-300) * -1);
     border-bottom: 1px solid var(--border);
     transition: background-color var(--dur-color) var(--ease-out);
   }
@@ -663,7 +668,8 @@ const faqSchema = {
     .case {
       grid-template-columns: var(--space-500) minmax(0, 1fr);
       gap: var(--space-200);
-      padding: var(--space-300) 0;
+      padding: var(--space-300) var(--space-200);
+      margin-inline: calc(var(--space-200) * -1);
     }
     .case-link {
       grid-column: 2;
