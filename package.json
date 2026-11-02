@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "^5.10.0"
+    "astro": "^5.10.0",
+    "rehype-external-links": "^3.0.0"
   },
   "devDependencies": {
     "typescript": "^5.8.0"
