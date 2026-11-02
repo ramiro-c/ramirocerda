@@ -42,6 +42,7 @@ const offer = landing[lang].botardoOffer;
   aria-hidden="true"
   aria-labelledby="botardoTitle"
   data-retry-label={t("botardo.retry")}
+  data-pending-text={t("botardo.pending")}
   data-offer-text={offer.text}
   data-offer-button={offer.button}
   inert
@@ -111,12 +112,17 @@ const offer = landing[lang].botardoOffer;
   }
   const botardoSessionId = getBotardoSessionId();
 
+  // Two keys, on purpose. `botardo:history` is the LLM context window sent to
+  // the worker (short). `botardo:transcript` is what the visitor sees, so the
+  // conversation survives the full page load of a normal internal navigation.
   const HISTORY_KEY = "botardo:history";
+  const TRANSCRIPT_KEY = "botardo:transcript";
   const MAX_HISTORY_TURNS = 10;
+  const MAX_TRANSCRIPT_MESSAGES = 40;
 
-  function loadConversationHistory() {
+  function loadStoredMessages(key) {
     try {
-      const raw = sessionStorage.getItem(HISTORY_KEY);
+      const raw = sessionStorage.getItem(key);
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
@@ -133,14 +139,56 @@ const offer = landing[lang].botardoOffer;
     }
   }
 
-  let conversationHistory = loadConversationHistory();
+  function persistMessages(key, list, limit) {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(list.slice(-limit)));
+    } catch {
+      // sessionStorage unavailable
+    }
+  }
+
+  let conversationHistory = loadStoredMessages(HISTORY_KEY);
+  let transcript = loadStoredMessages(TRANSCRIPT_KEY);
 
   function persistConversationHistory() {
+    persistMessages(HISTORY_KEY, conversationHistory, MAX_HISTORY_TURNS);
+  }
+
+  function persistTranscript() {
+    persistMessages(TRANSCRIPT_KEY, transcript, MAX_TRANSCRIPT_MESSAGES);
+  }
+
+  // Panel state (open/closed + unsent draft) and the message that was in flight
+  // when the visitor navigated away. Same reasoning as the transcript: an MPA
+  // page load wipes the widget, so it has to rebuild itself from storage.
+  const UI_KEY = "botardo:ui";
+  const PENDING_KEY = "botardo:pending";
+
+  function loadUiState() {
     try {
-      sessionStorage.setItem(
-        HISTORY_KEY,
-        JSON.stringify(conversationHistory.slice(-MAX_HISTORY_TURNS)),
-      );
+      const parsed = JSON.parse(sessionStorage.getItem(UI_KEY) || "null");
+      if (!parsed || typeof parsed !== "object") return { open: false, draft: "" };
+      return {
+        open: parsed.open === true,
+        draft: typeof parsed.draft === "string" ? parsed.draft : "",
+      };
+    } catch {
+      return { open: false, draft: "" };
+    }
+  }
+
+  function readPendingMessage() {
+    try {
+      return sessionStorage.getItem(PENDING_KEY) || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function setPendingMessage(text) {
+    try {
+      if (text) sessionStorage.setItem(PENDING_KEY, text);
+      else sessionStorage.removeItem(PENDING_KEY);
     } catch {
       // sessionStorage unavailable
     }
@@ -181,6 +229,14 @@ const offer = landing[lang].botardoOffer;
   const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
   const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  function persistUiState() {
+    try {
+      sessionStorage.setItem(UI_KEY, JSON.stringify({ open: isOpen, draft: input.value }));
+    } catch {
+      // sessionStorage unavailable
+    }
+  }
+
   function setExpandedState(expanded) {
     islandButton.setAttribute("aria-expanded", String(expanded));
     for (const trigger of openTriggers) {
@@ -218,24 +274,27 @@ const offer = landing[lang].botardoOffer;
     messages.scrollTo({ top: messages.scrollHeight, behavior });
   }
 
-  function updateModalState(open) {
+  function updateModalState(open, { focus = true } = {}) {
     isOpen = open;
     modal.classList.toggle("is-open", open);
     modal.setAttribute("aria-hidden", String(!open));
     modal.toggleAttribute("inert", !open);
     setExpandedState(open);
+    persistUiState();
 
     if (open) {
       if (isMobile()) {
         lockBodyScroll();
       }
-      requestAnimationFrame(() => {
-        if (isMobile()) {
-          closeButton.focus({ preventScroll: true });
-        } else {
-          input.focus({ preventScroll: true });
-        }
-      });
+      if (focus) {
+        requestAnimationFrame(() => {
+          if (isMobile()) {
+            closeButton.focus({ preventScroll: true });
+          } else {
+            input.focus({ preventScroll: true });
+          }
+        });
+      }
       scrollMessagesToBottom("auto");
       return;
     }
@@ -337,7 +396,7 @@ const offer = landing[lang].botardoOffer;
       .join("");
   }
 
-  function appendMessage(text, role) {
+  function appendMessage(text, role, { scroll = true } = {}) {
     const message = document.createElement("div");
     message.className = `botardo-message botardo-${role}`;
     if (role === "assistant") {
@@ -346,7 +405,33 @@ const offer = landing[lang].botardoOffer;
       message.textContent = text;
     }
     messages.insertBefore(message, typingIndicator);
-    scrollMessagesToBottom(prefersReducedMotion() ? "auto" : "smooth");
+    if (scroll) scrollMessagesToBottom(prefersReducedMotion() ? "auto" : "smooth");
+  }
+
+  // Internal links are full page loads (no client router), so every navigation
+  // re-runs this script against an empty message list. Replay what the visitor
+  // already sees instead of showing a blank chat over a warm LLM context.
+  function hydrateTranscript() {
+    if (!transcript.length) return;
+
+    const welcome = messages.querySelector(".botardo-welcome");
+    if (welcome) welcome.hidden = true;
+
+    // Announcements are for the live exchange, not for the replay on load.
+    const live = messages.getAttribute("aria-live");
+    messages.setAttribute("aria-live", "off");
+
+    for (const entry of transcript) {
+      appendMessage(entry.content, entry.role, { scroll: false });
+    }
+
+    messages.setAttribute("aria-live", live || "polite");
+
+    if (transcript[transcript.length - 1]?.offerContact === true) {
+      appendContactOffer();
+    }
+
+    scrollMessagesToBottom("auto");
   }
 
   // Hire intent comes from the worker's LLM router (PR #20) as
@@ -412,6 +497,8 @@ const offer = landing[lang].botardoOffer;
 
     appendMessage(text, "user");
     input.value = "";
+    persistUiState();
+    setPendingMessage(text);
     typingIndicator.hidden = false;
     scrollMessagesToBottom("auto");
 
@@ -442,12 +529,22 @@ const offer = landing[lang].botardoOffer;
       }
 
       const data = await response.json();
+      const offerContact = shouldOfferContact(data);
       appendMessage(data.reply, "assistant");
-      if (shouldOfferContact(data)) appendContactOffer();
+      if (offerContact) appendContactOffer();
       conversationHistory.push({ role: "user", content: text });
       conversationHistory.push({ role: "assistant", content: data.reply });
       conversationHistory = conversationHistory.slice(-MAX_HISTORY_TURNS);
       persistConversationHistory();
+      transcript.push({ role: "user", content: text });
+      transcript.push({
+        role: "assistant",
+        content: data.reply,
+        ...(offerContact ? { offerContact: true } : {}),
+      });
+      transcript = transcript.slice(-MAX_TRANSCRIPT_MESSAGES);
+      persistTranscript();
+      setPendingMessage("");
       lastFailedMessage = "";
     } catch (error) {
       typingIndicator.hidden = true;
@@ -496,6 +593,26 @@ const offer = landing[lang].botardoOffer;
 
   closeButton.addEventListener("click", closeBotardo);
 
+  // Restore the widget session: draft text, replayed messages, panel state and
+  // an interrupted question. An internal link is a full page load, so without
+  // this the chat starts blank on every page.
+  const uiState = loadUiState();
+  input.value = uiState.draft;
+
+  hydrateTranscript();
+
+  // Desktop only: on mobile an open panel locks body scroll, so restoring it on
+  // a fresh page would trap the visitor at the top of the document.
+  if (uiState.open && !isMobile()) {
+    updateModalState(true, { focus: false });
+  }
+
+  const pendingMessage = readPendingMessage();
+  if (pendingMessage) {
+    lastFailedMessage = pendingMessage;
+    showError(modal.getAttribute("data-pending-text") || "I didn't finish replying. Try again.");
+  }
+
   document.addEventListener("keydown", (event) => {
     if (!isOpen) return;
     if (event.key === "Escape") {
@@ -528,6 +645,8 @@ const offer = landing[lang].botardoOffer;
     event.preventDefault();
     sendMessage();
   });
+
+  input.addEventListener("input", persistUiState);
 
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
