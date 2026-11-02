@@ -10,6 +10,7 @@
     "chat:populate": "node workers/chat-worker/scripts/populate-index.mjs",
     "chat:stats": "node workers/chat-worker/scripts/chat-stats.mjs",
     "site:stats": "node scripts/site-stats.mjs",
+    "links": "node scripts/check-links.mjs",
     "chat:eval": "pnpm --filter ramirocerda-chat-worker eval"
   },
   "dependencies": {
