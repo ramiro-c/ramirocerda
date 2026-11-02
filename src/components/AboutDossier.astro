@@ -16,6 +16,8 @@ const { lang, yearsExp, copy } = Astro.props;
 const t = useTranslations(lang);
 const labels = {
   personalLabel: t("about.personalLabel"),
+  photoCaption: t("about.photoCaption"),
+  photoAlt: t("about.photoAlt"),
   rolesLabel: t("about.rolesLabel"),
   educationLabel: t("about.educationLabel"),
   skillsLabel: t("about.skillsLabel"),
@@ -33,6 +35,26 @@ const labels = {
 
     <p class="section-label caption-3">{labels.personalLabel}</p>
     {copy.personal.map((paragraph) => <p class="personal-p body-3">{paragraph}</p>)}
+
+    <figure class="personal-photo">
+      <picture>
+        <source
+          type="image/webp"
+          srcset="/nerdearla-midudev-400.webp 400w, /nerdearla-midudev-720.webp 720w"
+          sizes="(min-width: 860px) 20rem, 90vw"
+        />
+        <img
+          class="personal-photo-img"
+          src="/nerdearla-midudev-720.jpg"
+          width="720"
+          height="960"
+          alt={labels.photoAlt}
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+      <figcaption class="personal-photo-caption caption-5">{labels.photoCaption}</figcaption>
+    </figure>
 
     <p class="section-label caption-3">{labels.rolesLabel}</p>
     <ul class="d-rows">
@@ -102,6 +124,27 @@ const labels = {
     max-width: 44rem;
     margin: 0 0 var(--space-200);
     color: var(--muted);
+  }
+  /* The photo belongs to the personal section, so it sits in the text column
+     rather than the rail. It is capped and left aligned so the paragraph
+     measure above it stays the reference for the eye. */
+  .personal-photo {
+    margin: var(--space-400) 0 0;
+    max-width: 20rem;
+  }
+  .personal-photo picture {
+    display: block;
+  }
+  .personal-photo-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-xl);
+    background-color: var(--surface);
+  }
+  .personal-photo-caption {
+    margin: var(--space-100) 0 0;
+    color: var(--muted-2);
   }
   .d-rows {
     list-style: none;
