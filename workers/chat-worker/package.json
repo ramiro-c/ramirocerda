@@ -9,7 +9,8 @@
     "eval": "tsx evals/run.ts",
     "eval:offline": "tsx evals/run.ts --offline",
     "eval:decision": "tsx evals/run.ts --decision-only",
-    "eval:judges": "tsx evals/judge-check.ts"
+    "eval:judges": "tsx evals/judge-check.ts",
+    "eval:gen-bench": "tsx evals/gen-bench.ts"
   },
   "devDependencies": {
     "@types/node": "24.13.3",
