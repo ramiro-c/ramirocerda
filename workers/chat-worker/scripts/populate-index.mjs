@@ -28,7 +28,6 @@ import path from "node:path";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKER_DIR = path.join(SCRIPT_DIR, "..");
 const ROOT_DIR = path.join(WORKER_DIR, "..", "..");
-const SOURCES_PATH = path.join(WORKER_DIR, "kb-sources.json");
 const MANIFEST_PATH = path.join(WORKER_DIR, "vectorize-manifest.json");
 
 // Optional convenience: auto-load a gitignored `.env` from the repo root when no
@@ -101,7 +100,7 @@ function listOf(block, key) {
       .filter(Boolean);
   }
   const lines = block.split(/\r?\n/);
-  const keyIdx = lines.findIndex((line) => new RegExp(`^[ \t]*${key}:[ \t]*(?:$|\S)`).test(line));
+  const keyIdx = lines.findIndex((line) => new RegExp(`^[ \\t]*${key}:[ \\t]*(?:$|\\S)`).test(line));
   if (keyIdx === -1) return [];
   const items = [];
   for (let i = keyIdx + 1; i < lines.length; i++) {

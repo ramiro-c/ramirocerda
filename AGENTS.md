@@ -22,5 +22,8 @@
 
 ## Operations
 
+- Lint (whole repo, site + worker + scripts): `pnpm run lint` (oxlint; errors
+  block CI via `.github/workflows/lint.yml`, style warnings don't).
+
 - RAG KB populate: `pnpm chat:populate` from the repo root (see
   `workers/chat-worker/DEPLOY.md` for the full runbook).

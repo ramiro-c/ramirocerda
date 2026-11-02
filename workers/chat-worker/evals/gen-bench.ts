@@ -183,7 +183,7 @@ async function main() {
     .map((c) => {
       const chunks: RetrievedChunk[] = kb
         .filter((k) => (c.expected.expectedChunks as string[]).some((prefix) => k.id.startsWith(prefix)))
-        .map((k) => ({ id: k.id, score: 1, metadata: { ...(k.metadata ?? {}), text: k.text } }));
+        .map((k) => ({ id: k.id, score: 1, metadata: { ...k.metadata, text: k.text } }));
       const messages = buildRagPrompt({
         identityPrompt: IDENTITY_PROMPT,
         chunks,
