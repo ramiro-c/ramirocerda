@@ -2,7 +2,6 @@
   "name": "ramirocerda",
   "type": "module",
   "version": "1.0.0",
-  "packageManager": "pnpm@11.10.0",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build --force",
@@ -12,7 +11,7 @@
     "lint": "oxlint",
     "site:stats": "node scripts/site-stats.mjs",
     "links": "node scripts/check-links.mjs",
-    "chat:eval": "pnpm --filter ramirocerda-chat-worker eval"
+    "chat:eval": "bun run --filter ramirocerda-chat-worker eval"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
@@ -22,5 +21,13 @@
   "devDependencies": {
     "oxlint": "^1.90.0",
     "typescript": "^5.8.0"
-  }
+  },
+  "workspaces": [
+    "workers/chat-worker"
+  ],
+  "trustedDependencies": [
+    "esbuild",
+    "sharp",
+    "workerd"
+  ]
 }

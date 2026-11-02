@@ -18,12 +18,13 @@ Astro portfolio site with localized Spanish/English routes.
 
 ## Scripts
 
-Uses **pnpm** (see `packageManager` in `package.json`).
+Uses **Bun** (`bun.lock`; workspace list in `package.json`).
 
-- `pnpm install` — install dependencies
-- `pnpm dev` — Astro dev server
-- `pnpm build` — build into `dist/`
-- `pnpm preview` — preview production build
+- `bun install` — install dependencies
+- `bun run dev` — Astro dev server
+- `bun run build` — build into `dist/`
+- `bun run preview` — preview production build
+- `bun run lint` — oxlint across site, worker and scripts
 
 ## Botardo
 

@@ -5,28 +5,28 @@ Real RAG + OpenCode Go generation (SDD change `botardo-rag-opencode-go`).
 ## Prerequisites
 
 - Cloudflare account with Vectorize + Workers AI enabled (free tier OK).
-- `wrangler` available (`pnpm dlx wrangler` works from this directory) and authenticated (`wrangler login`).
+- `wrangler` available (`bunx wrangler` works from this directory) and authenticated (`wrangler login`).
 - Active OpenCode Go subscription with an API key. **The key is a Worker secret — it must never be committed to the repo.**
 - **Credentials live in the gitignored root `.env`** (`CLOUDFLARE_ACCOUNT_ID`,
   `CLOUDFLARE_API_TOKEN`) and `workers/chat-worker/.dev.vars` (OpenCode Go key).
-  `pnpm chat:populate` auto-loads the root `.env`, so no credential input is
+  `bun run chat:populate` auto-loads the root `.env`, so no credential input is
   needed to run it — never share, print, or commit these files.
 
 ## One-time setup (already done on 2026-08-13)
 
 ```bash
 # 1. Create the Vectorize index. IMMUTABLE: dimensions/metric cannot change later.
-pnpm dlx wrangler vectorize create botardo-kb --dimensions=1024 --metric=cosine
+bunx wrangler vectorize create botardo-kb --dimensions=1024 --metric=cosine
 
 # 2. Populate the index from the KB (chunk -> bge-m3 embed -> upsert + prune).
 #    Credentials come from the gitignored root `.env` (auto-loaded) — nothing to export.
-pnpm chat:populate        # from the repo root
+bun run chat:populate        # from the repo root
 #    Preview without touching the index:
-pnpm exec --filter ramirocerda-chat-worker populate -- --dry-run
+bun run --filter ramirocerda-chat-worker populate -- --dry-run
 ```
 
 Population writes `vectorize-manifest.json` (committed): the chunk-ID baseline used
-to prune stale vectors on the next run. Re-run `pnpm chat:populate` after any KB change.
+to prune stale vectors on the next run. Re-run `bun run chat:populate` after any KB change.
 
 ## Automatic population (CI)
 
@@ -35,7 +35,7 @@ KB content (`src/content/**`, `workers/chat-worker/scripts/**`,
 `kb-sources.json`, the manifest, or the workflow itself):
 
 1. `--check` asserts the committed manifest matches the current sources (fails fast, no network).
-2. `pnpm chat:populate` equivalent (bare node) embeds + upserts + prunes.
+2. `bun run chat:populate` equivalent (bare node) embeds + upserts + prunes.
 3. If the manifest changed, a bot commit `chore(chat-worker): sync vectorize manifest [skip ci]` pushes it back.
 
 Requires the repo secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`
@@ -72,8 +72,8 @@ is pinned in `wrangler.jsonc` and must equal `DATASET` in
 Inspect with (credentials auto-loaded from the root `.env`):
 
 ```bash
-pnpm chat:stats                 # questions/day, lang/status split, no-info rate, conversations, invocations
-pnpm chat:stats -- --sql "SELECT toDate(timestamp) AS day, blob3 FROM events.analyticsEngine.ramirocerda_chat_ANALYTICS WHERE timestamp >= NOW() - INTERVAL '30' DAY ORDER BY timestamp DESC LIMIT 20"
+bun run chat:stats                 # questions/day, lang/status split, no-info rate, conversations, invocations
+bun run chat:stats -- --sql "SELECT toDate(timestamp) AS day, blob3 FROM events.analyticsEngine.ramirocerda_chat_ANALYTICS WHERE timestamp >= NOW() - INTERVAL '30' DAY ORDER BY timestamp DESC LIMIT 20"
 ```
 
 Queries go to the **unified Analytics SQL API** (`POST /client/v4/analytics/sql`)
@@ -254,7 +254,7 @@ Config (vars in `wrangler.jsonc`, defaults in `src/config.ts`):
 | `OPENCODE_GO_API_KEY` | secret (existing) | | generation key; also sent as Bearer on the paid Jev fallback only, never on the free call |
 
 Removed: every `OPENROUTER_*` var and the `OPENROUTER_API_KEY` secret (if it
-was ever set: `pnpm dlx wrangler secret delete OPENROUTER_API_KEY`), plus the older
+was ever set: `bunx wrangler secret delete OPENROUTER_API_KEY`), plus the older
 `ROUTER_MODEL`, `REWRITE_MODEL`, `ROUTER_LLM_ENABLED`, `ROUTER_TIMEOUT_MS`,
 `REWRITE_TIMEOUT_MS`, `SUFFICIENCY_MIN_TOP_SCORE`, `SUFFICIENCY_MIN_CHUNKS`.
 `max_tokens`, `response_format` and reasoning effort have no equivalent in
@@ -327,15 +327,15 @@ Judges (`evals/stage-judges.ts`), no regex or keyword routing:
 
 ```bash
 # Full before/after with every stage (needs CF + OpenCode Go credentials, read-only):
-CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... OPENCODE_GO_API_KEY=... pnpm chat:eval
+CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... OPENCODE_GO_API_KEY=... bun run chat:eval
 # Optional cross-check: the adaptive pipeline with the decision model off must match the linear column
-DECISION_MODEL= pnpm --filter ramirocerda-chat-worker eval -- --pipelines adaptive
-pnpm --filter ramirocerda-chat-worker eval -- --no-judge     # skip faithfulness (the only judge that spends generation tokens)
+DECISION_MODEL= bun run --filter ramirocerda-chat-worker eval -- --pipelines adaptive
+bun run --filter ramirocerda-chat-worker eval -- --no-judge     # skip faithfulness (the only judge that spends generation tokens)
 
 # No credentials:
-pnpm --filter ramirocerda-chat-worker eval:judges            # REAL Jev judges on FIXTURES (judge-fixtures.json), validates the judges
-pnpm --filter ramirocerda-chat-worker eval:decision          # REAL Jev router, stubbed KB/generation
-pnpm --filter ramirocerda-chat-worker eval:offline           # MOCKED decision model, call counts only
+bun run --filter ramirocerda-chat-worker eval:judges            # REAL Jev judges on FIXTURES (judge-fixtures.json), validates the judges
+bun run --filter ramirocerda-chat-worker eval:decision          # REAL Jev router, stubbed KB/generation
+bun run --filter ramirocerda-chat-worker eval:offline           # MOCKED decision model, call counts only
 ```
 
 Real mode needs `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (Workers AI +
@@ -357,7 +357,7 @@ quality. Results are written to `evals/results/` (gitignored).
 ## Secret (step 2.6 — requires the real OpenCode Go key, run manually)
 
 ```bash
-pnpm dlx wrangler secret put OPENCODE_GO_API_KEY
+bunx wrangler secret put OPENCODE_GO_API_KEY
 # paste the OpenCode Go API key at the prompt. It is stored encrypted in
 # Cloudflare and never appears in the repo. Production reads it from the
 # environment; local dev reads it from workers/chat-worker/.dev.vars (gitignored).
@@ -366,7 +366,7 @@ pnpm dlx wrangler secret put OPENCODE_GO_API_KEY
 ## Deploy sequence (order matters)
 
 1. Set the secret (below) and populate the index (above) BEFORE the first deploy.
-2. `pnpm dlx wrangler deploy` — committed config ships with `RAG_ENABLED="true"`; the RAG
+2. `bunx wrangler deploy` — committed config ships with `RAG_ENABLED="true"`; the RAG
    pipeline is the only path since the legacy static-KB + llama branch was
    removed (commit "chore(chat-worker): remove legacy kb path").
 3. `RAG_ENABLED` is now a **vestigial flag**: kept in config while its removal
@@ -391,19 +391,19 @@ One time setup, in this order:
 cd workers/chat-worker
 
 # 1. D1 database. Copy the printed database_id.
-pnpm exec wrangler d1 create ramirocerda-leads
+bunx wrangler d1 create ramirocerda-leads
 # 2. Uncomment "d1_databases" in wrangler.jsonc (binding LEADS_DB) and paste the id.
 # 3. Create the tables (migrations/0001_create_leads.sql, 0002_create_events.sql).
-pnpm exec wrangler d1 migrations apply ramirocerda-leads --remote
+bunx wrangler d1 migrations apply ramirocerda-leads --remote
 
 # 4. Turnstile: Cloudflare dashboard > Turnstile > Add widget, hostnames
 #    ramirocerda.com.ar (+ www, + the Vercel preview host if wanted), mode Managed.
 #    Site key (public)  -> Vercel env PUBLIC_TURNSTILE_SITE_KEY (Production + Preview).
 #    Secret key         -> worker secret:
-pnpm exec wrangler secret put TURNSTILE_SECRET_KEY
+bunx wrangler secret put TURNSTILE_SECRET_KEY
 
 # 5. Resend: create an API key (Sending access) and store it.
-pnpm exec wrangler secret put RESEND_API_KEY
+bunx wrangler secret put RESEND_API_KEY
 #    LEAD_FROM defaults to onboarding@resend.dev, which only delivers to the
 #    Resend account owner. To send from your own domain (and to enable the
 #    visitor confirmation), verify ramirocerda.com.ar in Resend (DNS records),
@@ -411,7 +411,7 @@ pnpm exec wrangler secret put RESEND_API_KEY
 #    LEAD_CONFIRMATION_ENABLED="true" in wrangler.jsonc.
 
 # 6. Deploy the worker, then redeploy the site (Vercel picks up the new env var).
-pnpm exec wrangler deploy
+bunx wrangler deploy
 ```
 
 Vars (wrangler.jsonc): `LEAD_NOTIFY_TO`, `LEAD_FROM`, `LEAD_CONFIRMATION_ENABLED`.
@@ -427,7 +427,7 @@ ramirocerda-leads --local` for a local database.
 ### Funnel queries
 
 ```bash
-pnpm exec wrangler d1 execute ramirocerda-leads --remote --file=queries/funnel.sql
+bunx wrangler d1 execute ramirocerda-leads --remote --file=queries/funnel.sql
 ```
 
 Prints clicks per CTA and placement, leads per origin (form vs botardo),
@@ -435,14 +435,14 @@ conversion new vs returning visitors, and primary CTA click through per
 placement, for the last 30 days. Read latest leads:
 
 ```bash
-pnpm exec wrangler d1 execute ramirocerda-leads --remote \
+bunx wrangler d1 execute ramirocerda-leads --remote \
   --command "SELECT created_at, origin, name, email FROM leads ORDER BY created_at DESC LIMIT 20"
 ```
 
 ## Local probes
 
-wrangler is not a dependency of this repo: use `pnpm dlx wrangler` (or a global
-install). Every `wrangler dev` needs Cloudflare auth first (`pnpm dlx wrangler
+wrangler is not a dependency of this repo: use `bunx wrangler` (or a global
+install). Every `wrangler dev` needs Cloudflare auth first (`bunx wrangler
 login`, or `CLOUDFLARE_API_TOKEN` in a non-interactive shell), because:
 
 - `env.AI` always runs remotely (Workers AI has no local emulation);
@@ -457,8 +457,8 @@ login for AI and has no Vectorize, so retrieval cannot work there. Copy
 ```bash
 cd workers/chat-worker
 cp .dev.vars.example .dev.vars            # then fill OPENCODE_GO_API_KEY
-pnpm dlx wrangler login                   # once per machine
-pnpm dlx wrangler dev --remote --port 8787
+bunx wrangler login                   # once per machine
+bunx wrangler dev --remote --port 8787
 ```
 
 The worker only answers allowed origins (`ALLOWED_ORIGINS` in `src/index.ts`).
@@ -505,9 +505,9 @@ the repo) with `stream: true`, and saves every reply to
 `eval:judges` judges (claim extraction + Jev claim support).
 
 ```bash
-pnpm --filter ramirocerda-chat-worker eval:gen-bench -- --dry-run   # no key: prints the prompts
-pnpm --filter ramirocerda-chat-worker eval:gen-bench                # default candidates, 6 cases
-pnpm --filter ramirocerda-chat-worker eval:gen-bench -- \
+bun run --filter ramirocerda-chat-worker eval:gen-bench -- --dry-run   # no key: prints the prompts
+bun run --filter ramirocerda-chat-worker eval:gen-bench                # default candidates, 6 cases
+bun run --filter ramirocerda-chat-worker eval:gen-bench -- \
   --models "deepseek-v4.1-flash,deepseek-v4.1-flash@low,claude-haiku-5-5@off,gpt-6-luna@none" \
   --cases 6 --runs 2 --judge
 ```
@@ -523,7 +523,7 @@ via, model_tier, fallback, primary_error, hire_intent, offer_contact),
 `chat.rag_judge`, `chat.rag_retrieved`, `chat.ai_done`.
 
 Local Analytics Engine writes are discarded (no `remote: true` on the
-binding), so `pnpm chat:stats` only shows deployed traffic.
+binding), so `bun run chat:stats` only shows deployed traffic.
 
 ### Testing the widget against the local worker
 
@@ -532,14 +532,14 @@ worker, run the site with the override (CORS already allows `http://localhost:43
 the `astro dev` default port; another port is rejected with `403`):
 
 ```bash
-cd workers/chat-worker && pnpm dlx wrangler dev --remote --port 8787   # terminal 1
-PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 pnpm dev               # terminal 2, repo root
+cd workers/chat-worker && bunx wrangler dev --remote --port 8787   # terminal 1
+PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 bun run dev               # terminal 2, repo root
 ```
 
 `PUBLIC_BOTARDO_WORKER_URL` can also live in the root `.env` (see `.env.example`).
 
 Note the widget still reads `url` / `urlAlt` from Vectorize metadata, so note
-links only appear after `pnpm chat:populate` pushes the new metadata.
+links only appear after `bun run chat:populate` pushes the new metadata.
 
 ### RAG path (RAG_ENABLED=true, after secret set)
 

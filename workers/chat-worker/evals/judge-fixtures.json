@@ -1,5 +1,5 @@
 {
-  "$comment": "FIXTURES for `pnpm eval:judges`: they validate the Jev stage judges (claim support and abstention) without Cloudflare or OpenCode Go credentials. snippets.text are VERBATIM excerpts of indexed KB chunks (checked by judge-fixtures.test.mjs against scripts/knowledge-base.js via kb-sources.json). Claims and replies are hand-written test inputs, NOT Botardo answers. Claims labeled supported=false and replies that state a fact the KB lacks are deliberately false or absent from the KB to test the judge; they are not facts about Ramiro.",
+  "$comment": "FIXTURES for `bun run --filter ramirocerda-chat-worker eval:judges`: they validate the Jev stage judges (claim support and abstention) without Cloudflare or OpenCode Go credentials. snippets.text are VERBATIM excerpts of indexed KB chunks (checked by judge-fixtures.test.mjs against scripts/knowledge-base.js via kb-sources.json). Claims and replies are hand-written test inputs, NOT Botardo answers. Claims labeled supported=false and replies that state a fact the KB lacks are deliberately false or absent from the KB to test the judge; they are not facts about Ramiro.",
   "claimSupport": [
     {
       "id": "soccer-predictor",

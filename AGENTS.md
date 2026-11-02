@@ -5,7 +5,7 @@
 - Local credentials live in the root `.env` (gitignored): `CLOUDFLARE_ACCOUNT_ID`,
   `CLOUDFLARE_API_TOKEN`. The chat worker's OpenCode Go key is in
   `workers/chat-worker/.dev.vars` (gitignored).
-- `pnpm chat:populate` (populate-index.mjs) **auto-loads the root `.env`** — it
+- `bun run chat:populate` (populate-index.mjs) **auto-loads the root `.env`** — it
   needs NO credential input from the user. Do not ask for Cloudflare tokens or
   account IDs to run it; just run the script. Use `--dry-run` to preview chunks.
 - `.env` / `.dev.vars` / any secrets must never be committed, printed, or pasted
@@ -22,8 +22,8 @@
 
 ## Operations
 
-- Lint (whole repo, site + worker + scripts): `pnpm run lint` (oxlint; errors
+- Lint (whole repo, site + worker + scripts): `bun run lint` (oxlint; errors
   block CI via `.github/workflows/lint.yml`, style warnings don't).
 
-- RAG KB populate: `pnpm chat:populate` from the repo root (see
+- RAG KB populate: `bun run chat:populate` from the repo root (see
   `workers/chat-worker/DEPLOY.md` for the full runbook).
