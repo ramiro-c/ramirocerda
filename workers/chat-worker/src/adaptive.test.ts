@@ -48,7 +48,7 @@ function makeEnv(opts: { rounds?: Match[][]; configured?: boolean; vars?: Record
     EMBEDDING_MODEL: "@cf/baai/bge-m3",
     CHAT_RATE_LIMITER: { limit: () => Promise.resolve({ success: true }) },
     ...(opts.configured === false ? DECISION_OFF : DECISION_VARS),
-    ...(opts.vars ?? {}),
+    ...opts.vars,
   };
   return { env, datapoints, query, run };
 }

@@ -47,7 +47,7 @@ function ragEnv(
     TOP_K: "5",
     SIMILARITY_THRESHOLD: "0.30",
     ...(opts.on ? { RAG_RERANK_MODEL: DEFAULT_RAG_RERANK_MODEL } : {}),
-    ...(opts.vars ?? {}),
+    ...opts.vars,
   };
   return { env, run, query };
 }

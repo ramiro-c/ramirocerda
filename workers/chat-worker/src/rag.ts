@@ -153,7 +153,7 @@ async function rerankOrder(
       ? ((result as { response: unknown[] }).response)
       : [];
     if (entries.length !== candidates.length) throw new Error("reranker response size mismatch");
-    const scores = new Array<number | undefined>(candidates.length).fill(undefined);
+    const scores: (number | undefined)[] = Array.from({ length: candidates.length });
     for (const entry of entries) {
       const { id, score } = entry as { id?: unknown; score?: unknown };
       if (
