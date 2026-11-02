@@ -190,7 +190,9 @@ async function main(): Promise<void> {
           routeVia: value.kind === "adaptive" ? value.run.decision.via : null,
           routerMs: value.kind === "adaptive" && value.run.decision.via !== "not_configured" ? value.run.routerMs : null,
           offerContact: value.kind === "adaptive" ? value.run.offerContact : false,
-          searched: counters.vectorizeQueries > 0,
+          // Adaptive prefetches the literal message in parallel with the router, so Vectorize is
+          // always hit; whether it "searched" is the router's decision to use retrieval.
+          searched: value.kind === "adaptive" ? value.run.decision.route === "search" : counters.vectorizeQueries > 0,
           chunkIds: chunks.map((ch) => ch.id),
           replyKind,
           reply,
