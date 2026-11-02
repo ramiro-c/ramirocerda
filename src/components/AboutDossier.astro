@@ -44,7 +44,7 @@ const labels = {
           <source
             type="image/webp"
             srcset="/nerdearla-midudev-400.webp 400w, /nerdearla-midudev-720.webp 720w"
-            sizes="(min-width: 720px) 13rem, 22rem"
+            sizes="22rem"
           />
           <img
             class="personal-photo-img"
@@ -130,14 +130,24 @@ const labels = {
     color: var(--muted);
   }
   /* The photo sits beside the personal paragraphs, not under them, so the reader
-     sees the person while reading about him. It drops under the copy on narrow
-     screens, where two columns would leave the paragraphs too thin to read. */
+     sees the person while reading about him. The column is a ratio, not a fixed
+     width, so the picture grows with the page instead of staying at thumbnail
+     size on a wide screen. */
   .personal {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 13rem;
-    gap: var(--space-400);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-300);
     align-items: start;
     margin-top: var(--space-400);
+  }
+  /* Two columns only once the text column can hold a readable measure beside a
+     large picture. Earlier than this the paragraphs fall to a few words a line,
+     so the photo takes the full measure instead. */
+  @media (min-width: 1150px) {
+    .personal {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+      gap: var(--space-500);
+    }
   }
   .personal-copy > :last-child {
     margin-bottom: 0;
@@ -159,12 +169,8 @@ const labels = {
     margin: var(--space-100) 0 0;
     color: var(--muted-2);
   }
-  @media (max-width: 719px) {
-    .personal {
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--space-300);
-    }
-    /* On a phone the photo is the only image on the page, so it takes the full
+  @media (max-width: 1149px) {
+    /* Stacked, the photo is the only image on the page, so it takes the full
        measure and centres instead of sitting small in the left corner. */
     .personal-photo {
       max-width: 22rem;
