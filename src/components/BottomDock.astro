@@ -192,12 +192,15 @@ const copy = landing[lang];
   desktop.addEventListener("change", publishOffset);
   publishOffset();
 
-  // Fade the notice out once the hero scrolls away, so it never covers body copy.
-  const hero = document.querySelector(".hero");
-  if (notice && hero && "IntersectionObserver" in window) {
+  // The notice competes with the opening of the page only. Observing the page
+  // heading works on every page, including the ones with no hero, so the card
+  // never sits over body copy once the reader scrolls past the opening. The top
+  // margin clears the floating navigation.
+  const pageAnchor = document.querySelector("main h1");
+  if (notice && pageAnchor && "IntersectionObserver" in window) {
     new IntersectionObserver(
       ([entry]) => notice.classList.toggle("is-away", !entry.isIntersecting),
-      { threshold: 0 },
-    ).observe(hero);
+      { threshold: 0, rootMargin: "-96px 0px 0px 0px" },
+    ).observe(pageAnchor);
   }
 </script>

@@ -33,28 +33,32 @@ const labels = {
     </p>
     <p class="bio body-3">{copy.bio}</p>
 
-    <p class="section-label caption-3">{labels.personalLabel}</p>
-    {copy.personal.map((paragraph) => <p class="personal-p body-3">{paragraph}</p>)}
+    <div class="personal">
+      <div class="personal-copy">
+        <p class="section-label caption-3">{labels.personalLabel}</p>
+        {copy.personal.map((paragraph) => <p class="personal-p body-3">{paragraph}</p>)}
+      </div>
 
-    <figure class="personal-photo">
-      <picture>
-        <source
-          type="image/webp"
-          srcset="/nerdearla-midudev-400.webp 400w, /nerdearla-midudev-720.webp 720w"
-          sizes="(min-width: 860px) 20rem, 90vw"
-        />
-        <img
-          class="personal-photo-img"
-          src="/nerdearla-midudev-720.jpg"
-          width="720"
-          height="960"
-          alt={labels.photoAlt}
-          loading="lazy"
-          decoding="async"
-        />
-      </picture>
-      <figcaption class="personal-photo-caption caption-5">{labels.photoCaption}</figcaption>
-    </figure>
+      <figure class="personal-photo">
+        <picture>
+          <source
+            type="image/webp"
+            srcset="/nerdearla-midudev-400.webp 400w, /nerdearla-midudev-720.webp 720w"
+            sizes="(min-width: 720px) 13rem, 22rem"
+          />
+          <img
+            class="personal-photo-img"
+            src="/nerdearla-midudev-720.jpg"
+            width="720"
+            height="960"
+            alt={labels.photoAlt}
+            loading="lazy"
+            decoding="async"
+          />
+        </picture>
+        <figcaption class="personal-photo-caption caption-5">{labels.photoCaption}</figcaption>
+      </figure>
+    </div>
 
     <p class="section-label caption-3">{labels.rolesLabel}</p>
     <ul class="d-rows">
@@ -125,12 +129,21 @@ const labels = {
     margin: 0 0 var(--space-200);
     color: var(--muted);
   }
-  /* The photo belongs to the personal section, so it sits in the text column
-     rather than the rail. It is capped and left aligned so the paragraph
-     measure above it stays the reference for the eye. */
+  /* The photo sits beside the personal paragraphs, not under them, so the reader
+     sees the person while reading about him. It drops under the copy on narrow
+     screens, where two columns would leave the paragraphs too thin to read. */
+  .personal {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 13rem;
+    gap: var(--space-400);
+    align-items: start;
+    margin-top: var(--space-400);
+  }
+  .personal-copy > :last-child {
+    margin-bottom: 0;
+  }
   .personal-photo {
-    margin: var(--space-400) 0 0;
-    max-width: 20rem;
+    margin: 0;
   }
   .personal-photo picture {
     display: block;
@@ -145,6 +158,21 @@ const labels = {
   .personal-photo-caption {
     margin: var(--space-100) 0 0;
     color: var(--muted-2);
+  }
+  @media (max-width: 719px) {
+    .personal {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-300);
+    }
+    /* On a phone the photo is the only image on the page, so it takes the full
+       measure and centres instead of sitting small in the left corner. */
+    .personal-photo {
+      max-width: 22rem;
+      margin-inline: auto;
+    }
+    .personal-photo-caption {
+      text-align: center;
+    }
   }
   .d-rows {
     list-style: none;
