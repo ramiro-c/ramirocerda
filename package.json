@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "chat:populate": "node workers/chat-worker/scripts/populate-index.mjs",
     "chat:stats": "node workers/chat-worker/scripts/chat-stats.mjs",
+    "lint": "oxlint",
     "site:stats": "node scripts/site-stats.mjs",
     "links": "node scripts/check-links.mjs",
     "chat:eval": "pnpm --filter ramirocerda-chat-worker eval"
@@ -19,6 +20,7 @@
     "rehype-external-links": "^3.0.0"
   },
   "devDependencies": {
+    "oxlint": "^1.90.0",
     "typescript": "^5.8.0"
   }
 }
