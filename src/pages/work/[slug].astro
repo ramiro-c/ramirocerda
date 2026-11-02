@@ -228,11 +228,14 @@ const links = [
     display: grid;
     gap: var(--space-100);
   }
+  /* Rows are a grid so the date, the title and the arrow share one line no
+     matter how long the title is. As flex, the title took its natural width,
+     pushed the arrow onto a line of its own and the row lost its rhythm. */
   .related-list li a {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: baseline;
-    gap: var(--space-100);
+    column-gap: var(--space-100);
     text-decoration: none;
     transition: transform var(--dur-color) var(--ease-out);
   }
@@ -243,21 +246,42 @@ const links = [
     color: var(--accent-text);
   }
   .rel-date {
-    flex: none;
+    grid-column: 1;
+    grid-row: 1;
     color: var(--muted-2);
   }
   .rel-title {
-    min-width: 0;
+    grid-column: 2;
+    grid-row: 1;
     transition: color var(--dur-color) var(--ease-out);
   }
   .arrow {
-    margin-left: auto;
+    grid-column: 3;
+    grid-row: 1;
     color: var(--muted-2);
   }
   @media (max-width: 720px) {
     .case-study h1 {
       font-size: var(--text-4xl);
       line-height: 40px;
+    }
+    /* Stacked: the date sits above the title and the arrow centres against both,
+       because three tracks leave the title a few words per line on a phone. */
+    .related-list li a {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: var(--space-50);
+    }
+    .rel-date {
+      grid-row: 1;
+    }
+    .rel-title {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .arrow {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      align-self: center;
     }
   }
   @media (prefers-reduced-motion: reduce) {
