@@ -68,6 +68,23 @@ const copy = landing[lang];
     background: var(--surface-2);
     color: var(--text);
   }
+  /* Narrow screens: the card spans the width and sits above the bubble's row
+     instead of beside it (bottom margin = the bubble's footprint), so the text
+     gets the full line and the bubble never moves. Text on top, a compact
+     dismiss right aligned under it. */
+  @media (max-width: 767.98px) {
+    .dock-notice {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-75);
+      max-width: none;
+      margin: 0 var(--space-200) var(--botardo-gutter);
+      padding: var(--space-100) var(--space-200);
+    }
+    .dock-dismiss {
+      align-self: flex-end;
+    }
+  }
   .dock-notice[hidden] {
     display: none;
   }
