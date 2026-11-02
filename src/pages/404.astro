@@ -2,12 +2,18 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
-import { languages, type Lang } from "../i18n/ui";
-import { getLocalizedPath, useTranslations } from "../i18n/utils";
+import { useTranslations } from "../i18n/utils";
 
-const requested = Astro.url.pathname.split("/")[1] as Lang;
-const lang: Lang = requested in languages ? requested : "es";
+/**
+ * A 404 is one static file. The host serves it for every missing path, so there
+ * is no request path to read at build time: the previous version derived the
+ * language from Astro.url.pathname, which is always "/404" here, and every
+ * visitor silently got Spanish. Rendering both languages is the only way to
+ * serve an English reader without relying on JavaScript.
+ */
+const lang = "es";
 const t = useTranslations(lang);
+const tEn = useTranslations("en");
 ---
 
 <BaseLayout
@@ -22,7 +28,13 @@ const t = useTranslations(lang);
     <h1 class="heading-1">{t("notfound.title")}</h1>
     <p class="support body-3">{t("notfound.support")}</p>
     <div class="ctas">
-      <a class="cta-primary" href={getLocalizedPath(lang, "/")}>{t("notfound.cta")}</a>
+      <a class="cta-primary" href="/">{t("notfound.cta")}</a>
+    </div>
+
+    <div class="en-fallback" lang="en">
+      <p class="en-title title-1">{tEn("notfound.title")}</p>
+      <p class="en-support body-6">{tEn("notfound.support")}</p>
+      <a class="cta-link" href="/en/">{tEn("notfound.cta")}</a>
     </div>
   </section>
 
@@ -51,6 +63,22 @@ const t = useTranslations(lang);
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-100);
+  }
+  /* The English block sits below the Spanish one and steps down in weight, so a
+     Spanish reader never has to read past it and an English reader finds the
+     whole message in one place. */
+  .en-fallback {
+    max-width: 680px;
+    margin-top: var(--space-600);
+    padding-top: var(--space-300);
+    border-top: 1px solid var(--border);
+  }
+  .en-title {
+    margin: 0 0 var(--space-50);
+  }
+  .en-support {
+    margin: 0 0 var(--space-200);
+    color: var(--muted);
   }
   @media (max-width: 720px) {
     .hero h1 {
