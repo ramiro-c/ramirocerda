@@ -137,7 +137,7 @@ const labels = {
      leaves a hole under the caption. */
   .personal {
     margin-top: var(--space-400);
-    margin-bottom: var(--space-600);
+    margin-bottom: var(--space-700);
   }
   /* Wide enough for a large picture and still a readable measure beside it.
      Earlier than this the paragraphs fall to a few words a line, so the photo
@@ -147,7 +147,10 @@ const labels = {
       float: right;
       width: 24rem;
       max-width: none;
-      margin: 0 0 var(--space-300) var(--space-500);
+      /* Enough room on both sides that the wrapped lines never read as touching
+         the picture, and enough below that the caption cannot land on the same
+         baseline as the copy that runs past it. */
+      margin: 0 0 var(--space-600) var(--space-600);
     }
     .personal-photo-caption {
       text-align: left;
