@@ -29,7 +29,7 @@ export interface GenerateOptions {
   maxTokens?: number;
   temperature?: number;
   timeoutMs?: number;
-  /** Total attempts including the first (default 3). */
+  /** Total attempts including the first (default DEFAULT_GENERATION_ATTEMPTS). */
   maxAttempts?: number;
   /** Base backoff in ms, doubled after each retry (default 250). */
   backoffMs?: number;
@@ -38,6 +38,20 @@ export interface GenerateOptions {
   /** Client identification sent as User-Agent (required by OpenCode Go). */
   userAgent?: string;
 }
+
+/** Output budget. Unchanged on purpose: shorter replies are a product decision, not a latency fix. */
+export const DEFAULT_MAX_TOKENS = 1024;
+/**
+ * Per attempt. Measured replies (up to ~1300 chars) finish in ~2-7 s end to end, so
+ * 12 s covers a slow but healthy upstream. In streaming mode it bounds the wait for the
+ * first token and every gap between tokens instead, so a long reply is never cut by it.
+ */
+export const DEFAULT_GENERATION_TIMEOUT_MS = 12_000;
+/**
+ * Total attempts. 2 x 12 s + 250 ms backoff ~= 24 s worst case (was 3 x 30 s ~= 91 s),
+ * which leaves room for router + retrieval inside the widget's 30 s first-token budget.
+ */
+export const DEFAULT_GENERATION_ATTEMPTS = 2;
 
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
 
@@ -116,10 +130,10 @@ export async function generateReply(options: GenerateOptions): Promise<GenerateR
     apiKey,
     model,
     messages,
-    maxTokens = 1024,
+    maxTokens = DEFAULT_MAX_TOKENS,
     temperature = 0,
-    timeoutMs = 30_000,
-    maxAttempts = 3,
+    timeoutMs = DEFAULT_GENERATION_TIMEOUT_MS,
+    maxAttempts = DEFAULT_GENERATION_ATTEMPTS,
     backoffMs = 250,
     sessionId,
     userAgent = "botardo-web/1.0",
@@ -164,5 +178,118 @@ export async function generateReply(options: GenerateOptions): Promise<GenerateR
     }
   }
   // All attempts exhausted with retryable outcomes.
+  return { status: 500, code: "MODEL_ERROR", ...(lastUpstream === undefined ? {} : { upstream: lastUpstream }) };
+}
+
+export interface StreamOptions extends GenerateOptions {
+  /** Called with each content delta, in order. Once called, the attempt can no longer be retried. */
+  onDelta: (text: string) => void;
+}
+
+type StreamAttempt =
+  | { kind: "done"; result: GenerateResult }
+  /** Retryable only when nothing reached the visitor yet. */
+  | { kind: "retry"; upstream?: number; emitted: boolean };
+
+/** Parse OpenAI-style SSE lines (`data: {...}` / `data: [DONE]`). Returns the trailing partial line. */
+export function parseSseLines(buffer: string, onData: (data: string) => void): string {
+  const lines = buffer.split(/\r?\n/);
+  const rest = lines.pop() ?? "";
+  for (const line of lines) {
+    if (line.startsWith("data:")) onData(line.slice(5).trimStart());
+  }
+  return rest;
+}
+
+async function streamOnce(options: StreamOptions, maxTokens: number, timeoutMs: number): Promise<StreamAttempt> {
+  const { endpoint, apiKey, model, messages, temperature = 0, sessionId, userAgent = "botardo-web/1.0", onDelta } = options;
+  const controller = new AbortController();
+  // One watchdog re-armed on every chunk: bounds time-to-first-token and each idle gap.
+  let timer = setTimeout(() => controller.abort(), timeoutMs);
+  const rearm = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => controller.abort(), timeoutMs);
+  };
+  let emitted = false;
+  let content = "";
+  let finish: unknown = null;
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        Authorization: `Bearer ${apiKey}`,
+        ...(sessionId ? { "x-opencode-session": sessionId } : {}),
+        "User-Agent": userAgent,
+      },
+      body: JSON.stringify({ model, messages, max_tokens: maxTokens, temperature, stream: true }),
+      signal: controller.signal,
+    });
+    if (response.status === 429) return { kind: "done", result: { status: 429, code: "RATE_LIMITED" } };
+    if (!response.ok || !response.body) {
+      return RETRYABLE_STATUS.has(response.status) || !response.body
+        ? { kind: "retry", upstream: response.status, emitted }
+        : { kind: "done", result: { status: 500, code: "MODEL_ERROR", upstream: response.status } };
+    }
+    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buffer = "";
+    const onData = (data: string) => {
+      if (data === "[DONE]") return;
+      let parsed: { choices?: Array<{ delta?: { content?: unknown }; finish_reason?: unknown }> };
+      try {
+        parsed = JSON.parse(data);
+      } catch {
+        return;
+      }
+      const choice = parsed?.choices?.[0];
+      const delta = choice?.delta?.content;
+      if (typeof delta === "string" && delta.length > 0) {
+        content += delta;
+        emitted = true;
+        onDelta(delta);
+      }
+      if (choice?.finish_reason) finish = choice.finish_reason;
+    };
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      rearm();
+      buffer = parseSseLines(buffer + value, onData);
+    }
+    parseSseLines(buffer + "\n", onData);
+    if (content.trim().length === 0) return { kind: "retry", emitted };
+    // Streaming cannot take back tokens the visitor already read, so a `length` cut is
+    // flagged instead of retried with a doubled budget (the non-streaming path still retries).
+    return finish === "length"
+      ? { kind: "done", result: { status: 200, content, truncated: true } }
+      : { kind: "done", result: { status: 200, content } };
+  } catch {
+    return { kind: "retry", emitted };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Streaming variant of generateReply (`stream: true`). Same status mapping and retry
+ * policy, except that a failure after the first delta is final: the partial reply is
+ * already on screen, so it comes back as MODEL_ERROR and the widget offers a retry.
+ */
+export async function generateReplyStream(options: StreamOptions): Promise<GenerateResult> {
+  const {
+    maxTokens = DEFAULT_MAX_TOKENS,
+    timeoutMs = DEFAULT_GENERATION_TIMEOUT_MS,
+    maxAttempts = DEFAULT_GENERATION_ATTEMPTS,
+    backoffMs = 250,
+  } = options;
+  let lastUpstream: number | undefined;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const outcome = await streamOnce(options, maxTokens, timeoutMs);
+    if (outcome.kind === "done") return outcome.result;
+    if (outcome.upstream !== undefined) lastUpstream = outcome.upstream;
+    if (outcome.emitted) break;
+    if (attempt < maxAttempts) await sleep(backoffMs * 2 ** (attempt - 1));
+  }
   return { status: 500, code: "MODEL_ERROR", ...(lastUpstream === undefined ? {} : { upstream: lastUpstream }) };
 }

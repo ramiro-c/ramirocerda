@@ -93,8 +93,17 @@
   --z-widget: 999;
   --z-dialog: 1001;
   --z-overlay: 1002;
-  /* Height of the fixed bottom dock, set by JS. */
+  /* Height of the fixed bottom dock (notice + mobile bar), set by JS. Only the
+     page padding uses it. */
   --dock-offset: 0px;
+  /* Height of the persistent mobile CTA bar only (0 on desktop), set by JS.
+     Botardo anchors to this, never to the dismissible notice, so it stays put. */
+  --dock-bar-offset: 0px;
+  /* Botardo's launcher footprint, shared with the dock so the notice reserves
+     the bubble's corner instead of pushing it. */
+  --botardo-size: 58px;
+  --botardo-inset: var(--space-200);
+  --botardo-gutter: calc(var(--botardo-inset) + var(--botardo-size) + var(--space-200));
 }
 
 *,

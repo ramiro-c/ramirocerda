@@ -53,11 +53,10 @@
     "SITE_ORIGIN": "https://ramirocerda.com.ar",
     "ADAPTIVE_RAG": "1",
     "DECISION_ENDPOINT": "https://opencode.ai/inference/systemone/v1/systemone",
-    // Paid primary (jev-1.13): ~3x faster than the anonymous free tier (jev-1.13-free).
-    // Both tiers are paid here, so every call bills to the Console balance; the retry
-    // reuses the same paid model. To fall back to the free tier for cost, set
-    // DECISION_FALLBACK_MODEL back to "jev-1.13-free" (the code sends no key to free slugs).
-    "DECISION_MODEL": "jev-1.13",
+    // Free primary (jev-1.13-free, anonymous, no key), one paid retry (jev-1.13, Bearer
+    // OPENCODE_GO_API_KEY) only when the free call fails. A free 429 opens the isolate
+    // breaker (src/breaker.ts) so the paid tier is used directly for the cooldown.
+    "DECISION_MODEL": "jev-1.13-free",
     "DECISION_FALLBACK_MODEL": "jev-1.13",
     "DECISION_INTEGRATION_ID": "opencode",
     "DECISION_TIMEOUT_MS": "1000",

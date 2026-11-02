@@ -100,12 +100,13 @@ describe("adaptive RAG through handleRag", () => {
     expect(calls.decisionHeaders[0].Authorization).toBeUndefined();
   });
 
-  it("smalltalk: one short generation, no embedding, no Vectorize, no judge", async () => {
+  it("smalltalk: one short generation, no judge; the parallel search is dropped from the prompt", async () => {
     const { env, query, run, datapoints } = makeEnv();
     const { body, calls } = await ask(env, "hola!", { router: [routerAnswer("smalltalk")], generation: "¡Hola! Soy Botardo." });
     expect(body).toEqual({ reply: "¡Hola! Soy Botardo.", offerContact: false });
-    expect(query).not.toHaveBeenCalled();
-    expect(run).not.toHaveBeenCalled();
+    // The raw-message search runs in parallel with the router and is discarded.
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledTimes(1);
     expect(calls.judge).toHaveLength(0);
     expect(calls.generation).toHaveLength(1);
     const gen = calls.generation[0] as { messages: Array<{ role: string; content: string }> };
@@ -114,12 +115,12 @@ describe("adaptive RAG through handleRag", () => {
     expect(datapoints[0]?.doubles?.slice(4, 11)).toEqual([1, 0, 0, expect.any(Number), 0, 0, 0]);
   });
 
-  it("off_topic: fixed localized reply, no retrieval, no generation", async () => {
+  it("off_topic: fixed localized reply, no generation; the parallel search is discarded", async () => {
     const { env, query, run, datapoints } = makeEnv();
     const { body, calls } = await ask(env, "¿Cuál es la capital de Francia?", { router: [routerAnswer("off_topic")] });
     expect(body).toEqual({ reply: OFF_TOPIC_REPLY.es, offerContact: false });
-    expect(query).not.toHaveBeenCalled();
-    expect(run).not.toHaveBeenCalled();
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledTimes(1);
     expect(calls.generation).toHaveLength(0);
     expect(datapoints[0]?.doubles?.[4]).toBe(2);
     expect(datapoints[0]?.doubles?.[5]).toBe(0);
@@ -213,8 +214,8 @@ describe("adaptive RAG through handleRag", () => {
     // reply_length is 0 for every failure, so the upstream status is the only
     // signal that tells an expired key (401) from a rate limit or an outage.
     expect(events).toEqual([
-      { status: 200, reply_length: "Respuesta".length, truncated: false },
-      { status: 500, reply_length: 0, truncated: false, upstream_status: 401 },
+      { status: 200, reply_length: "Respuesta".length, truncated: false, streamed: false },
+      { status: 500, reply_length: 0, truncated: false, streamed: false, upstream_status: 401 },
     ]);
   });
 

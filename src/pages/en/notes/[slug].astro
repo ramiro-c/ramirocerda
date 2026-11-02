@@ -44,7 +44,7 @@ const { note, otherNotes, projects } = Astro.props as {
 const { Content } = await render(note);
 ---
 
-<BaseLayout lang={lang} title={note.data.title} description={note.data.description}>
+<BaseLayout lang={lang} section="notes" title={note.data.title} description={note.data.description}>
   <SiteHeader slot="header" lang={lang} />
 
   <article class="note">

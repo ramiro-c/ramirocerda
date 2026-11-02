@@ -8,6 +8,7 @@
  *                route=search, hire_intent=false, query=raw message.
  *   2. smalltalk one short generation, no retrieval
  *      off_topic fixed localized reply, no retrieval, no generation
+ *   (the raw-message search of step 3 starts in parallel with step 1)
  *   3. search    retrieve with the query (raw message, or previous user turn +
  *                message when the model says it needs the history); ONE judge
  *                request (noul) decides sufficiency and, when insufficient,
@@ -21,7 +22,7 @@
  */
 
 import { readAdaptiveConfig, type AdaptiveEnvVars } from "./config";
-import { generateReply, type GenerateResult } from "./generate";
+import { generateReply, generateReplyStream, type GenerateResult } from "./generate";
 import { detectLanguage, type Language } from "./language";
 import { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
 import { buildRagPrompt, HISTORY_TURNS, retrieveChunks, type ChatMessage, type RetrievedChunk } from "./rag";
@@ -74,7 +75,10 @@ export interface PipelineOutcome {
   chunks: RetrievedChunk[];
   topScore: number;
   routerMs: number;
-  /** Searches plus the judge call. */
+  /**
+   * Searches plus the judge call, measured after the router: the first search starts in
+   * parallel with the router, so only the part that outlasts it shows up here.
+   */
   retrievalMs: number;
   judgeMs: number;
   generationMs: number;
@@ -101,14 +105,24 @@ export async function runAdaptivePipeline(opts: {
   env: PipelineEnv;
   sessionId: string;
   log?: PipelineLogger;
+  /** Called once the router decided, before retrieval/generation: lets a stream send offerContact first. */
+  onRouted?: (decision: RouteDecision) => void;
+  /** When set, generation streams (`stream: true`) and every content delta is handed here. */
+  onDelta?: (text: string) => void;
 }): Promise<PipelineOutcome> {
-  const { message, history, env, sessionId } = opts;
+  const { message, history, env, sessionId, onDelta } = opts;
   const log: PipelineLogger = opts.log ?? (() => {});
   const config = readAdaptiveConfig(env);
   const lang = detectLanguage(message);
   const siteOrigin = env.SITE_ORIGIN ?? DEFAULT_SITE_ORIGIN;
 
   const tRoute = Date.now();
+  // The first search always uses the raw message (see routeMessage), so it does not
+  // depend on the router: start embed + Vectorize + rerank now and run both at once.
+  // Not a shortcut: when the route is not `search` the result is simply dropped.
+  // A rejection is observed here and re-thrown only if the search path awaits it.
+  const prefetched = config.adaptiveEnabled ? retrieveChunks(message, env) : null;
+  prefetched?.catch(() => {});
   // The flag is the whole point of this switch: off means no decision model at all,
   // so a deployment can turn the adaptive path off without touching any other knob.
   const decision = config.adaptiveEnabled
@@ -116,6 +130,7 @@ export async function runAdaptivePipeline(opts: {
     : fallbackDecision(message, "disabled");
   const routerMs = Date.now() - tRoute;
   const offerContact = decision.hireIntent;
+  opts.onRouted?.(decision);
   // True when a rewritten (history-merged) query exists as the judge's fallback. The raw
   // message is always searched first, so this no longer means "the first search was rewritten".
   const rewritten = decision.route === "search" && decision.alternateQuery !== null;
@@ -161,13 +176,14 @@ export async function runAdaptivePipeline(opts: {
 
   const generate = async (messages: ChatMessage[]) => {
     const tGen = Date.now();
-    const result = await generateReply({
+    const request = {
       endpoint: env.OPENCODE_GO_ENDPOINT,
       apiKey: env.OPENCODE_GO_API_KEY,
       model: env.GENERATION_MODEL,
       messages,
       sessionId,
-    });
+    };
+    const result = onDelta ? await generateReplyStream({ ...request, onDelta }) : await generateReply(request);
     const generationMs = Date.now() - tGen;
     log("chat.ai_done", {
       latency_ms: generationMs,
@@ -179,6 +195,7 @@ export async function runAdaptivePipeline(opts: {
       // True only when the upstream ran out of output budget even after the
       // doubled-budget retry: the visitor got an answer cut mid-sentence.
       truncated: result.status === 200 && result.truncated === true,
+      streamed: Boolean(onDelta),
     });
     return { result, generationMs };
   };
@@ -196,7 +213,12 @@ export async function runAdaptivePipeline(opts: {
   // the raw message, exactly the pre-adaptive pipeline.
   const retrieval = config.adaptiveEnabled
     ? await retrieveAdaptive(
-        { question: message, query: decision.query, alternateQuery: decision.alternateQuery },
+        {
+          question: message,
+          query: decision.query,
+          alternateQuery: decision.alternateQuery,
+          ...(prefetched && decision.query === message ? { prefetched } : {}),
+        },
         env,
         config,
       )

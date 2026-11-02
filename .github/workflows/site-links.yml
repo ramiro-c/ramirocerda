@@ -28,7 +28,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: node --test scripts/check-links.test.mjs src/scripts/botardo-offer.test.mjs
+      - run: node --test scripts/check-links.test.mjs scripts/site-stats.test.mjs src/scripts/botardo-offer.test.mjs src/scripts/botardo-stream.test.mjs
 
       - run: pnpm run build
 

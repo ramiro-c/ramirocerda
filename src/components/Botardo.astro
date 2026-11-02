@@ -43,6 +43,10 @@ const offer = landing[lang].botardoOffer;
   aria-labelledby="botardoTitle"
   data-retry-label={t("botardo.retry")}
   data-pending-text={t("botardo.pending")}
+  data-error-timeout={t("botardo.errorTimeout")}
+  data-error-network={t("botardo.errorNetwork")}
+  data-error-rate-limited={t("botardo.errorRateLimited")}
+  data-error-server={t("botardo.errorServer")}
   data-offer-text={offer.text}
   data-offer-button={offer.button}
   inert
@@ -89,6 +93,7 @@ const offer = landing[lang].botardoOffer;
 
 <script>
   import { shouldOfferContact } from "../scripts/botardo-offer.mjs";
+  import { askBotardo, errorText } from "../scripts/botardo-stream.mjs";
   // Production worker by default. For local testing run `wrangler dev --remote`
   // in workers/chat-worker and start the site with
   // PUBLIC_BOTARDO_WORKER_URL=http://localhost:8787 pnpm dev
@@ -406,6 +411,7 @@ const offer = landing[lang].botardoOffer;
     }
     messages.insertBefore(message, typingIndicator);
     if (scroll) scrollMessagesToBottom(prefersReducedMotion() ? "auto" : "smooth");
+    return message;
   }
 
   // Internal links are full page loads (no client router), so every navigation
@@ -502,35 +508,32 @@ const offer = landing[lang].botardoOffer;
     typingIndicator.hidden = false;
     scrollMessagesToBottom("auto");
 
+    let streamedMessage = null;
     try {
-      const response = await fetch(`${WORKER_URL}/ask`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // Streams the reply: the typing indicator stays until the first token, then
+      // the message grows in place. Old workers / errors answer JSON (see botardo-stream.mjs).
+      const data = await askBotardo({
+        url: `${WORKER_URL}/ask`,
+        payload: {
           message: text,
           sessionId: botardoSessionId,
           history: conversationHistory.slice(-MAX_HISTORY_TURNS),
-        }),
+        },
+        onDelta: (_chunk, soFar) => {
+          if (!streamedMessage) {
+            typingIndicator.hidden = true;
+            streamedMessage = appendMessage(soFar, "assistant");
+          } else {
+            streamedMessage.innerHTML = renderMarkdown(soFar);
+            scrollMessagesToBottom("auto");
+          }
+        },
       });
 
       typingIndicator.hidden = true;
-
-      if (!response.ok) {
-        let errorMessage = "Error del servidor";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          errorMessage = (await response.text()) || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
       const offerContact = shouldOfferContact(data);
-      appendMessage(data.reply, "assistant");
+      if (streamedMessage) streamedMessage.innerHTML = renderMarkdown(data.reply);
+      else appendMessage(data.reply, "assistant");
       if (offerContact) appendContactOffer();
       conversationHistory.push({ role: "user", content: text });
       conversationHistory.push({ role: "assistant", content: data.reply });
@@ -548,8 +551,17 @@ const offer = landing[lang].botardoOffer;
       lastFailedMessage = "";
     } catch (error) {
       typingIndicator.hidden = true;
+      // Drop a half-streamed reply: the retry asks again from scratch.
+      streamedMessage?.remove();
       lastFailedMessage = text;
-      showError(error instanceof Error ? error.message : "Error de conexión. Intentá de nuevo.");
+      showError(
+        errorText(error instanceof Error && "code" in error ? String(error.code) : "NETWORK", {
+          timeout: modal.getAttribute("data-error-timeout") || "Timeout",
+          network: modal.getAttribute("data-error-network") || "Network error",
+          rateLimited: modal.getAttribute("data-error-rate-limited") || "Rate limited",
+          server: modal.getAttribute("data-error-server") || "Server error",
+        }),
+      );
     } finally {
       input.disabled = false;
       if (sendButton instanceof HTMLButtonElement) {
@@ -678,10 +690,10 @@ const offer = landing[lang].botardoOffer;
 
   .botardo-island {
     position: fixed;
-    right: calc(var(--space-200) + env(safe-area-inset-right));
-    bottom: calc(var(--space-200) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
-    width: 58px;
-    height: 58px;
+    right: calc(var(--botardo-inset) + env(safe-area-inset-right));
+    bottom: calc(var(--botardo-inset) + var(--dock-bar-offset, 0px) + env(safe-area-inset-bottom));
+    width: var(--botardo-size);
+    height: var(--botardo-size);
     display: grid;
     place-items: center;
     border: 1px solid var(--border);
@@ -716,9 +728,9 @@ const offer = landing[lang].botardoOffer;
   .botardo-modal {
     position: fixed;
     right: calc(var(--space-200) + env(safe-area-inset-right));
-    bottom: calc(var(--space-900) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
+    bottom: calc(var(--space-900) + var(--dock-bar-offset, 0px) + env(safe-area-inset-bottom));
     width: min(400px, calc(100vw - var(--space-400)));
-    height: min(560px, calc(100vh - var(--space-900) - var(--dock-offset, 0px)));
+    height: min(560px, calc(100vh - var(--space-900) - var(--dock-bar-offset, 0px)));
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1036,13 +1048,13 @@ const offer = landing[lang].botardoOffer;
       right: var(--space-200);
       left: var(--space-200);
       width: auto;
-      bottom: calc(var(--space-800) + var(--dock-offset, 0px) + env(safe-area-inset-bottom));
-      height: min(68vh, 520px, calc(100dvh - var(--space-900) - var(--space-300) - var(--dock-offset, 0px)));
+      bottom: calc(var(--space-800) + var(--dock-bar-offset, 0px) + env(safe-area-inset-bottom));
+      height: min(68vh, 520px, calc(100dvh - var(--space-900) - var(--space-300) - var(--dock-bar-offset, 0px)));
     }
 
     .botardo-island {
-      right: var(--space-200);
-      bottom: calc(var(--space-200) + var(--dock-offset, 0px));
+      right: var(--botardo-inset);
+      bottom: calc(var(--botardo-inset) + var(--dock-bar-offset, 0px));
     }
   }
 

@@ -185,11 +185,12 @@ key is refused, `chat.route` / `chat.rag_judge` show `fallback: "failed"`,
 `reason` with the paid failure (`http_401` for a rejected key, `http_402` for
 an empty balance); set `DECISION_FALLBACK_MODEL=""` to stop retrying.
 
-Latency budget: `DECISION_TIMEOUT_MS` (1500) is per attempt. Worst case per
-step is 2 attempts = 3 s; a `search` message has 2 steps (router + judge), so
-the worst-case decision time is 4 x 1.5 s = 6 s, on top of up to 2 embeddings,
-2 Vectorize queries and 1 generation. Without `OPENCODE_GO_API_KEY` it stays at
-2 x 1.5 s = 3 s. The measured free p95 is about 0.36 s, so the timeout is only
+Latency budget: `DECISION_TIMEOUT_MS` (1000) is per attempt. Worst case per
+step is 2 attempts = 2 s; a `search` message has 2 steps (router + judge), so
+the worst-case decision time is 4 x 1 s = 4 s. The router overlaps the first
+embedding + Vectorize + rerank (they run in parallel), so only the judge and
+generation add to it. Without `OPENCODE_GO_API_KEY` it stays at
+1 x 1 s per step. The measured free p50 is about 0.35 s (2026-11-02), so the timeout is only
 hit when the free model is degraded.
 
 ### Flow
@@ -471,6 +472,51 @@ curl -s http://localhost:8787/ask \
 # 200 {"reply":"...","offerContact":false}
 # follow-up: add "history":[{"role":"user","content":"..."},{"role":"assistant","content":"..."}]
 ```
+
+Streaming (what the widget uses): add `Accept: text/event-stream`. The body is
+SSE: `meta` `{offerContact}` right after the router, `delta` `{text}` chunks,
+then `done` `{reply, offerContact}` (or `error` `{error, code}`). Without that
+header the JSON contract above is unchanged. `-N` disables curl buffering, and
+`time_starttransfer` is the first byte:
+
+```bash
+curl -sN https://ramirocerda-chat.rami992009.workers.dev/ask \
+  -H 'Origin: https://www.ramirocerda.com.ar' -H 'Content-Type: application/json' \
+  -H 'Accept: text/event-stream' -d '{"message":"¿En qué trabaja Ramiro?"}' \
+  -w '\nfirst byte %{time_starttransfer}s, total %{time_total}s\n'
+```
+
+`chat.ai_done` logs `streamed: true` for these. Timeouts: generation is 12 s per
+attempt x 2 attempts (~24 s worst case; streaming re-arms the 12 s on every
+chunk, so it bounds time-to-first-token and idle gaps, not reply length). A
+length cut in streaming is flagged `truncated` instead of retried (the visitor
+already read the text); the JSON path still retries once with 2x budget.
+The widget aborts after 30 s without a first token or 15 s idle and shows the
+localized error + retry.
+
+### Generation benchmark (TTFT, tokens/s, reasoning tokens)
+
+Needs `OPENCODE_GO_API_KEY` (env or `.dev.vars`); without it the script exits
+without calling anything. It sends real Botardo RAG prompts (the answerable
+`kb` cases of `evals/cases.json`, half ES / half EN, built with
+`buildRagPrompt` and the KB chunks in each case's `expectedChunks`, loaded from
+the repo) with `stream: true`, and saves every reply to
+`evals/results/gen-bench-*.json`. `--judge` grades faithfulness with the
+`eval:judges` judges (claim extraction + Jev claim support).
+
+```bash
+pnpm --filter ramirocerda-chat-worker eval:gen-bench -- --dry-run   # no key: prints the prompts
+pnpm --filter ramirocerda-chat-worker eval:gen-bench                # default candidates, 6 cases
+pnpm --filter ramirocerda-chat-worker eval:gen-bench -- \
+  --models "deepseek-v4.1-flash,deepseek-v4.1-flash@low,claude-haiku-5-5@off,gpt-6-luna@none" \
+  --cases 6 --runs 2 --judge
+```
+
+`model@effort` sends `reasoning_effort: "<effort>"` verbatim (plain `model`
+omits it). Default candidates: `deepseek-v4.1-flash` (default and `@low`),
+`claude-haiku-5-5@off`, `gpt-6-luna@none`. Output per model (p50): TTFT, total,
+tokens/s after the first token, reasoning tokens, `length` cuts and, with
+`--judge`, faithful answers. Change `GENERATION_MODEL` only with those numbers.
 
 Each request logs JSON lines in the wrangler terminal: `chat.route` (route,
 via, model_tier, fallback, primary_error, hire_intent, offer_contact),
