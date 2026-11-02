@@ -1,0 +1,4 @@
+[install]
+# Packages excluded from the minimum release age gate. Kept in sync with the
+# versions this repo deliberately ships ahead of the default window.
+minimumReleaseAgeExcludes = ["miniflare@5.20261023.3-beta", "wrangler@4.156.0"]
