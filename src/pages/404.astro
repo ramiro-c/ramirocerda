@@ -2,12 +2,18 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
-import { languages, type Lang } from "../i18n/ui";
-import { getLocalizedPath, useTranslations } from "../i18n/utils";
+import { useTranslations } from "../i18n/utils";
 
-const requested = Astro.url.pathname.split("/")[1] as Lang;
-const lang: Lang = requested in languages ? requested : "es";
+/**
+ * A 404 is one static file. The host serves it for every missing path, so there
+ * is no request path to read at build time: the previous version derived the
+ * language from Astro.url.pathname, which is always "/404" here, and every
+ * visitor silently got Spanish. Rendering both languages is the only way to
+ * serve an English reader without relying on JavaScript.
+ */
+const lang = "es";
 const t = useTranslations(lang);
+const tEn = useTranslations("en");
 ---
 
 <BaseLayout
@@ -18,11 +24,17 @@ const t = useTranslations(lang);
   <SiteHeader slot="header" lang={lang} />
 
   <section class="hero">
-    <p class="brand-line mono">404</p>
-    <h1 class="display">{t("notfound.title")}</h1>
-    <p class="support">{t("notfound.support")}</p>
+    <p class="brand-line mono caption-3">404</p>
+    <h1 class="heading-1">{t("notfound.title")}</h1>
+    <p class="support body-3">{t("notfound.support")}</p>
     <div class="ctas">
-      <a class="btn solid" href={getLocalizedPath(lang, "/")}>{t("notfound.cta")}</a>
+      <a class="cta-primary" href="/">{t("notfound.cta")}</a>
+    </div>
+
+    <div class="en-fallback" lang="en">
+      <p class="en-title title-1">{tEn("notfound.title")}</p>
+      <p class="en-support body-6">{tEn("notfound.support")}</p>
+      <a class="cta-link" href="/en/">{tEn("notfound.cta")}</a>
     </div>
   </section>
 
@@ -30,43 +42,48 @@ const t = useTranslations(lang);
 </BaseLayout>
 
 <style>
+  /* Visual system: landing-page-design skill Part B. Layout only; type comes
+     from the named text style classes in src/styles/global.css. */
   .hero {
-    padding: 1rem 0 2.5rem;
+    padding: var(--space-200) 0 var(--space-600);
   }
   .brand-line {
-    margin: 0 0 0.75rem;
+    margin: 0 0 var(--space-100);
     color: var(--muted-2);
-    font-size: 0.9rem;
   }
-  .display {
-    margin: 0 0 1rem;
-    font-size: clamp(2.4rem, 8vw, 4.2rem);
+  .hero h1 {
+    margin: 0 0 var(--space-200);
   }
   .support {
-    max-width: 36rem;
+    max-width: 680px;
+    margin: 0 0 var(--space-300);
     color: var(--muted);
-    margin: 0 0 1.5rem;
   }
   .ctas {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: var(--space-100);
   }
-  .btn {
-    border: 1.5px solid var(--border);
-    background: transparent;
-    color: var(--text);
-    padding: 0.65rem 0.95rem;
-    text-decoration: none;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    border-radius: var(--radius);
+  /* The English block sits below the Spanish one and steps down in weight, so a
+     Spanish reader never has to read past it and an English reader finds the
+     whole message in one place. */
+  .en-fallback {
+    max-width: 680px;
+    margin-top: var(--space-600);
+    padding-top: var(--space-300);
+    border-top: 1px solid var(--border);
   }
-  .btn.solid {
-    background: var(--border);
-    color: var(--bg);
+  .en-title {
+    margin: 0 0 var(--space-50);
+  }
+  .en-support {
+    margin: 0 0 var(--space-200);
+    color: var(--muted);
+  }
+  @media (max-width: 720px) {
+    .hero h1 {
+      font-size: var(--text-4xl);
+      line-height: 40px;
+    }
   }
 </style>

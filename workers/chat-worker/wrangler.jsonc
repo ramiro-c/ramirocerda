@@ -22,6 +22,14 @@
       "dataset": "ramirocerda_chat_ANALYTICS"
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "LEADS_DB",
+      "database_name": "ramirocerda-leads",
+      "database_id": "60c31ea1-0780-4de5-8802-881a8b999f9b",
+      "migrations_dir": "migrations"
+    }
+  ],
   "ratelimits": [
     {
       "name": "CHAT_RATE_LIMITER",
@@ -55,7 +63,10 @@
     "DECISION_TIMEOUT_MS": "1000",
     "DECISION_MIN_CONFIDENCE": "0.5",
     "JUDGE_SUFFICIENT_THRESHOLD": "0.4",
-    "MAX_RETRIEVAL_ITERATIONS": "2"
+    "MAX_RETRIEVAL_ITERATIONS": "2",
+    "LEAD_NOTIFY_TO": "rami992009@gmail.com",
+    "LEAD_FROM": "Botardo <noreply@ramirocerda.com.ar>",
+    "LEAD_CONFIRMATION_ENABLED": "true"
   },
   "observability": {
     "enabled": true

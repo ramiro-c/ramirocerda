@@ -1,4 +1,9 @@
 ---
+/**
+ * Navigation (skill B7). A compact pill that floats off the top edge, centered
+ * and sized to its content, with a translucent blurred surface. Below 720px the
+ * links move into a full height panel whose items arrive one after another.
+ */
 import { getCollection } from "astro:content";
 import type { Lang } from "../i18n/ui";
 import { getLocalizedPath, useTranslations } from "../i18n/utils";
@@ -10,53 +15,287 @@ interface Props {
 const { lang } = Astro.props;
 const t = useTranslations(lang);
 const showNotes = (await getCollection("notes")).some((note) => !note.data.draft);
+const path = Astro.url.pathname;
+
+const links = [
+  { href: getLocalizedPath(lang, "/about/"), label: t("nav.about") },
+  { href: getLocalizedPath(lang, "/work/"), label: t("nav.work") },
+  ...(showNotes ? [{ href: getLocalizedPath(lang, "/notes/"), label: t("nav.notes") }] : []),
+  { href: getLocalizedPath(lang, "/workflow/"), label: t("nav.workflow") },
+];
+
+const isCurrent = (href: string) => path === href || path === href.replace(/\/$/, "");
 ---
 
-<header class="header site-shell">
-  <a class="brand mono" href={getLocalizedPath(lang, "/")}>ramirocerda</a>
-  <nav class="nav" aria-label="Primary">
-    <a href={getLocalizedPath(lang, "/about/")}>{t("nav.about")}</a>
-    <a href={getLocalizedPath(lang, "/work/")}>{t("nav.work")}</a>
-    {showNotes && <a href={getLocalizedPath(lang, "/notes/")}>{t("nav.notes")}</a>}
-    <a href={getLocalizedPath(lang, "/workflow/")}>{t("nav.workflow")}</a>
-  </nav>
-  <LanguageToggle lang={lang} />
+<header class="nav-root">
+  <div class="nav-bar">
+    <a class="brand title-4" href={getLocalizedPath(lang, "/")}>ramirocerda</a>
+    <nav class="nav-links" aria-label="Primary">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            class="nav-link title-4"
+            aria-current={isCurrent(link.href) ? "page" : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+    <LanguageToggle lang={lang} />
+    <button
+      class="nav-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="navPanel"
+      aria-label={t("nav.menu")}
+      data-label-open={t("nav.menu")}
+      data-label-close={t("nav.close")}
+      data-nav-toggle
+    >
+      <span class="toggle-line" aria-hidden="true"></span>
+      <span class="toggle-line" aria-hidden="true"></span>
+    </button>
+  </div>
 </header>
 
+<div class="nav-panel" id="navPanel" data-nav-panel hidden>
+  <nav class="panel-links" aria-label="Primary">
+    {
+      links.map((link, i) => (
+        <a
+          href={link.href}
+          class="panel-link heading-4"
+          style={`--i:${i}`}
+          aria-current={isCurrent(link.href) ? "page" : undefined}
+        >
+          {link.label}
+        </a>
+      ))
+    }
+  </nav>
+  <div class="panel-lang">
+    <LanguageToggle lang={lang} />
+  </div>
+</div>
+
 <style>
-  .header {
+  .nav-root {
+    position: fixed;
+    top: var(--space-200);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-nav);
+    width: max-content;
+    max-width: calc(100% - var(--space-400));
+  }
+  .nav-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1.25rem 0;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 2.5rem;
+    gap: var(--space-300);
+    padding: var(--space-75) var(--space-100);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
   .brand {
-    font-weight: 500;
+    color: var(--text);
     text-decoration: none;
-    letter-spacing: 0.02em;
+    padding: var(--space-25) var(--space-75);
+    transition: color var(--dur-color) var(--ease-out);
   }
-  .nav {
+  .brand:hover {
+    color: var(--accent-text);
+  }
+  .nav-links {
     display: flex;
-    gap: 1.25rem;
-    font-size: 0.95rem;
+    align-items: center;
+    gap: var(--space-25);
   }
-  .nav a {
+  .nav-link {
+    padding: var(--space-25) var(--space-75);
+    border-radius: var(--radius-md);
+    color: var(--muted);
     text-decoration: none;
+    transition:
+      color var(--dur-color) var(--ease-out),
+      background-color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
   }
-  .nav a:hover {
-    color: var(--accent);
+  .nav-link:hover {
+    color: var(--text);
+    background: var(--surface-2);
   }
-  @media (max-width: 640px) {
-    .header {
-      flex-wrap: wrap;
+  .nav-link:active {
+    transform: scale(0.98);
+  }
+  .nav-link[aria-current="page"] {
+    color: var(--text);
+    background: var(--surface-2);
+  }
+
+  /* Toggle: two lines that rotate into a cross instead of swapping icons. */
+  .nav-toggle {
+    display: none;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: transparent;
+    cursor: pointer;
+    transition: transform var(--dur-color) var(--ease-out);
+  }
+  .nav-toggle:active {
+    transform: scale(0.98);
+  }
+  .toggle-line {
+    position: absolute;
+    left: 11px;
+    width: 18px;
+    height: 1.5px;
+    border-radius: var(--radius-full);
+    background: var(--text);
+    transition:
+      transform var(--dur-move) var(--ease-out),
+      opacity var(--dur-color) var(--ease-out);
+  }
+  .toggle-line:first-child {
+    top: 17px;
+  }
+  .toggle-line:last-child {
+    top: 22px;
+  }
+  .nav-toggle.is-open .toggle-line:first-child {
+    transform: translateY(2.5px) rotate(45deg);
+  }
+  .nav-toggle.is-open .toggle-line:last-child {
+    transform: translateY(-2.5px) rotate(-45deg);
+  }
+
+  /* Mobile panel: full height, high opacity surface, strong blur. */
+  .nav-panel {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-nav) - 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-400);
+    padding: var(--space-900) var(--space-300) var(--space-600);
+    background: rgba(0, 0, 0, 0.94);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+  }
+  .nav-panel[hidden] {
+    display: none;
+  }
+  .panel-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-200);
+  }
+  .panel-link {
+    color: var(--text);
+    text-decoration: none;
+    opacity: 0;
+    transform: translateY(var(--space-300));
+    transition:
+      opacity var(--dur-move) var(--ease-out),
+      transform var(--dur-move) var(--ease-out);
+    /* Stagger in reading order, 60ms apart, never past 400ms. */
+    transition-delay: calc(min(var(--i) * 60ms, 400ms));
+  }
+  .nav-panel.is-open .panel-link {
+    opacity: 1;
+    transform: none;
+  }
+  .panel-link[aria-current="page"] {
+    color: var(--accent-text);
+  }
+
+  @media (max-width: 720px) {
+    .nav-links {
+      display: none;
     }
-    .nav {
-      order: 3;
-      width: 100%;
-      justify-content: flex-start;
+    .nav-toggle {
+      display: block;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel-link {
+      transform: none;
+      transition: opacity var(--dur-color) var(--ease-out);
+      transition-delay: 0ms;
+    }
+    .toggle-line {
+      transition: none;
+    }
+    .nav-link:active,
+    .nav-toggle:active {
+      transform: none;
     }
   }
 </style>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>("[data-nav-toggle]");
+  const panel = document.querySelector<HTMLElement>("[data-nav-panel]");
+
+  if (toggle && panel) {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // Panel close duration mirrors --dur-move so the fade finishes before hiding.
+    const durMove = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dur-move")) || 500;
+    let hideTimer: number | undefined;
+
+    const setOpen = (open: boolean) => {
+      toggle.classList.toggle("is-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute(
+        "aria-label",
+        (open ? toggle.dataset.labelClose : toggle.dataset.labelOpen) ?? "",
+      );
+      document.body.style.overflow = open ? "hidden" : "";
+      window.clearTimeout(hideTimer);
+
+      if (open) {
+        panel.hidden = false;
+        // Force a style commit so the hidden -> visible change is rendered
+        // before is-open starts the per-link transitions.
+        void panel.offsetHeight;
+        panel.classList.add("is-open");
+      } else {
+        panel.classList.remove("is-open");
+        const delay = reduceMotion.matches ? 0 : durMove;
+        hideTimer = window.setTimeout(() => {
+          panel.hidden = true;
+        }, delay);
+      }
+    };
+
+    toggle.addEventListener("click", () => {
+      setOpen(!toggle.classList.contains("is-open"));
+    });
+
+    panel.addEventListener("click", (event) => {
+      if (event.target === panel) setOpen(false);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && toggle.classList.contains("is-open")) {
+        setOpen(false);
+        // Focus must not fall to <body> when the panel is hidden underneath it.
+        toggle.focus();
+      }
+    });
+
+    window.matchMedia("(min-width: 721px)").addEventListener("change", (event) => {
+      if (event.matches) setOpen(false);
+    });
+  }
+</script>

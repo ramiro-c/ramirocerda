@@ -35,40 +35,40 @@ const groups = trackIds
   <SiteHeader slot="header" lang={lang} />
 
   <section class="work">
-    <p class="mono label">01 / {t("work.title").toUpperCase()}</p>
-    <h1 class="display heading">{t("work.title")}</h1>
+    <p class="label caption-3">01 / {t("work.title")}</p>
+    <h1 class="heading-1">{t("work.title")}</h1>
 
     {
       groups.map((group) => (
         <section class="track">
           <div class="track-head">
-            <h2 class="track-title mono">{group.title}</h2>
-            <p class="track-note">{group.note}</p>
+            <h2 class="track-title caption-3">{group.title}</h2>
+            <p class="track-note caption-5">{group.note}</p>
           </div>
           <ul class="cat">
             {group.items.map((item, i) => (
               <li>
                 <a href={`/work/${item.slug}/`}>
                   <span class="row-head">
-                    <span class="num mono">{String(i + 1).padStart(2, "0")}</span>
-                    <span class="meta mono">
-                      {item.status && <span class="status">{t(`status.${item.status}`)}</span>}
+                    <span class="num mono caption-4">{String(i + 1).padStart(2, "0")}</span>
+                    <span class="meta mono caption-5">
+                      {item.status && <span class="status caption-3">{t(`status.${item.status}`)}</span>}
                       {item.status && item.kind && <span class="dot">·</span>}
                       {item.kind && <span class="kind">{t(`kind.${item.kind}`)}</span>}
                       {(item.status || item.kind) && item.year && <span class="dot">·</span>}
                       {item.year && <span class="year">{item.year}</span>}
                     </span>
                   </span>
-                  <span class="title">{item.title}</span>
-                  <span class="summary">{item.summary}</span>
+                  <span class="title title-1">{item.title}</span>
+                  <span class="summary body-6">{item.summary}</span>
                   {item.tags && item.tags.length > 0 && (
                     <span class="tags">
                       {item.tags.map((tag) => (
-                        <span class="tag mono">{tag}</span>
+                        <span class="tag caption-4">{tag}</span>
                       ))}
                     </span>
                   )}
-                  <span class="go mono" aria-hidden="true">→</span>
+                  <span class="go body-3" aria-hidden="true">→</span>
                 </a>
               </li>
             ))}
@@ -82,18 +82,17 @@ const groups = trackIds
 </BaseLayout>
 
 <style>
+  /* Visual system: landing-page-design skill Part B. Layout only; type comes
+     from the named text style classes in src/styles/global.css. */
   .work {
-    padding: 1rem 0 2rem;
+    padding: var(--space-200) 0 var(--space-600);
   }
   .label {
-    margin: 0 0 0.75rem;
+    margin: 0 0 var(--space-100);
     color: var(--muted-2);
-    font-size: 0.8rem;
   }
-  .heading {
-    margin: 0 0 1.5rem;
-    font-size: clamp(2.2rem, 7vw, 3.6rem);
-    line-height: 0.95;
+  .work h1 {
+    margin: 0 0 var(--space-300);
   }
   .cat {
     list-style: none;
@@ -101,40 +100,41 @@ const groups = trackIds
     margin: 0;
   }
   .track {
-    margin-top: 2.25rem;
+    margin-top: var(--space-400);
   }
   .track-head {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.5rem 1rem;
-    margin-bottom: 0.9rem;
+    gap: var(--space-75) var(--space-200);
+    margin-bottom: var(--space-100);
   }
   .track-title {
     margin: 0;
-    font-size: 0.82rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    color: var(--text);
   }
   .track-note {
+    max-width: 52ch;
     margin: 0;
     color: var(--muted);
-    font-size: 0.85rem;
-    max-width: 52ch;
   }
   .cat li {
     position: relative;
-    border-top: 2px solid var(--border);
-    padding: 1.1rem 0 1.25rem;
+    border-top: 1px solid var(--border);
+    padding: var(--space-200) 0 var(--space-300);
   }
   .cat li:last-child {
-    border-bottom: 2px solid var(--border);
+    border-bottom: 1px solid var(--border);
   }
   .cat a {
     display: grid;
-    gap: 0.45rem;
+    gap: var(--space-50);
     text-decoration: none;
     color: inherit;
+    transition: transform var(--dur-color) var(--ease-out);
+  }
+  .cat a:active {
+    transform: scale(0.98);
   }
   .row-head {
     display: flex;
@@ -142,69 +142,68 @@ const groups = trackIds
     align-items: baseline;
     /* Reserve the right edge for the absolutely positioned .go arrow, so it
        never lands on top of the status · kind · year meta line. */
-    padding-right: 1.6rem;
+    padding-right: var(--space-400);
   }
   .num {
-    color: var(--accent);
-    font-size: 0.75rem;
+    color: var(--accent-text);
   }
   .meta {
     display: inline-flex;
-    gap: 0.35rem;
-    font-size: 0.7rem;
+    flex-wrap: wrap;
+    min-width: 0;
     align-items: baseline;
+    gap: var(--space-50);
   }
   .status {
-    color: var(--accent);
-    text-transform: uppercase;
-    font-weight: 700;
+    color: var(--accent-text);
   }
   .dot,
   .kind,
   .year {
     color: var(--muted-2);
   }
-  .kind {
-    text-transform: uppercase;
-  }
   .title {
-    font-family: "Archivo Black", sans-serif;
-    font-size: clamp(1.3rem, 3.6vw, 1.9rem);
-    line-height: 1.05;
-    transition: color 0.15s ease;
+    transition: color var(--dur-color) var(--ease-out);
   }
   .cat a:hover .title {
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .summary {
-    color: var(--muted);
-    font-size: 0.9rem;
     max-width: 52ch;
+    color: var(--muted);
   }
   .tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: var(--space-50);
   }
   .tag {
-    font-size: 0.62rem;
-    color: var(--muted);
+    padding: var(--space-25) var(--space-75);
     border: 1px solid var(--border);
-    padding: 0.12rem 0.4rem;
+    border-radius: var(--radius-sm);
+    color: var(--muted);
   }
   .go {
     position: absolute;
     right: 0;
-    top: 1.2rem;
-    font-size: 1rem;
+    top: var(--space-200);
     color: var(--accent);
     opacity: 0;
-    transform: translateX(-8px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transform: translateX(calc(var(--space-75) * -1));
+    transition:
+      opacity var(--dur-color) var(--ease-out),
+      transform var(--dur-move) var(--ease-out);
   }
-  .cat a:hover .go {
+  .cat a:hover .go,
+  .cat a:focus-within .go {
     opacity: 1;
     transform: none;
+  }
+  @media (max-width: 720px) {
+    .work h1 {
+      font-size: var(--text-4xl);
+      line-height: 40px;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .title,
@@ -213,6 +212,9 @@ const groups = trackIds
     }
     .go {
       opacity: 1;
+      transform: none;
+    }
+    .cat a:active {
       transform: none;
     }
   }

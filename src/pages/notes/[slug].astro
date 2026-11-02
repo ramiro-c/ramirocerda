@@ -48,21 +48,21 @@ const { Content } = await render(note);
   <SiteHeader slot="header" lang={lang} />
 
   <article class="note">
-    <p class="mono label"><a class="crumb" href={getLocalizedPath(lang, "/notes/")}>{t("notes.back")}</a> / {note.data.lang.toUpperCase()}</p>
-    <h1 class="display heading">{note.data.title}</h1>
-    <p class="summary">{note.data.description}</p>
+    <p class="label caption-3"><a class="crumb" href={getLocalizedPath(lang, "/notes/")}>{t("notes.back")}</a> / {note.data.lang.toUpperCase()}</p>
+    <h1 class="heading-1">{note.data.title}</h1>
+    <p class="summary body-3">{note.data.description}</p>
     <div class="content">
       <Content />
     </div>
 
     {projects.length > 0 && (
       <section class="related">
-        <p class="mono label">{t("notes.relatedProjects")}</p>
+        <p class="label caption-3">{t("notes.relatedProjects")}</p>
         <ul class="related-list">
           {projects.map((p) => (
             <li>
               <a href={getLocalizedPath(lang, `/work/${p.slug}/`)}>
-                <span class="rel-title">{p.title}</span>
+                <span class="rel-title title-3">{p.title}</span>
                 <span class="arrow" aria-hidden="true">→</span>
               </a>
             </li>
@@ -73,13 +73,13 @@ const { Content } = await render(note);
 
     {otherNotes.length > 0 && (
       <section class="related">
-        <p class="mono label">{t("notes.other")}</p>
+        <p class="label caption-3">{t("notes.other")}</p>
         <ul class="related-list">
           {otherNotes.map((n) => (
             <li>
               <a href={getLocalizedPath(lang, `/notes/${n.slug}/`)}>
-                <span class="rel-date mono">{n.dateStr}</span>
-                <span class="rel-title">{n.title}</span>
+                <span class="rel-date mono caption-4">{n.dateStr}</span>
+                <span class="rel-title title-3">{n.title}</span>
                 <span class="arrow" aria-hidden="true">→</span>
               </a>
             </li>
@@ -93,68 +93,94 @@ const { Content } = await render(note);
 </BaseLayout>
 
 <style>
+  /* Visual system: landing-page-design skill Part B. Layout only; type comes
+     from the named text style classes in src/styles/global.css. */
   .note {
-    padding: 1rem 0 2rem;
+    padding: var(--space-200) 0 var(--space-600);
   }
   .label {
-    margin: 0 0 0.75rem;
+    margin: 0 0 var(--space-100);
     color: var(--muted-2);
-    font-size: 0.8rem;
   }
-  .heading {
-    margin: 0 0 1rem;
-    font-size: clamp(2.2rem, 7vw, 3.6rem);
-    line-height: 0.95;
+  .note h1 {
+    margin: 0 0 var(--space-200);
   }
   .summary {
-    max-width: 44rem;
-    margin: 0 0 1.5rem;
+    max-width: 680px;
+    margin: 0 0 var(--space-300);
     color: var(--muted);
   }
   .content {
+    padding-top: var(--space-200);
     border-top: 1px solid var(--border);
-    padding-top: 1rem;
   }
   .crumb {
+    display: inline-block;
     color: var(--muted-2);
     text-decoration: none;
+    transition:
+      color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
   }
   .crumb:hover {
-    color: var(--accent);
+    color: var(--accent-text);
+  }
+  .crumb:active {
+    transform: scale(0.98);
   }
   .related {
-    margin-top: 2.5rem;
+    margin-top: var(--space-500);
+    padding-top: var(--space-300);
     border-top: 1px solid var(--border);
-    padding-top: 1.25rem;
   }
   .related-list {
     list-style: none;
     padding: 0;
     margin: 0;
     display: grid;
-    gap: 0.75rem;
+    gap: var(--space-100);
   }
   .related-list li a {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.75rem;
+    gap: var(--space-100);
     text-decoration: none;
+    transition: transform var(--dur-color) var(--ease-out);
+  }
+  .related-list li a:active {
+    transform: scale(0.98);
   }
   .related-list li a:hover .rel-title {
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .rel-date {
     flex: none;
-    font-size: 0.68rem;
     color: var(--muted-2);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
   .rel-title {
-    font-weight: 700;
+    min-width: 0;
+    transition: color var(--dur-color) var(--ease-out);
   }
   .arrow {
     margin-left: auto;
     color: var(--muted-2);
+  }
+  @media (max-width: 720px) {
+    .note h1 {
+      font-size: var(--text-4xl);
+      line-height: 40px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .crumb,
+    .rel-title,
+    .related-list li a {
+      transition: none;
+    }
+    .crumb:active,
+    .related-list li a:active {
+      transform: none;
+    }
   }
 </style>

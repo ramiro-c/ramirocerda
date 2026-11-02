@@ -1,0 +1,206 @@
+---
+/**
+ * Fixed bottom layer: storage notice (until dismissed), the mobile sticky CTA
+ * bar and the desktop floating CTA. It publishes its height as --dock-offset
+ * so Botardo's island and the page padding sit above it.
+ * The floating CTA hides while an in page primary CTA is on screen, so there
+ * is never a duplicate primary action in view.
+ */
+import { WHATSAPP_URL } from "../config/site";
+import { landing } from "../i18n/landing";
+import type { Lang } from "../i18n/ui";
+import { getLocalizedPath } from "../i18n/utils";
+import PrimaryCta from "./PrimaryCta.astro";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const copy = landing[lang];
+---
+
+<div class="dock" id="bottomDock">
+  <div class="dock-notice" id="storageNotice" role="region" aria-label={copy.notice.link} hidden>
+    <p class="body-6">
+      {copy.notice.text}
+      <a href={getLocalizedPath(lang, "/privacy/")}>{copy.notice.link}</a>
+    </p>
+    <button type="button" class="dock-dismiss button-xsm" data-dismiss-notice>{copy.notice.dismiss}</button>
+  </div>
+  <nav class="dock-bar" aria-label={copy.dock.label} data-dock-cta>
+    <PrimaryCta lang={lang} position="dock" compact />
+    {
+      WHATSAPP_URL && (
+        <a class="dock-whatsapp cta-link" href={WHATSAPP_URL} target="_blank" rel="noopener" data-cta-id="whatsapp" data-cta-position="dock">
+          {copy.cta.whatsapp}
+        </a>
+      )
+    }
+  </nav>
+</div>
+
+<style>
+  .dock {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: var(--z-dock);
+    pointer-events: none;
+  }
+  .dock > * {
+    pointer-events: auto;
+  }
+  .dock-notice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-200);
+    /* A compact card in the corner, not a full width bar. A bar that spans the
+       viewport reads as part of the layout and covers whatever is under it on
+       every scroll position, which is what made it feel intrusive. */
+    max-width: 26rem;
+    margin: 0 var(--space-300) var(--space-300);
+    padding: var(--space-200) var(--space-300);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  .dock-notice[hidden] {
+    display: none;
+  }
+  /* The notice only competes with the hero, where there is nothing to read under
+     it. Once the hero leaves the viewport it fades out, so it never sits over
+     body copy the way a permanent bar does. */
+  .dock-notice {
+    transition:
+      opacity var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out),
+      visibility 0s linear;
+  }
+  .dock-notice.is-away {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(var(--space-75));
+    transition:
+      opacity var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out),
+      visibility 0s linear var(--dur-color);
+  }
+  .dock-notice p {
+    margin: 0;
+    max-width: 72ch;
+  }
+  .dock-notice a {
+    color: inherit;
+  }
+  .dock-dismiss {
+    flex: none;
+    min-height: 44px;
+    padding: var(--space-75) var(--space-200);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition:
+      background-color var(--dur-color) var(--ease-out),
+      color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
+  }
+  .dock-dismiss:hover {
+    background: var(--text);
+    color: var(--bg);
+  }
+  .dock-dismiss:active {
+    transform: scale(0.98);
+  }
+
+  /* Mobile: full width sticky bar, always present (Botardo floats above it). */
+  .dock-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-200);
+    padding: var(--space-100) var(--space-200);
+    padding-bottom: calc(var(--space-100) + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .dock-bar :global(.cta-primary) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* Desktop: no floating CTA. The hero and the closing section already carry the
+     primary action, so a second button that appears and disappears while you
+     scroll only reads as a glitch. The dock holds the storage notice, nothing else. */
+  @media (min-width: 768px) {
+    .dock {
+      display: flex;
+      flex-direction: column-reverse;
+    }
+    .dock-bar {
+      display: none;
+    }
+  }
+
+  :global(body) {
+    padding-bottom: var(--dock-offset);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dock-dismiss:active {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  import { STORAGE_KEYS } from "../config/site";
+
+  const dock = document.getElementById("bottomDock");
+  const notice = document.getElementById("storageNotice");
+  const bar = dock?.querySelector<HTMLElement>("[data-dock-cta]");
+  const desktop = window.matchMedia("(min-width: 768px)");
+
+  function publishOffset() {
+    if (!dock) return;
+    // On desktop the CTA floats, so only the notice takes vertical space.
+    const noticeHeight = notice && !notice.hidden ? notice.offsetHeight : 0;
+    const barHeight = bar && !desktop.matches ? bar.offsetHeight : 0;
+    document.documentElement.style.setProperty("--dock-offset", `${noticeHeight + barHeight}px`);
+  }
+
+  try {
+    if (notice && !localStorage.getItem(STORAGE_KEYS.noticeDismissed)) notice.hidden = false;
+  } catch {
+    // Storage blocked: nothing is stored, so there is nothing to disclose.
+  }
+
+  notice?.querySelector("[data-dismiss-notice]")?.addEventListener("click", () => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.noticeDismissed, "1");
+    } catch {
+      // ignore
+    }
+    notice.hidden = true;
+    publishOffset();
+  });
+
+  if (dock && "ResizeObserver" in window) new ResizeObserver(publishOffset).observe(dock);
+  desktop.addEventListener("change", publishOffset);
+  publishOffset();
+
+  // The notice competes with the opening of the page only. Observing the page
+  // heading works on every page, including the ones with no hero, so the card
+  // never sits over body copy once the reader scrolls past the opening. The top
+  // margin clears the floating navigation.
+  const pageAnchor = document.querySelector("main h1");
+  if (notice && pageAnchor && "IntersectionObserver" in window) {
+    new IntersectionObserver(
+      ([entry]) => notice.classList.toggle("is-away", !entry.isIntersecting),
+      { threshold: 0, rootMargin: "-96px 0px 0px 0px" },
+    ).observe(pageAnchor);
+  }
+</script>

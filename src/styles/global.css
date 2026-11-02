@@ -1,14 +1,100 @@
+/* Design tokens: landing-page-design skill, Part B.
+   Every visual value in the site resolves through this file. Never invent a
+   font size, spacing step, radius or duration outside these tokens. */
+
 :root {
-  --bg: #f7f5f1;
-  --text: #111111;
-  --muted: #444444;
-  --muted-2: #666666;
+  /* S1 Typeface. One primary face. Mono only for code, data, numeric UI. */
+  --font-sans: "Geist", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", monospace;
+
+  /* Dark theme surfaces. Flat only: no background gradients anywhere.
+     Palette is the skill's approved dark set (B4). The page sits on the
+     darkest step and cards step up, so elevation reads without shadows. */
+  --bg: #000000;
+  --surface: #181818;
+  --surface-2: #1f1f1f;
+  --text: #ffffff;
+  /* 10.1:1 on --bg. */
+  --muted: #b4b4b4;
+  /* 6.08:1 on --bg, the lightest step that still clears AA for small text. */
+  --muted-2: #8a8a8a;
   --accent: #e4572e;
-  --border: #111111;
-  --radius: 2px;
-  --font-display: "Archivo Black", "Archivo", system-ui, sans-serif;
-  --font-body: "Archivo", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* Lightened accent for small text only: 8.52:1 on --bg. */
+  --accent-text: #f08a63;
+  /* Fill hover. Lightened so it keeps 6.36:1 with --accent-ink. */
+  --accent-hover: #ef6f45;
+  --accent-ink: #111111;
+  /* Error state. Lightened for dark surfaces: 9.17:1 on --bg. */
+  --error: #ff8a7a;
+  --border: #272727;
+  --border-strong: #313131;
+
+  /* Dark surface steps, for sections that need to sit off the base. */
+  --dark-0: #000000;
+  --dark-1: #181818;
+  --dark-2: #1f1f1f;
+  --dark-3: #272727;
+  --dark-4: #313131;
+  --dark-warm: #131209;
+
+  /* Page measure. 920px was too narrow for a full width hero, and the redesign
+     audit puts the container between 1200 and 1440. */
+  --shell-w: 1280px;
+
+  /* S2 Type scale: Tailwind steps with their paired line heights. */
+  --text-xs: 0.75rem; /* 12 / 16 */
+  --text-sm: 0.875rem; /* 14 / 20 */
+  --text-base: 1rem; /* 16 / 24 */
+  --text-lg: 1.125rem; /* 18 / 28 */
+  --text-xl: 1.25rem; /* 20 / 28 */
+  --text-2xl: 1.5rem; /* 24 / 32 */
+  --text-3xl: 1.875rem; /* 30 / 36 */
+  --text-4xl: 2.25rem; /* 36 / 40 */
+  --text-5xl: 3rem; /* 48 */
+  --text-6xl: 3.75rem; /* 60 */
+  --text-7xl: 4.5rem; /* 72 */
+  --text-8xl: 6rem; /* 96 */
+
+  /* S4 Spacing table. Nothing between these values, nothing outside them. */
+  --space-0: 0;
+  --space-25: 2px;
+  --space-50: 4px;
+  --space-75: 8px;
+  --space-100: 12px;
+  --space-200: 16px;
+  --space-300: 24px;
+  --space-400: 32px;
+  --space-500: 40px;
+  --space-600: 48px;
+  --space-700: 64px;
+  --space-800: 80px;
+  --space-900: 96px;
+
+  /* S5 Radius: Tailwind values only. */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+  --radius-full: 9999px;
+  /* Shared default for plain controls. Cards use --radius-2xl. */
+  --radius: var(--radius-lg);
+
+  /* S9 Motion. Weighted, decelerating. Never a browser default curve. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-color: 300ms;
+  --dur-move: 500ms;
+
+  /* Layering. */
+  --z-nav: 950;
+  --z-dock: 990;
+  --z-widget: 999;
+  --z-dialog: 1001;
+  --z-overlay: 1002;
+  /* Height of the fixed bottom dock, set by JS. */
+  --dock-offset: 0px;
 }
 
 *,
@@ -19,6 +105,10 @@
 
 html {
   scroll-behavior: smooth;
+  /* The hero bleeds to the viewport edges with 100vw. Clip, not hidden, so the
+     page never grows a horizontal scrollbar and sticky still works, because clip
+     does not create a scroll container. */
+  overflow-x: clip;
 }
 
 body {
@@ -26,9 +116,10 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-body);
-  font-size: 1.05rem;
-  line-height: 1.55;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -37,44 +128,294 @@ a {
 
 a:focus-visible,
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: var(--radius-xs);
 }
 
-.skip-link {
-  position: absolute;
-  left: 12px;
-  top: -48px;
-  z-index: 1000;
-  background: var(--accent);
-  color: #fff;
-  padding: 8px 12px;
-  text-decoration: none;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* ---------------------------------------------------------------------------
+   S3 Text styles. Use these class names, never a loose size and weight pair.
+   --------------------------------------------------------------------------- */
+
+.heading-1 {
+  font-size: var(--text-6xl);
+  line-height: 60px;
+  font-weight: 600;
+}
+.heading-2 {
+  font-size: var(--text-5xl);
+  line-height: 48px;
+  font-weight: 600;
+}
+.heading-3 {
+  font-size: var(--text-4xl);
+  line-height: 40px;
+  font-weight: 600;
+}
+.heading-4 {
+  font-size: var(--text-3xl);
+  line-height: 36px;
+  font-weight: 600;
+}
+.heading-5 {
+  font-size: var(--text-2xl);
+  line-height: 32px;
+  font-weight: 600;
+}
+.heading-6 {
+  font-size: var(--text-xl);
+  line-height: 28px;
   font-weight: 600;
 }
 
-.skip-link:focus {
-  top: 12px;
+.title-1 {
+  font-size: var(--text-xl);
+  line-height: 28px;
+  font-weight: 500;
+}
+.title-2 {
+  font-size: var(--text-lg);
+  line-height: 28px;
+  font-weight: 500;
+}
+.title-3 {
+  font-size: var(--text-base);
+  line-height: 24px;
+  font-weight: 500;
+}
+.title-4 {
+  font-size: var(--text-sm);
+  line-height: 20px;
+  font-weight: 500;
+}
+.title-5 {
+  font-size: var(--text-xs);
+  line-height: 16px;
+  font-weight: 500;
 }
 
-.display {
-  font-family: var(--font-display);
-  letter-spacing: -0.04em;
-  line-height: 1.05;
-  text-transform: uppercase;
+.body-1 {
+  font-size: var(--text-base);
+  line-height: 24px;
+  font-weight: 600;
+}
+.body-2 {
+  font-size: var(--text-base);
+  line-height: 24px;
+  font-weight: 500;
+}
+.body-3 {
+  font-size: var(--text-base);
+  line-height: 24px;
+  font-weight: 400;
+}
+.body-4 {
+  font-size: var(--text-sm);
+  line-height: 20px;
+  font-weight: 600;
+}
+.body-5 {
+  font-size: var(--text-sm);
+  line-height: 20px;
+  font-weight: 500;
+}
+.body-6 {
+  font-size: var(--text-sm);
+  line-height: 20px;
+  font-weight: 400;
 }
 
+.button-lg {
+  font-size: var(--text-lg);
+  line-height: 28px;
+  font-weight: 600;
+}
+.button-md {
+  font-size: var(--text-base);
+  line-height: 24px;
+  font-weight: 600;
+}
+.button-sm {
+  font-size: var(--text-sm);
+  line-height: 20px;
+  font-weight: 600;
+}
+.button-xsm {
+  font-size: var(--text-xs);
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.caption-1 {
+  font-size: var(--text-sm);
+  line-height: 20px;
+  font-weight: 500;
+}
+.caption-2 {
+  font-size: var(--text-sm);
+  line-height: 20px;
+  font-weight: 400;
+}
+.caption-3 {
+  font-size: var(--text-xs);
+  line-height: 16px;
+  font-weight: 600;
+}
+.caption-4 {
+  font-size: var(--text-xs);
+  line-height: 16px;
+  font-weight: 500;
+}
+.caption-5 {
+  font-size: var(--text-xs);
+  line-height: 16px;
+  font-weight: 400;
+}
+
+/* Numeric and code UI only (skill S1). */
 .mono {
   font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Shared primitives
+   --------------------------------------------------------------------------- */
+
+.skip-link {
+  position: absolute;
+  left: var(--space-100);
+  top: -48px;
+  z-index: var(--z-dialog);
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: var(--space-75) var(--space-100);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: var(--space-100);
+}
+
+/* Primary CTA: the single accent action, shared by hero, cases, final band,
+   dock and contact form. Restyle here only. */
+.cta-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-75);
+  padding: var(--space-75) var(--space-100);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: inherit;
+  font-size: var(--text-base);
+  line-height: 24px;
+  font-weight: 600;
+  text-decoration: none;
+  text-wrap: balance;
+  cursor: pointer;
+  transition:
+    transform var(--dur-color) var(--ease-out),
+    background-color var(--dur-color) var(--ease-out);
+  touch-action: manipulation;
+}
+.cta-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+.cta-primary:active {
+  transform: scale(0.98);
+}
+.cta-primary[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+  transform: none;
+}
+
+/* Secondary actions are text links, never a second button above the fold. */
+.cta-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--text-base);
+  line-height: 24px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+  transition: color var(--dur-color) var(--ease-out);
+}
+.cta-link:hover {
+  color: var(--accent-text);
+}
+
+/* Returning visitor swaps (html[data-returning] set before paint in BaseLayout). */
+html[data-returning] .first-visit-only,
+html:not([data-returning]) .returning-only {
+  display: none !important;
+}
+
+/* Scroll reveal: once, rise 32px, base curve. JS adds .is-visible. */
+.reveal {
+  opacity: 0;
+  transform: translateY(var(--space-400));
+  transition:
+    opacity 700ms var(--ease-out),
+    transform 700ms var(--ease-out);
+}
+.reveal.is-visible,
+html:not(.js) .reveal {
+  opacity: 1;
+  transform: none;
 }
 
 .site-shell {
-  width: min(920px, calc(100% - 2rem));
+  width: min(var(--shell-w), calc(100% - var(--space-600)));
   margin-inline: auto;
 }
 
+/* Clear the fixed floating navigation (skill B7). */
+main#main {
+  padding-top: var(--space-900);
+}
+
+@media (max-width: 720px) {
+  main#main {
+    padding-top: var(--space-700);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transform: none;
+  }
   *,
   *::before,
   *::after {
@@ -87,10 +428,11 @@ input:focus-visible {
 
 /* Mermaid diagrams rendered from ```mermaid code blocks (progressive enhancement) */
 .mermaid-diagram {
-  margin: 1.5rem 0;
-  padding: 0.75rem;
-  border: 1px solid var(--border, #e5e5e5);
-  background: var(--surface, #fff);
+  margin: var(--space-300) 0;
+  padding: var(--space-100);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
   overflow-x: auto;
   text-align: center;
   cursor: zoom-in;
@@ -104,23 +446,31 @@ input:focus-visible {
 }
 
 /* Show the desktop (LR) diagram on wide screens, mobile (TD) on phones */
-.diagram-desktop { display: block; }
-.diagram-mobile { display: none; }
+.diagram-desktop {
+  display: block;
+}
+.diagram-mobile {
+  display: none;
+}
 @media (max-width: 768px) {
-  .diagram-desktop { display: none; }
-  .diagram-mobile { display: block; }
+  .diagram-desktop {
+    display: none;
+  }
+  .diagram-mobile {
+    display: block;
+  }
 }
 
 /* Mermaid fullscreen overlay (tap a diagram to expand; pinch-zoom on mobile) */
 .mermaid-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-overlay);
   background: rgba(0, 0, 0, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
+  padding: var(--space-75);
   overflow: auto;
   touch-action: pan-x pan-y pinch-zoom;
   -webkit-overflow-scrolling: touch;
@@ -130,9 +480,9 @@ input:focus-visible {
   max-width: 96vw;
   max-height: 92vh;
   overflow: auto;
-  background: #fff;
-  padding: 0.5rem;
-  border-radius: 4px;
+  background: var(--surface);
+  padding: var(--space-75);
+  border-radius: var(--radius-xl);
   box-sizing: border-box;
 }
 .mermaid-overlay-body svg {
@@ -144,18 +494,18 @@ input:focus-visible {
 }
 .mermaid-overlay-close {
   position: fixed;
-  top: 0.5rem;
-  right: 0.75rem;
-  font-size: 2rem;
-  line-height: 1;
+  top: var(--space-75);
+  right: var(--space-100);
+  font-size: var(--text-3xl);
+  line-height: 36px;
   color: #fff;
   background: none;
   border: none;
   cursor: pointer;
-  z-index: 10000;
+  z-index: var(--z-overlay);
 }
 @media (max-width: 768px) {
   .mermaid-diagram {
-    padding: 0.5rem;
+    padding: var(--space-75);
   }
 }

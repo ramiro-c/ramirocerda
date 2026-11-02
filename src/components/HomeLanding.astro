@@ -1,0 +1,686 @@
+---
+/**
+ * Home as a conversion page (landing kit structure): hero with one primary CTA
+ * and proof beside it, live demo, cases, repeated CTA, tagline reveal, FAQ
+ * (with FAQPage schema), the existing projects/notes hub and a final CTA
+ * identical to the hero one. Copy lives in i18n/landing.ts.
+ *
+ * Visual system: landing-page-design skill Part B. Sizes, spacing, radii and
+ * motion come from the tokens and named text styles in src/styles/global.css.
+ */
+import { landing } from "../i18n/landing";
+import type { Lang } from "../i18n/ui";
+import { getLocalizedPath, useTranslations } from "../i18n/utils";
+import HomeHub from "./HomeHub.astro";
+import PrimaryCta from "./PrimaryCta.astro";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const c = landing[lang];
+const isDev = import.meta.env.DEV;
+const logos = c.proof.logos.filter((logo) => logo.confirmed || isDev);
+const testimonials = c.testimonials.items;
+const taglineWords = c.tagline.split(" ");
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  inLanguage: lang === "es" ? "es-AR" : "en-US",
+  mainEntity: c.faq.items.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+};
+---
+
+<section class="hero" aria-labelledby="heroTitle">
+  <div class="hero-copy">
+    <p class="eyebrow caption-3">
+      <span class="eyebrow-rule" aria-hidden="true"></span>
+      {c.hero.eyebrow}
+    </p>
+    <p class="returning-only welcome-back caption-3">{c.hero.returningNote}</p>
+    <h1 class="heading-1 hero-title" id="heroTitle">
+      <span class="hero-line">{c.hero.headline}</span>
+      <span class="hero-line">{c.hero.headlineAccent}</span>
+    </h1>
+    <p class="hero-sub body-3">{c.hero.sub}</p>
+
+    <div class="hero-actions">
+      <PrimaryCta lang={lang} position="hero" />
+      <p class="reassurance caption-2">{c.cta.reassurance}</p>
+    </div>
+    <p class="secondary-actions">
+      <a class="cta-link" href="#casos" data-cta-id="cases" data-cta-position="hero">{c.cta.cases}</a>
+      <button class="cta-link" type="button" data-open-botardo data-cta-id="botardo" data-cta-position="hero">{c.cta.botardo}</button>
+    </p>
+
+    <div class="hero-proof">
+    <p class="proof-claim body-2">{c.hero.proof}</p>
+    {
+      logos.length > 0 && (
+        <p class="proof-logos caption-4">
+          <span class="proof-label">{c.proof.workedWith}</span>
+          {logos.map((logo) => (
+            <span class:list={["logo-name", { "is-placeholder": !logo.confirmed }]} title={logo.confirmed ? undefined : "TODO: confirm before publishing (dev only)"}>
+              {logo.name}
+            </span>
+          ))}
+        </p>
+      )
+    }
+    <p class="status-chip caption-4">
+      <span class="chip-dot" aria-hidden="true"></span>
+      {t("home.statusAvailable")}
+      <span class="chip-sep" aria-hidden="true">·</span>
+      {t("home.location")}
+    </p>
+    </div>
+  </div>
+
+  <figure class="hero-visual">
+    <picture>
+      <source
+        type="image/webp"
+        srcset="/hero-architecture-400.webp 400w, /hero-architecture-600.webp 600w"
+        sizes="(min-width: 900px) 25rem, 92vw"
+      />
+      <img
+        class="hero-image"
+        src="/hero-architecture-600.jpg"
+        srcset="/hero-architecture-600.jpg 600w"
+        sizes="(min-width: 900px) 25rem, 92vw"
+        width="600"
+        height="720"
+        alt={c.hero.visualAlt}
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
+    <figcaption class="hero-credit caption-5">
+      <a
+        class="hero-credit-link"
+        href="https://www.eso.org/public/images/potw2618a/"
+        rel="noopener"
+        target="_blank">{c.hero.visualCredit}</a><span class="hero-credit-sep">·</span><span>{c.hero.visualCreditNote}</span>
+    </figcaption>
+  </figure>
+</section>
+
+<section class="band demo reveal" aria-labelledby="demoTitle">
+  <span class="band-num mono caption-4" aria-hidden="true">01</span>
+  <p class="label caption-3">{c.demo.label}</p>
+  <h2 class="heading-2 section-title" id="demoTitle">{c.demo.title}</h2>
+  <p class="section-body body-3">{c.demo.body}</p>
+  <div class="demo-actions">
+    <button class="cta-secondary body-5" type="button" data-open-botardo data-cta-id="botardo" data-cta-position="demo">{c.cta.botardo}</button>
+    {
+      c.demo.prompts.map((prompt, i) => (
+        <button class="prompt-chip body-5" type="button" data-open-botardo data-botardo-prompt={prompt} data-cta-id="botardo_prompt" data-cta-position={`demo-${i + 1}`}>
+          {prompt}
+        </button>
+      ))
+    }
+  </div>
+</section>
+
+<section class="band cases reveal" id="casos" aria-labelledby="casesTitle">
+  <span class="band-num mono caption-4" aria-hidden="true">02</span>
+  <p class="label caption-3">{c.cases.label}</p>
+  <h2 class="heading-2 section-title" id="casesTitle">{c.cases.title}</h2>
+  <ol class="case-list">
+    {
+      c.cases.items.map((item, i) => (
+        <li class="case">
+          <span class="case-num mono caption-4" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+          <div class="case-main">
+            <p class="case-label caption-3">{item.label}</p>
+            <h3 class="case-title title-1">{item.title}</h3>
+            <p class="case-result body-3">{item.result}</p>
+          </div>
+          {item.href && (
+            /^https?:\/\//.test(item.href) ? (
+              <a class="cta-link case-link" href={item.href} target="_blank" rel="noreferrer" data-cta-id="case_site" data-cta-position={item.id}>
+                {c.cases.visit}
+              </a>
+            ) : (
+              <a class="cta-link case-link" href={item.href} data-cta-id="case" data-cta-position={item.id}>
+                {c.cases.more}
+              </a>
+            )
+          )}
+        </li>
+      ))
+    }
+  </ol>
+  <div class="cta-row">
+    <PrimaryCta lang={lang} position="cases" />
+  </div>
+</section>
+
+{
+  /* The section only exists when there is something to say. An empty state that
+     announces its own emptiness is worse than no section at all. */
+  testimonials.length > 0 && (
+    <section class="band testimonials reveal" aria-label={c.testimonials.label}>
+      <p class="label caption-3">{c.testimonials.label}</p>
+      <ul class="quote-list">
+        {testimonials.map((item) => (
+          <li>
+            <blockquote>
+              <p class="body-3">{item.quote}</p>
+              <footer class="caption-2">
+                {item.name}, {item.role}
+              </footer>
+            </blockquote>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<section class="tagline" aria-label={c.tagline}>
+  <p class="heading-1 tagline-text" data-tagline aria-hidden="true">
+    {
+      taglineWords.map((word, i) => (
+        <>
+          <span class="tagline-word" data-index={i}>{word}</span>{" "}
+        </>
+      ))
+    }
+  </p>
+</section>
+
+<section class="band faq reveal" aria-labelledby="faqTitle">
+  <span class="band-num mono caption-4" aria-hidden="true">03</span>
+  <p class="label caption-3">{c.faq.label}</p>
+  <h2 class="heading-2 section-title" id="faqTitle">{c.faq.title}</h2>
+  <dl class="faq-list">
+    {
+      c.faq.items.map((item, i) => (
+        <div class="faq-item">
+          <span class="faq-num mono caption-4" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+          <dt class="body-1">{item.q}</dt>
+          <dd class="body-3">{item.a}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+</section>
+
+<HomeHub lang={lang} />
+
+<section class="final reveal" aria-labelledby="finalTitle">
+  <h2 class="heading-1 final-title" id="finalTitle">{c.final.title}</h2>
+  <p class="section-body body-3">{c.final.body}</p>
+  <div class="hero-actions">
+    <PrimaryCta lang={lang} position="final" />
+    <p class="reassurance caption-2">{c.cta.reassurance}</p>
+  </div>
+  <p class="secondary-actions">
+    <a class="cta-link" href={getLocalizedPath(lang, "/work/")} data-cta-id="work" data-cta-position="final">{t("cta.work")}</a>
+  </p>
+</section>
+
+<style>
+  /* Hero: the photo bleeds off the right and bottom edges while the copy sits on
+     flat black. Splitting them keeps the image's composition intact and gives
+     every text element a guaranteed contrast floor, which a text-over-photo
+     overlay cannot promise. */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+    /* Break out of the page shell to the real viewport edges, and pull up under
+       the fixed navigation so the photo reaches the top of the screen. The copy
+       keeps its own top padding so no text sits under the nav. */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-top: calc(var(--space-900) * -1);
+  }
+  .hero-copy {
+    /* Aligns the copy with the page shell at every width, including when the
+       hero is wider than the shell. */
+    --hero-gutter: max(var(--space-300), calc((100vw - var(--shell-w)) / 2));
+    min-width: 0;
+    padding: var(--space-800) var(--hero-gutter) var(--space-700);
+  }
+  .hero-visual {
+    margin: 0;
+  }
+  .hero-visual picture {
+    display: block;
+  }
+  .hero-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: center;
+    background-color: var(--surface);
+  }
+  /* The ESO licence requires a visible credit that stays attached to the image,
+     with an active link, plus a note stating the modification (crop). */
+  .hero-credit {
+    margin: 0;
+    padding: var(--space-100) var(--space-400) var(--space-300);
+    color: var(--muted-2);
+  }
+  .hero-credit-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: color var(--dur-color) var(--ease-out);
+  }
+  .hero-credit-link:hover,
+  .hero-credit-link:focus-visible {
+    color: var(--text);
+  }
+  .hero-credit-sep {
+    margin: 0 var(--space-50);
+  }
+  /* Wide screens: the copy holds the left column while the photo runs the full
+     height of the viewport on the right, bleeding past both edges. The hero is
+     one screen, so the headline and the primary action are always visible. */
+  @media (min-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 46%);
+      min-height: calc(100dvh - var(--space-900));
+      align-items: stretch;
+    }
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--space-900) var(--space-700) var(--space-800)
+        var(--hero-gutter);
+    }
+    .hero-visual {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      min-height: 0;
+    }
+    .hero-visual picture {
+      min-height: 0;
+      overflow: hidden;
+    }
+    .hero-image {
+      height: 100%;
+      aspect-ratio: auto;
+    }
+    .hero-credit {
+      padding: var(--space-100) var(--space-300) var(--space-300);
+    }
+  }
+  .eyebrow,
+  .welcome-back {
+    margin: 0 0 var(--space-100);
+    color: var(--muted-2);
+  }
+  /* A short accent rule anchors the eyebrow to the left edge, so the hero opens
+     with a mark rather than a floating line of small text. */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-100);
+  }
+  .eyebrow-rule {
+    display: block;
+    width: var(--space-500);
+    height: 1px;
+    background-color: var(--accent);
+    flex: none;
+  }
+  .welcome-back {
+    color: var(--text);
+  }
+
+  /* Hero heading: left to right text gradient, capped at 680px (skill B5). */
+  .hero-title {
+    max-width: 680px;
+    margin: 0 0 var(--space-300);
+    color: var(--text);
+    text-wrap: balance;
+  }
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .hero-title {
+      background-image: linear-gradient(90deg, #ffffff 0%, #9b9b9b 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+  .hero-line {
+    display: block;
+  }
+  .hero-sub {
+    max-width: 680px;
+    margin: 0 0 var(--space-400);
+    color: var(--muted);
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-100) var(--space-300);
+  }
+  .reassurance {
+    margin: 0;
+    color: var(--muted);
+  }
+  .secondary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-300);
+    margin: var(--space-200) 0 0;
+  }
+  .hero-proof {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-100);
+    margin-top: var(--space-600);
+    padding-top: var(--space-400);
+    border-top: 1px solid var(--border);
+  }
+  .proof-claim {
+    margin: 0;
+  }
+  .proof-logos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-75) var(--space-200);
+    margin: 0;
+  }
+  .proof-label {
+    color: var(--muted-2);
+  }
+  .logo-name {
+    padding: var(--space-25) var(--space-75);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .logo-name.is-placeholder {
+    border-style: dashed;
+    opacity: 0.55;
+  }
+  .logo-name.is-placeholder::after {
+    content: " (TODO)";
+  }
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: var(--space-75);
+    margin: 0;
+    padding: var(--space-25) var(--space-100);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    color: var(--muted);
+  }
+  .chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--accent);
+  }
+
+  /* Every band shares one editorial frame: a numbered rail on the left and the
+     content in the second column. A flat stack of full width blocks is what
+     makes a long page read as a list; the rail gives it a spine and lets the
+     reader see where a section starts. */
+  .band {
+    display: grid;
+    grid-template-columns: var(--space-700) minmax(0, 1fr);
+    column-gap: var(--space-600);
+    padding: var(--space-900) 0;
+    border-top: 1px solid var(--border);
+  }
+  .band-num {
+    grid-column: 1;
+    grid-row: 1;
+    padding-top: var(--space-75);
+    color: var(--muted-2);
+  }
+  .band > :not(.band-num) {
+    grid-column: 2;
+  }
+  .label {
+    margin: 0 0 var(--space-100);
+    color: var(--muted-2);
+  }
+  .section-title {
+    max-width: 680px;
+    margin: 0 0 var(--space-200);
+  }
+  .section-body {
+    max-width: 680px;
+    margin: 0 0 var(--space-400);
+    color: var(--muted);
+  }
+
+  .demo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-100);
+  }
+  .cta-secondary,
+  .prompt-chip {
+    padding: var(--space-75) var(--space-100);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background-color var(--dur-color) var(--ease-out),
+      color var(--dur-color) var(--ease-out),
+      transform var(--dur-color) var(--ease-out);
+  }
+  .cta-secondary {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .prompt-chip:hover {
+    background: var(--surface-2);
+  }
+  .cta-secondary:hover {
+    background: var(--muted);
+  }
+  .cta-secondary:active,
+  .prompt-chip:active {
+    transform: scale(0.98);
+  }
+
+  .case-list {
+    display: grid;
+    gap: 0;
+    margin: var(--space-400) 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--border);
+  }
+  /* The cases are an index, not a card grid. A three column card wall is the
+     most generic layout there is, and it flattens six very different projects
+     into the same rectangle. Numbered rows keep the reading order and let the
+     titles carry the rhythm. */
+  .case {
+    display: grid;
+    grid-template-columns: var(--space-700) minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--space-300);
+    /* The hover fill needs room around the text. The row carries horizontal
+       padding and pulls back by the same amount, so the copy stays aligned with
+       the heading above while the fill bleeds past it instead of touching the
+       letters. */
+    padding: var(--space-400) var(--space-300);
+    margin-inline: calc(var(--space-300) * -1);
+    border-bottom: 1px solid var(--border);
+    transition: background-color var(--dur-color) var(--ease-out);
+  }
+  .case:hover {
+    background-color: var(--surface);
+  }
+  .case-num {
+    padding-top: var(--space-50);
+    color: var(--muted-2);
+    transition: color var(--dur-color) var(--ease-out);
+  }
+  .case:hover .case-num {
+    color: var(--accent-text);
+  }
+  .case-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-75);
+    min-width: 0;
+  }
+  .case-label {
+    margin: 0;
+    color: var(--accent-text);
+  }
+  .case-title {
+    margin: 0;
+  }
+  .case-result {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--muted);
+  }
+  .case-link {
+    align-self: start;
+    white-space: nowrap;
+  }
+  .cta-row {
+    display: flex;
+    margin-top: var(--space-600);
+  }
+
+  .quote-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tagline {
+    padding: var(--space-800) 0;
+  }
+  .tagline-text {
+    max-width: 680px;
+    margin: 0;
+  }
+  .tagline-word {
+    opacity: 0.3;
+    transition: opacity var(--dur-move) var(--ease-out);
+  }
+  .tagline-word.is-lit {
+    opacity: 1;
+  }
+  :global(html:not(.js)) .tagline-word {
+    opacity: 1;
+  }
+
+  .faq-list {
+    margin: var(--space-600) 0 0;
+  }
+  .faq-item {
+    display: grid;
+    grid-template-columns: var(--space-500) minmax(0, 2fr) minmax(0, 3fr);
+    gap: var(--space-100) var(--space-400);
+    padding: var(--space-400) 0;
+    border-top: 1px solid var(--border);
+  }
+  .faq-num {
+    padding-top: var(--space-50);
+    color: var(--muted-2);
+  }
+  .faq-item dd {
+    margin: 0;
+    color: var(--muted);
+  }
+  @media (max-width: 720px) {
+    .faq-item {
+      grid-template-columns: var(--space-500) minmax(0, 1fr);
+      gap: var(--space-75) var(--space-200);
+    }
+    .faq-item dd {
+      grid-column: 2;
+    }
+  }
+
+  /* The closing block bleeds to the viewport edges and steps up one surface, so
+     the page ends on a change of tone instead of another identical band. */
+  .final {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding: var(--space-900) max(var(--space-300), calc((100vw - var(--shell-w)) / 2))
+      var(--space-900);
+    background-color: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .final-title {
+    max-width: 900px;
+    margin: 0 0 var(--space-200);
+  }
+
+  @media (max-width: 720px) {
+    /* The mobile main padding is one step smaller, so the pull matches it. */
+    .hero {
+      margin-top: calc(var(--space-700) * -1);
+    }
+    .hero-title,
+    .tagline-text,
+    .final-title {
+      font-size: var(--text-5xl);
+      line-height: 48px;
+    }
+    .section-title {
+      font-size: var(--text-3xl);
+      line-height: 36px;
+    }
+    /* The rail collapses: the number sits above the label so the section still
+       opens with a marker instead of losing its spine entirely. */
+    .band {
+      grid-template-columns: minmax(0, 1fr);
+      padding: var(--space-700) 0;
+    }
+    .band > :not(.band-num) {
+      grid-column: 1;
+    }
+    .band-num {
+      grid-row: auto;
+      padding-top: 0;
+      margin-bottom: var(--space-50);
+    }
+    /* The index rows stack: the number keeps its gutter, the action drops under
+       the copy so nothing has to shrink to fit. */
+    .case {
+      grid-template-columns: var(--space-500) minmax(0, 1fr);
+      gap: var(--space-200);
+      padding: var(--space-300) var(--space-200);
+      margin-inline: calc(var(--space-200) * -1);
+    }
+    .case-link {
+      grid-column: 2;
+      justify-self: start;
+    }
+  }
+  @media (max-width: 420px) {
+    .hero-title,
+    .tagline-text {
+      font-size: var(--text-4xl);
+      line-height: 40px;
+    }
+  }
+</style>

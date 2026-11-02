@@ -11,15 +11,17 @@ const yearsExp = new Date().getFullYear() - 2020;
 
 const copy = {
   es: {
-    bio: `AI & Full-Stack Engineer Semi Senior. Tech Lead hands-on en LDP (Libro de Pases): lideré refactors de búsqueda, observabilidad (Sentry/New Relic), testing/CI y mejoras de latencia de más del 75%. Diseño y deployo agentes de IA en producción. Ingeniero en Sistemas de Información (UTN, 2023).`,
+    bio: `Tech lead y desarrollador full stack en Buenos Aires. Lidero el desarrollo en Libro de Pases y llevo agentes de IA a producción. Ingeniero en Sistemas de Información (UTN, 2023).`,
     personal: [
-      "Soy curioso y bastante tranquilo. Leo mucha ciencia ficción y distopía — Orwell, Huxley, Asimov, Philip K. Dick — y me engancha la estética cyberpunk, tipo Ghost in the Shell. También leí bastante estoicismo; Meditaciones de Marco Aurelio me marcó.",
-      "Entreno, voy al gym y me gustan las artes marciales. Cuando puedo, trekking y viajar. Me interesan las plantas y los insectos: detalles chicos del mundo que me entretienen.",
+      "Leo mucho. Casi todo ciencia ficción dura, terror y distopías. Prefiero los libros usados: me gusta encontrar las anotaciones de alguien que pasó antes y el olor a libro viejo. Mis favoritos son 1984, Un mundo feliz, Neuromante y Cementerio de animales, aunque dejar afuera a Arthur C. Clarke me rompe el corazón.",
+      "Hice artes marciales toda mi vida: BJJ, taekwondo, MMA y kickboxing. Ahora estoy full con el gym. Cuando puedo me escapo a la montaña o a la playa, hago trekking y me encanta admirar la naturaleza. También investigar bichos y ensuciarme entero con mis hijos.",
+      "En pantalla no salgo mucho de lo que me gusta en los libros. Interstellar creo que es mi favorita, y después Yo, Robot y casi cualquier cosa de Clint Eastwood: Mystic River, Million Dollar Baby, Gran Torino. Con las series soy más picky, pero GoT y Breaking Bad me marcaron.",
+      "Y bueno, la música... Pity Álvarez no tiene comparación. Dejo un lugar especial para Molchat Doma porque ese post punk bielorruso que escuchaba en loop mientras leía 1984 me cautivó.",
     ],
     roles: [
-      "LDP — RN Dev → React Dev → Tech Lead Full-Stack · 4 años",
-      "DevGAM — Full-stack freelance: sistemas de gestión multi-rubro (PHP, JS, MySQL)",
-      "UTN FRLP / Secretaría de TIC — Full-stack: trámites administrativos (Laravel, Vue)",
+      "LDP — RN Dev → React Dev → Tech Lead Full stack · 4 años",
+      "DevGAM — Full stack freelance: sistemas de gestión multi rubro (PHP, JS, MySQL)",
+      "UTN FRLP / Secretaría de TIC — Full stack: trámites administrativos (Laravel, Vue)",
       "New Logic — React freelance: blog con marketplace sobre GCP",
     ],
     education: "UTN — Ingeniería en Sistemas de Información (2023) · Coderhouse — AI Engineering (2026)",
@@ -59,7 +61,7 @@ const about = copy[lang];
   <SiteHeader slot="header" lang={lang} />
 
   <section class="about">
-    <h1 class="display">{t("about.title")}</h1>
+    <h1 class="heading-1">{t("about.title")}</h1>
     <AboutDossier lang={lang} yearsExp={yearsExp} copy={about} />
   </section>
 
@@ -67,12 +69,18 @@ const about = copy[lang];
 </BaseLayout>
 
 <style>
+  /* Visual system: landing-page-design skill Part B. Layout only; type comes
+     from the named text style classes in src/styles/global.css. */
   .about {
-    padding: 1rem 0 2rem;
+    padding: var(--space-200) 0 var(--space-600);
   }
-  .display {
-    margin: 0 0 0.75rem;
-    font-size: clamp(2.2rem, 7vw, 3.6rem);
-    line-height: 0.95;
+  .about h1 {
+    margin: 0 0 var(--space-300);
+  }
+  @media (max-width: 720px) {
+    .about h1 {
+      font-size: var(--text-4xl);
+      line-height: 40px;
+    }
   }
 </style>

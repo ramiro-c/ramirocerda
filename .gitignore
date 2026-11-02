@@ -8,3 +8,4 @@ dist/
 .atl/
 .env
 .DS_Store
+workers/chat-worker/evals/results/
