@@ -5,12 +5,25 @@
 # When fetched, 404, 410 and DNS failures fail the job; bot blocks
 # (401, 403, 429), 5xx and timeouts only warn. See scripts/check-links.mjs
 # for the allowlist.
+#
+# Pull requests and pushes are filtered by path: a change that cannot alter the
+# rendered site (the worker, docs, the odd task log) does not pay for a build.
+# The schedule ignores paths, so link rot is still caught every Monday.
 name: site links
 
 on:
   pull_request:
+    paths: &site_paths
+      - "src/**"
+      - "public/**"
+      - "scripts/**"
+      - "astro.config.*"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/site-links.yml"
   push:
     branches: [main]
+    paths: *site_paths
   schedule:
     # Mondays 12:00 UTC (09:00 Buenos Aires), to catch external links that rot.
     - cron: "0 12 * * 1"
