@@ -17,11 +17,11 @@ RAG (retrieval-augmented generation) es darle al modelo información que no tien
 
 **RAG híbrido.** Combina búsqueda por vectores con búsqueda por palabras clave (tipo BM25). Sirve cuando hay nombres propios, siglas o códigos que el embedding no captura bien.
 
-**RAG correctivo.** Después de buscar, algo evalúa si lo que se trajo alcanza. Si no alcanza, corrige: reformula la consulta, busca de nuevo o busca en otra fuente. Es la idea de [Corrective RAG](https://arxiv.org/abs/2401.15884).
+**RAG correctivo.** Después de buscar, algo evalúa si lo que se trajo alcanza. Si no alcanza, corrige: reformula la consulta, busca de nuevo o busca en otra fuente. Es la idea de Corrective RAG (ver Para profundizar).
 
-**Self-RAG.** El mismo modelo decide cuándo buscar y critica sus propias respuestas mientras genera ([el paper](https://arxiv.org/abs/2310.11511)).
+**Self-RAG.** El mismo modelo decide cuándo buscar y critica sus propias respuestas mientras genera (ver Self-RAG en Para profundizar).
 
-**RAG adaptativo.** Antes de buscar, se decide qué estrategia usar según la pregunta: no buscar, buscar una vez o buscar en varios pasos. El nombre viene de [Adaptive-RAG](https://arxiv.org/abs/2403.14403), que usa un clasificador de complejidad de la pregunta para elegir.
+**RAG adaptativo.** Antes de buscar, se decide qué estrategia usar según la pregunta: no buscar, buscar una vez o buscar en varios pasos. El nombre viene de Adaptive-RAG (ver Para profundizar), que usa un clasificador de complejidad de la pregunta para elegir.
 
 **RAG agéntico.** Un agente tiene la búsqueda como herramienta y decide solo cuándo, dónde y cuántas veces usarla, en un loop.
 
@@ -36,11 +36,20 @@ Ahora es adaptativo con un paso correctivo:
 3. Si es búsqueda, trae chunks de Vectorize y los reordena con un reranker.
 4. Un juez evalúa si esos chunks alcanzan para responder. Si no alcanzan, hace una segunda búsqueda con la pregunta reescrita según el contexto, junta los resultados y vuelve a evaluar.
 5. Recién ahí genera la respuesta, en streaming.
+6. Si no hay chunks que superen el umbral de similitud, responde que no tiene esa información, sin generar.
+
+No es híbrido: la base es prosa (perfil y notas), donde el embedding captura bien la similitud. No hay códigos ni siglas que rompan la búsqueda densa; si aparecieran, ahí sí valdría BM25.
 
 Para que la decisión no sume espera, la búsqueda arranca en paralelo con el router. Si el router dice que no hacía falta, ese resultado se descarta.
 
 ## Cómo sé que decide bien
 
-Lo medí con un set de casos de evaluación contra el router en producción. Acertó si había que buscar en 47 de 47 casos y la clasificación del mensaje en 51 de 51. La intención de contacto la detectó en 55 de 56. La decisión tarda alrededor de 124 ms en la mediana.
+Lo medí con un set de casos de evaluación contra el router en producción: acertó en todos los casos de búsqueda y de clasificación del mensaje, y detectó la intención de contacto en todos menos uno. La decisión tarda alrededor de 120 ms en la mediana.
+
+## Para profundizar
+
+- [Corrective RAG](https://arxiv.org/abs/2401.15884) — evaluar lo traído y corregir si no alcanza.
+- [Self-RAG](https://arxiv.org/abs/2310.11511) — el modelo decide cuándo buscar y critica su salida.
+- [Adaptive-RAG](https://arxiv.org/abs/2403.14403) — clasificador de complejidad de la pregunta.
 
 Probalo en [Botardo](/es/), abajo a la derecha.

@@ -17,11 +17,11 @@ RAG (retrieval-augmented generation) means giving the model information it doesn
 
 **Hybrid RAG.** Combines vector search with keyword search (BM25 style). Useful when there are proper names, acronyms or codes that embeddings don't capture well.
 
-**Corrective RAG.** After retrieving, something checks whether what came back is enough. If it isn't, it corrects: rewrites the query, searches again or searches elsewhere. That's the idea behind [Corrective RAG](https://arxiv.org/abs/2401.15884).
+**Corrective RAG.** After retrieving, something checks whether what came back is enough. If it isn't, it corrects: rewrites the query, searches again or searches elsewhere. That's the idea behind Corrective RAG (see Further reading).
 
-**Self-RAG.** The model itself decides when to retrieve and critiques its own output while generating ([the paper](https://arxiv.org/abs/2310.11511)).
+**Self-RAG.** The model itself decides when to retrieve and critiques its own output while generating (see Self-RAG in Further reading).
 
-**Adaptive RAG.** Before searching, it picks a strategy based on the question: don't search, search once, or search in several steps. The name comes from [Adaptive-RAG](https://arxiv.org/abs/2403.14403), which uses a question-complexity classifier to choose.
+**Adaptive RAG.** Before searching, it picks a strategy based on the question: don't search, search once, or search in several steps. The name comes from Adaptive-RAG (see Further reading), which uses a question-complexity classifier to choose.
 
 **Agentic RAG.** An agent has search as a tool and decides on its own when, where and how many times to use it, in a loop.
 
@@ -36,11 +36,20 @@ Now it's adaptive with a corrective step:
 3. For search, it retrieves chunks from Vectorize and reorders them with a reranker.
 4. A judge checks whether those chunks are enough to answer. If not, it runs a second search with the question rewritten using the context, merges the results and checks again.
 5. Only then it generates the answer, streamed.
+6. If no chunks clear the similarity threshold, it replies that it doesn't have that info, without generating.
+
+It isn't hybrid: the base is prose (profile and notes), where embeddings capture similarity well. There are no codes or acronyms that break dense retrieval; if there were, that's where BM25 would earn its place.
 
 So the decision doesn't add waiting time, retrieval starts in parallel with the router. If the router says it wasn't needed, that result is dropped.
 
 ## How I know it decides well
 
-I measured it with a set of eval cases against the production router. It got whether to search right in 47 of 47 cases and the message classification in 51 of 51. It caught contact intent in 55 of 56. The decision takes around 124 ms at the median.
+I measured it with a set of eval cases against the production router: it got whether to search right in every case, the message classification in every case, and caught contact intent in all but one. The decision takes around 120 ms at the median.
+
+## Further reading
+
+- [Corrective RAG](https://arxiv.org/abs/2401.15884) — check what came back and correct if it isn't enough.
+- [Self-RAG](https://arxiv.org/abs/2310.11511) — the model decides when to retrieve and critiques its own output.
+- [Adaptive-RAG](https://arxiv.org/abs/2403.14403) — a question-complexity classifier that picks the strategy.
 
 Try it at [Botardo](/en/), bottom right.
