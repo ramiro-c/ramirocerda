@@ -78,11 +78,11 @@ const faqSchema = {
       )}
       <p class="status-chip caption-4">
         <span class="chip-dot" aria-hidden="true"></span>
-        {t("home.statusAvailable")}
+        <span class="chip-status">{t("home.statusAvailable")}</span>
         <span class="chip-sep" aria-hidden="true">
           ·
         </span>
-        {t("home.location")}
+        <span class="chip-loc">{t("home.location")}</span>
       </p>
     </div>
   </div>
@@ -461,10 +461,25 @@ const faqSchema = {
     color: var(--muted);
   }
   .chip-dot {
+    flex: none;
     width: 8px;
     height: 8px;
     border-radius: var(--radius-full);
     background: var(--accent);
+  }
+  /* The city and the timezone are one fact, so they never split across lines. */
+  .chip-loc {
+    white-space: nowrap;
+  }
+  /* Below this width the chip's copy no longer fits on one line and the flex
+     row wraps. The separator is its own flex item, so left in place it would
+     end up trailing the first line ("... full-time ·") with nothing after it.
+     The wrap point is set by the copy length: 423px of text plus the 24px hero
+     gutter on each side. If the copy grows, raise this breakpoint with it. */
+  @media (max-width: 480px) {
+    .chip-sep {
+      display: none;
+    }
   }
 
   /* Every band shares one editorial frame: a numbered rail on the left and the
