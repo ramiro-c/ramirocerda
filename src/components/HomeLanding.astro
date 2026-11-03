@@ -43,7 +43,6 @@ const faqSchema = {
       <span class="eyebrow-rule" aria-hidden="true"></span>
       {c.hero.eyebrow}
     </p>
-    <p class="returning-only welcome-back caption-3">{c.hero.returningNote}</p>
     <h1 class="heading-1 hero-title" id="heroTitle">
       <span class="hero-line">{c.hero.headline}</span>
       <span class="hero-line">{c.hero.headlineAccent}</span>
@@ -64,7 +63,6 @@ const faqSchema = {
     </p>
 
     <div class="hero-proof">
-      <p class="proof-claim body-2">{c.hero.proof}</p>
       {logos.length > 0 && (
         <p class="proof-logos caption-4">
           <span class="proof-label">{c.proof.workedWith}</span>
@@ -360,17 +358,14 @@ const faqSchema = {
       padding: var(--space-100) var(--space-300) var(--space-300);
     }
   }
-  .eyebrow,
-  .welcome-back {
-    margin: 0 0 var(--space-100);
-    color: var(--muted-2);
-  }
   /* A short accent rule anchors the eyebrow to the left edge, so the hero opens
      with a mark rather than a floating line of small text. */
   .eyebrow {
     display: flex;
     align-items: center;
     gap: var(--space-100);
+    margin: 0 0 var(--space-100);
+    color: var(--muted-2);
   }
   .eyebrow-rule {
     display: block;
@@ -378,9 +373,6 @@ const faqSchema = {
     height: 1px;
     background-color: var(--accent);
     flex: none;
-  }
-  .welcome-back {
-    color: var(--text);
   }
 
   /* Hero heading: left to right text gradient, capped at 680px (skill B5). */
@@ -430,9 +422,6 @@ const faqSchema = {
     padding-top: var(--space-400);
     border-top: 1px solid var(--border);
   }
-  .proof-claim {
-    margin: 0;
-  }
   .proof-logos {
     display: flex;
     flex-wrap: wrap;
@@ -459,6 +448,11 @@ const faqSchema = {
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
+    /* The copy grows with the positioning ("open to projects AND full-time
+       roles"), so on narrow screens it has to wrap inside the hero gutter
+       instead of running past the right edge. */
+    flex-wrap: wrap;
+    max-width: 100%;
     gap: var(--space-75);
     margin: 0;
     padding: var(--space-25) var(--space-100);

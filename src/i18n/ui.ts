@@ -31,7 +31,7 @@ export const ui = {
     "home.aboutText":
       "Tech lead y desarrollador full stack en Buenos Aires. Entro a un producto, entiendo cómo se usa y me hago cargo de lo que falta: la búsqueda, el monitoreo, los tests, el deploy. También llevo agentes de IA a producción.",
     "home.stackLabel": "Stack",
-    "home.statusAvailable": "Disponible para proyectos",
+    "home.statusAvailable": "Abierto a nuevos proyectos y roles full-time",
     "home.location": "Buenos Aires · UTC-3",
     "botardo.welcome":
       "¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su experiencia, proyectos, habilidades o cualquier tema profesional.",
@@ -121,7 +121,7 @@ export const ui = {
     "home.aboutText":
       "Tech lead and full stack developer based in Buenos Aires. I join a product, learn how it is used, and take ownership of what is missing: search, monitoring, tests, deploy. I also take AI agents to production.",
     "home.stackLabel": "Stack",
-    "home.statusAvailable": "Available for projects",
+    "home.statusAvailable": "Open to new projects and full-time roles",
     "home.location": "Buenos Aires · UTC-3",
     "botardo.welcome":
       "Hi! I’m Botardo, an AI assistant with info about Ramiro. Ask me about his experience, projects, skills, or anything professional.",

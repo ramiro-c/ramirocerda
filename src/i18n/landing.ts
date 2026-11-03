@@ -41,8 +41,6 @@ export interface LandingCopy {
     headline: string;
     headlineAccent: string;
     sub: string;
-    returningNote: string;
-    proof: string;
     visualAlt: string;
     visualCredit: string;
     visualCreditNote: string;
@@ -109,8 +107,6 @@ export const landing: Record<Lang, LandingCopy> = {
       headline: "Pienso el producto",
       headlineAccent: "y lo pongo en producción.",
       sub: "Tech lead y desarrollador full stack. Diseño, desarrollo y mantengo productos web, móviles y agentes de IA. Me quedo en cada proyecto hasta que funciona con usuarios reales.",
-      returningNote: "Hola de nuevo.",
-      proof: "Ninguno de estos es un demo.",
       visualAlt:
         "Fotografía en blanco y negro de un pabellón de hormigón: un anillo circular en primer plano enmarca muros estriados y una columna.",
       visualCredit: "ESO/L. Sbordone",
@@ -270,8 +266,6 @@ export const landing: Record<Lang, LandingCopy> = {
       headline: "I think the product through",
       headlineAccent: "and ship it to production.",
       sub: "Tech lead and full stack developer. I design, build and maintain web and mobile products, platforms and AI agents. I stay on every project until it works with real users.",
-      returningNote: "Welcome back.",
-      proof: "None of these is a demo.",
       visualAlt:
         "Black and white photograph of a concrete pavilion: a circular ring in the foreground frames ribbed walls and a column.",
       visualCredit: "ESO/L. Sbordone",
