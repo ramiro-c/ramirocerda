@@ -47,7 +47,7 @@
     // Rerank: dense top-15 -> cross-encoder top-6. Fail-open.
     "RAG_RERANK_MODEL": "@cf/baai/bge-reranker-base",
     "RAG_RERANK_CANDIDATES": "15",
-    "GENERATION_MODEL": "deepseek-v4.1-flash",
+    "GENERATION_MODEL": "gpt-6-luna",
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
     "EMBEDDING_MODEL": "@cf/baai/bge-m3",
     "SITE_ORIGIN": "https://ramirocerda.com.ar",

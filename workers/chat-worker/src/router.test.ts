@@ -330,6 +330,6 @@ describe("deployed router config (wrangler.jsonc)", () => {
     expect(json.vars.DECISION_MODEL).toBe("jev-1.13-free");
     expect(json.vars.DECISION_FALLBACK_MODEL).toBe("jev-1.13");
     expect(json.vars.DECISION_MODEL).toBe(DEFAULT_DECISION_MODEL);
-    expect(json.vars.GENERATION_MODEL).toBe("deepseek-v4.1-flash");
+    expect(json.vars.GENERATION_MODEL).toBe("gpt-6-luna");
   });
 });
