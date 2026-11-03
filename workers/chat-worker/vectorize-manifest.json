@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-11-03T02:17:34.961Z",
+  "generatedAt": "2026-11-03T02:20:16.304Z",
   "sources": {
     "kb": 25,
     "notes": 34,
@@ -75,7 +75,7 @@
     "project-en-gastify-c5deacb8",
     "project-en-knowledge-vault-624ac4f9",
     "project-en-lactaria-38be02a0",
-    "project-en-ldp-cfc28faa",
+    "project-en-ldp-e7eb9c33",
     "project-en-linkedin-markdownificator-5d294f5c",
     "project-en-mini-projects-73920447",
     "project-en-mundial-2026-926c6daa",
@@ -92,7 +92,7 @@
     "project-es-gastify-ee94ad54",
     "project-es-knowledge-vault-6867c021",
     "project-es-lactaria-d7a687d0",
-    "project-es-ldp-753d618c",
+    "project-es-ldp-15dee93e",
     "project-es-linkedin-markdownificator-ce5c519b",
     "project-es-mini-projects-fa68124d",
     "project-es-mundial-2026-e01466b2",
