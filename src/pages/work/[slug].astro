@@ -42,6 +42,7 @@ const backPath = "/work/";
 const links = [
   project.data.repo ? { href: project.data.repo, label: "Repo" } : null,
   project.data.demo ? { href: project.data.demo, label: "Demo" } : null,
+  project.data.site ? { href: project.data.site, label: "Site" } : null,
 ].filter(Boolean) as Array<{ href: string; label: string }>;
 ---
 

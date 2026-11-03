@@ -7,7 +7,7 @@ track: "product"
 order: 0
 year: "2024"
 tags: ["Node.js", "React", "GCP", "TypeScript"]
-demo: https://www.ldptech.ai/
+site: https://home.ldptech.ai/es/
 es:
   title: "Libro de Pases (LDP) — Plataforma de fútbol"
   summary: "Plataforma que conecta clubes, scouts, agentes y jugadores a través de datos, colaboración y flujos de trabajo inteligentes para el mercado de pases. Lidero el desarrollo full stack: Node.js, React y GCP."
