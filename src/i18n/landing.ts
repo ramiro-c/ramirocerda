@@ -135,7 +135,7 @@ export const landing: Record<Lang, LandingCopy> = {
       items: [
         {
           id: "ldp",
-          href: "https://www.ldptech.ai/",
+          href: "/work/ldp",
           label: "Tech lead",
           title: "Libro de Pases (LDP), plataforma de fútbol",
           result:
@@ -294,7 +294,7 @@ export const landing: Record<Lang, LandingCopy> = {
       items: [
         {
           id: "ldp",
-          href: "https://www.ldptech.ai/",
+          href: "/en/work/ldp",
           label: "Tech lead",
           title: "Libro de Pases (LDP), football platform",
           result:
