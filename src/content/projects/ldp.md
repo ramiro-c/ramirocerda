@@ -20,6 +20,8 @@ es:
     - "Participación en todas las features: Comparativa multi-entidad, Shadow Teams, búsqueda avanzada."
     - "Liderazgo full stack: Node.js, React, GCP."
     - "Entré por la app móvil y hoy lidero el desarrollo full stack."
+    - "Entrevistas técnicas y challenges para la empresa."
+    - "Mentor de dos integrantes de un bootcamp."
   stack: ["Node.js", "React", "GCP", "TypeScript"]
 en:
   title: "Libro de Pases (LDP) — Football platform"
@@ -33,5 +35,7 @@ en:
     - "Participation in every feature: multi-entity Comparativa, Shadow Teams, advanced search."
     - "Full stack leadership: Node.js, React, GCP."
     - "Joined on the mobile app, now lead full stack development."
+    - "Technical interviews and challenges for the company."
+    - "Mentored two bootcamp graduates."
   stack: ["Node.js", "React", "GCP", "TypeScript"]
 ---
