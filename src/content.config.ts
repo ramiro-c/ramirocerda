@@ -14,7 +14,7 @@ const projects = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/projects" }),
   schema: z.object({
     slug: z.string(),
-    kind: z.enum(["personal", "freelance", "oss-fork"]).optional(),
+    kind: z.enum(["personal", "freelance", "oss-fork", "fulltime"]).optional(),
     // Work track: `ai-systems` leads the list (agents, RAG, eval harnesses),
     // `product` holds the web products and apps.
     track: z.enum(["ai-systems", "product"]).default("product"),
