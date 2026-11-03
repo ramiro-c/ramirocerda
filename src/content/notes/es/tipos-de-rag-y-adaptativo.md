@@ -52,4 +52,4 @@ Lo medí con un set de casos de evaluación contra el router en producción: ace
 - [Self-RAG](https://arxiv.org/abs/2310.11511) — el modelo decide cuándo buscar y critica su salida.
 - [Adaptive-RAG](https://arxiv.org/abs/2403.14403) — clasificador de complejidad de la pregunta.
 
-Probalo en [Botardo](/es/), abajo a la derecha.
+Probalo en [Botardo](/), abajo a la derecha.
