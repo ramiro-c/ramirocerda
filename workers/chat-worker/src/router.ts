@@ -76,12 +76,21 @@ export const HIRE_INTENT_QUESTION: DecisionQuestion = {
   type: "noul",
   instructions:
     "In the latest_message the visitor shows interest in hiring, contracting, recruiting or working with Ramiro (job offer, freelance project, availability, rates, interview, contacting him about work).",
+  criteria: {
+    true: "The latest_message asks about hiring, contracting, freelancing, rates, availability, an interview or otherwise working with Ramiro",
+    false:
+      "The latest_message asks about Ramiro's profile, projects, notes or this site, with no interest in hiring or working with him",
+  },
 };
 
 export const NEEDS_HISTORY_QUESTION: DecisionQuestion = {
   type: "noul",
   instructions:
     "The latest_message cannot be understood on its own: it refers to something mentioned earlier in the conversation (for example 'that', 'it', 'there' or 'and before that?').",
+  criteria: {
+    true: "The latest_message depends on an earlier turn (pronouns, ellipsis, 'and before that?') and cannot be understood on its own",
+    false: "The latest_message is self-contained and can be understood without the earlier conversation",
+  },
 };
 
 export function routerQuestions(hasHistory: boolean): Record<string, DecisionQuestion> {

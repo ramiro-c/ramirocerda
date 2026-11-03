@@ -6,7 +6,8 @@
  *
  *   request   { "model": "jev-1.13-free", "state": <string|object>,
  *               "questions": { "<name>": { "type": "choice", "instructions": "...", "criteria": { "<option>": "<when>" } },
- *                              "<name>": { "type": "noul",   "instructions": "..." } } }
+ *                              "<name>": { "type": "noul",   "instructions": "...",
+ *                                          "criteria": { "true": "<what a yes means>", "false": "<what a no means>" } } } }
  *   response  { "model": "...", "answers": { "<name>": { "type": "choice", "choice": "<option>", "confidence": 0.9, "probabilities": {...} },
  *                                            "<name>": { "type": "noul", "noul": 0.98 } },
  *               "usage": { "input_tokens": 120, "output_tokens": 12, ... } }
@@ -47,6 +48,8 @@ export interface ChoiceQuestion {
 export interface NoulQuestion {
   type: "noul";
   instructions: string;
+  /** Optional in the API; describing what yes and no mean anchors the probability. */
+  criteria?: { true: string; false: string };
 }
 
 export type DecisionQuestion = ChoiceQuestion | NoulQuestion;
@@ -54,8 +57,9 @@ export type DecisionQuestion = ChoiceQuestion | NoulQuestion;
 export type DecisionAnswer = { type: "choice"; choice: string; confidence: number } | { type: "noul"; noul: number };
 
 export interface DecisionUsage {
-  inputTokens: number;
-  outputTokens: number;
+  /** null when the API did not report a count (its schema allows null). */
+  inputTokens: number | null;
+  outputTokens: number | null;
 }
 
 /** Which model answered: the free primary, the paid fallback, or none (all attempts failed / not run). */
@@ -113,7 +117,7 @@ export function parseDecisionResponse(
     if (!answer) return null;
     parsed[name] = answer;
   }
-  const n = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
+  const n = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : null);
   return { answers: parsed, usage: { inputTokens: n(usage?.input_tokens), outputTokens: n(usage?.output_tokens) } };
 }
 

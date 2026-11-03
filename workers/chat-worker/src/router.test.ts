@@ -6,7 +6,7 @@ import {
   DEFAULT_DECISION_MODEL,
   readAdaptiveConfig,
 } from "./config";
-import { DECISION_USER_AGENT, parseAnswer, parseDecisionResponse } from "./decision";
+import { DECISION_USER_AGENT, parseAnswer, parseDecisionResponse, type DecisionQuestion } from "./decision";
 import {
   buildRouterState,
   contextualQuery,
@@ -17,6 +17,7 @@ import {
   routerQuestions,
 } from "./router";
 import { DECISION_OFF, DECISION_VARS, type ScriptedAnswer, routerAnswer, stubFetch } from "./test-utils";
+import { SUFFICIENT_QUESTION } from "./retrieval";
 
 const config = readAdaptiveConfig(DECISION_VARS);
 const history = [
@@ -78,6 +79,47 @@ describe("parseAnswer / parseDecisionResponse (strict System One validation)", (
     expect(parseDecisionResponse(questions, { answers: { route: answers.route } })).toBeNull();
     expect(parseDecisionResponse(questions, { choices: [] })).toBeNull();
     expect(parseDecisionResponse(questions, [answers])).toBeNull();
+  });
+
+  it("keeps an unreported usage count as null instead of inventing a zero", () => {
+    const questions = routerQuestions(false);
+    const answers = {
+      route: { type: "choice", choice: "smalltalk", confidence: 1 },
+      hire_intent: { type: "noul", noul: 0.1 },
+    };
+    expect(parseDecisionResponse(questions, { answers })?.usage).toEqual({ inputTokens: null, outputTokens: null });
+    expect(
+      parseDecisionResponse(questions, { answers, usage: { input_tokens: null, output_tokens: null } })?.usage,
+    ).toEqual({ inputTokens: null, outputTokens: null });
+    expect(
+      parseDecisionResponse(questions, { answers, usage: { input_tokens: "541", output_tokens: 3 } })?.usage,
+    ).toEqual({ inputTokens: null, outputTokens: 3 });
+    // A reported zero is data, not a missing count.
+    expect(parseDecisionResponse(questions, { answers, usage: { input_tokens: 0, output_tokens: 0 } })?.usage).toEqual({
+      inputTokens: 0,
+      outputTokens: 0,
+    });
+  });
+});
+
+describe("noul questions anchor their polarity with criteria", () => {
+  it.each<[string, DecisionQuestion]>([
+    ["hire_intent", HIRE_INTENT_QUESTION],
+    ["needs_history", NEEDS_HISTORY_QUESTION],
+    ["sufficient", SUFFICIENT_QUESTION],
+  ])("%s describes what a yes and a no mean", (_name, question) => {
+    expect(question.type).toBe("noul");
+    const criteria = question.type === "noul" ? question.criteria : undefined;
+    expect(criteria?.true.length).toBeGreaterThan(20);
+    expect(criteria?.false.length).toBeGreaterThan(20);
+  });
+
+  it("sends the criteria on the wire", async () => {
+    const { calls } = stubFetch({ router: [routerAnswer("search", { hire: 0.9, needsHistory: 0.1 })] });
+    await routeMessage("¿y está disponible para un freelance?", history, config);
+    expect(calls.router[0].questions.hire_intent).toEqual(HIRE_INTENT_QUESTION);
+    expect(calls.router[0].questions.hire_intent).toHaveProperty("criteria.true");
+    expect(calls.router[0].questions.hire_intent).toHaveProperty("criteria.false");
   });
 });
 
