@@ -67,8 +67,8 @@ export type ModelTier = "free" | "paid" | "none";
 
 /**
  * What happened with the paid retry. `free_skipped` means the anonymous tier was not
- * attempted at all: it answered 429 recently (isolate breaker) or the operator turned it
- * off with DECISION_FREE_DISABLED.
+ * attempted at all: a recent 429 or 401/403 was remembered (isolate breaker) or the
+ * operator turned it off with DECISION_FREE_DISABLED.
  */
 export type FallbackOutcome = "not_needed" | "used" | "failed" | "skipped_no_key" | "skipped_no_model" | "free_skipped";
 
@@ -86,9 +86,51 @@ export type DecisionResult =
   | { ok: false; reason: DecisionFailure; trace: DecisionTrace };
 
 type AttemptResult =
-  { ok: true; answers: Record<string, DecisionAnswer>; usage: DecisionUsage } | { ok: false; reason: DecisionFailure };
+  | { ok: true; answers: Record<string, DecisionAnswer>; usage: DecisionUsage }
+  | { ok: false; reason: DecisionFailure; retryAfterMs?: number | null };
 
 export const DECISION_USER_AGENT = "botardo-decision/1.0";
+
+/**
+ * 401/403 means our credentials or endpoint are wrong. That cannot fix itself inside a
+ * live isolate, so the anonymous tier stays out of play for the rest of a short window
+ * instead of paying a wasted round trip on every single request.
+ */
+export const FREE_TIER_AUTH_COOLDOWN_MS = 3_600_000;
+/** Upper bound for any remembered window, including one the server asks for. */
+export const MAX_FREE_TIER_COOLDOWN_MS = 3_600_000;
+
+/** Read a Retry-After header: a delay in seconds or an HTTP-date. null when unreadable. */
+export function parseRetryAfterMs(value: string | null, now: number): number | null {
+  if (value === null) return null;
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
+  // Only a real date is parsed from here: Date.parse("-5") would read as a year.
+  if (!/[a-z]/i.test(trimmed)) return null;
+  const at = Date.parse(trimmed);
+  return Number.isNaN(at) ? null : Math.max(0, at - now);
+}
+
+/**
+ * How long a failed anonymous attempt keeps that tier out of play. null means "do not
+ * remember it". Only a spent quota (429) or broken credentials (401/403) are worth
+ * remembering: a 5xx, a 422, a network error or a malformed body could equally be our
+ * own bug, and the paid retry runs against the same provider, so opening the breaker
+ * there would hide the real failure behind a silent skip and pay for a retry that
+ * fails the same way.
+ */
+export function freeTierCooldownMs(
+  reason: DecisionFailure,
+  retryAfterMs: number | null,
+  floorMs: number,
+): number | null {
+  if (reason === "http_429") {
+    return Math.min(Math.max(retryAfterMs ?? 0, floorMs), MAX_FREE_TIER_COOLDOWN_MS);
+  }
+  if (reason === "http_401" || reason === "http_403") return FREE_TIER_AUTH_COOLDOWN_MS;
+  return null;
+}
 
 const isProbability = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x) && x >= 0 && x <= 1;
 
@@ -141,7 +183,13 @@ async function attempt(
       body: JSON.stringify({ model, state, questions }),
       signal: controller.signal,
     });
-    if (!response.ok) return { ok: false, reason: `http_${response.status}` };
+    if (!response.ok) {
+      return {
+        ok: false,
+        reason: `http_${response.status}`,
+        retryAfterMs: parseRetryAfterMs(response.headers.get("retry-after"), Date.now()),
+      };
+    }
     let body: unknown;
     try {
       body = await response.json();
@@ -165,8 +213,9 @@ const isFreeModel = (model: string | null): boolean =>
  * Free attempt (anonymous), then at most ONE paid retry. Never throws.
  *
  * The anonymous tier is skipped when a paid path exists and either the isolate breaker
- * remembers a recent 429 (see src/breaker.ts) or DECISION_FREE_DISABLED is set: paying
- * twice for the same known-bad quota is pure latency.
+ * remembers a recent failure worth remembering (see src/breaker.ts and
+ * freeTierCooldownMs) or DECISION_FREE_DISABLED is set: paying twice for the same
+ * known-bad tier is pure latency.
  *
  * Tiering is now flexible: the primary model may be free (called anonymously) or paid
  * (called with the key). With DECISION_MODEL=jev-1.13 and DECISION_FALLBACK_MODEL=jev-1.13
@@ -182,7 +231,8 @@ export async function askDecision(
 
   const primaryIsFree = isFreeModel(config.model);
   // Skip the anonymous primary when the paid path exists and the isolate remembers a
-  // recent 429 (or the operator disabled the free tier). Applies only to the free model.
+  // recent failure worth remembering (or the operator disabled the free tier).
+  // Applies only to the free model.
   const skipPrimary = primaryIsFree && paidConfigured && (config.freeDisabled || isFreeTierExhausted(now));
 
   let primaryError: DecisionFailure;
@@ -205,7 +255,10 @@ export async function askDecision(
       };
     }
     primaryError = primary.reason;
-    if (primary.reason === "http_429" && primaryIsFree) noteFreeTierExhausted(now, config.freeCooldownMs);
+    if (primaryIsFree) {
+      const cooldownMs = freeTierCooldownMs(primary.reason, primary.retryAfterMs ?? null, config.freeCooldownMs);
+      if (cooldownMs !== null) noteFreeTierExhausted(now, cooldownMs);
+    }
   }
 
   if (!config.fallbackModel) {

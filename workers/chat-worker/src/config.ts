@@ -43,9 +43,9 @@ export const DEFAULT_DECISION_MIN_CONFIDENCE = 0.5;
 /** Probability threshold for the sufficiency judge: >= means sufficient, else re-search. */
 export const DEFAULT_JUDGE_SUFFICIENT_THRESHOLD = 0.4;
 /**
- * How long the anonymous free tier is skipped after it answers 429. The free model's
- * quota is a rolling usage limit, so the exact reset is unknown; 15 minutes keeps the
- * paid path as the only wasted work in the common case without silencing the free tier
+ * How long the anonymous free tier is skipped by default after it answers 429. The free
+ * model's quota is a rolling usage limit, so the exact reset is unknown; 15 minutes keeps
+ * the paid path as the only wasted work in the common case without silencing the free tier
  * for a whole day.
  */
 export const DEFAULT_DECISION_FREE_COOLDOWN_MS = 15 * 60 * 1000;
@@ -63,7 +63,7 @@ export interface AdaptiveEnvVars {
   DECISION_INTEGRATION_ID?: string;
   DECISION_TIMEOUT_MS?: string;
   DECISION_MIN_CONFIDENCE?: string;
-  /** While > 0, skip the anonymous tier for this many ms after it answers 429. */
+  /** Floor, in ms, for skipping the anonymous tier after it answers 429 (a Retry-After can widen it). */
   DECISION_FREE_COOLDOWN_MS?: string;
   /** "1" or "true" skips the anonymous tier outright (the paid path must exist). */
   DECISION_FREE_DISABLED?: string;
@@ -83,7 +83,7 @@ export interface DecisionConfig {
   integrationId: string;
   timeoutMs: number;
   minConfidence: number;
-  /** Window, in ms, during which the anonymous tier is skipped after a 429. */
+  /** Floor, in ms, for skipping the anonymous tier after a 429; a Retry-After header can widen it. */
   freeCooldownMs: number;
   /** Operator kill switch: never call the anonymous tier (needs a paid path). */
   freeDisabled: boolean;

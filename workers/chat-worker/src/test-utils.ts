@@ -21,7 +21,7 @@ export type ScriptedAnswer =
   | { answers: Record<string, unknown> }
   | { body: unknown }
   | { text: string }
-  | { status: number }
+  | { status: number; headers?: Record<string, string> }
   | { error: Error }
   | "hang";
 
@@ -60,7 +60,9 @@ function respond(answer: ScriptedAnswer, signal: AbortSignal | undefined, model:
   }
   if ("error" in answer) return Promise.reject(answer.error);
   if ("status" in answer) {
-    return Promise.resolve(new Response(JSON.stringify({ detail: "upstream error" }), { status: answer.status }));
+    return Promise.resolve(
+      new Response(JSON.stringify({ detail: "upstream error" }), { status: answer.status, headers: answer.headers }),
+    );
   }
   if ("text" in answer) return Promise.resolve(new Response(answer.text, { status: 200 }));
   const body =

@@ -9,9 +9,11 @@
  * Scope and safety:
  * - Per isolate, in memory only: no binding, no KV, no cross-isolate coherence. A cold
  *   isolate starts closed, which is the safe direction (one wasted request).
- * - Only a `http_429` from the PRIMARY attempt opens it, and only when a paid path
- *   exists. A 500/401/network/timeout stays a per-attempt failure.
- * - The window only ever grows (Math.max): two concurrent 429s converge on the later
+ * - Only a failure from the PRIMARY attempt opens it, only when a paid path exists, and
+ *   only for the reasons src/decision.ts decides are worth remembering: a spent quota
+ *   (429) or broken credentials (401/403). A 5xx, a 422, network or timeout stays a
+ *   per-attempt failure, because the paid retry would fail the same way.
+ * - The window only ever grows (Math.max): two concurrent failures converge on the later
  *   deadline instead of shortening it, so there is no lost update to reason about.
  */
 
