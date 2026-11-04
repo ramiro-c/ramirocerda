@@ -5,7 +5,7 @@ status: live
 featured: true
 track: "product"
 order: 0
-year: "2024"
+year: "2022"
 tags: ["Node.js", "React", "GCP", "TypeScript"]
 site: https://home.ldptech.ai/es/
 es:
