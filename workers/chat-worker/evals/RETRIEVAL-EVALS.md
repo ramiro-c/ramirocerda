@@ -1,0 +1,78 @@
+# Evals de retrieval de Botardo
+
+Estrategia para medir la calidad del retrieval de Botardo, qué significa cada métrica y próximos pasos. Doc interno: complementa el harness de `workers/chat-worker/evals/` (`run.ts`, `metrics.ts`, `cases.json`).
+
+## Contexto: el pipeline hoy
+
+Verificado contra el código (`src/router.ts`, `src/rag.ts`, `src/retrieval.ts`, `src/config.ts`, `wrangler.jsonc`):
+
+1. **Router** (`src/router.ts`): una request al modelo de decisión Jev (`jev-1.13-free`, fallback `jev-1.13`) clasifica el mensaje en `search` / `smalltalk` / `off_topic`. Si la confianza es menor a `DECISION_MIN_CONFIDENCE` (0.5), busca igual. También arma la query de búsqueda y una query alternativa.
+2. **Búsqueda densa** (`src/rag.ts`): embedding con `@cf/baai/bge-m3`, consulta al índice Vectorize `botardo-kb`. Con reranker activo trae `RAG_RERANK_CANDIDATES` candidatos (15 en `wrangler.jsonc`, 20 por defecto en código); `TOP_K` (5) solo aplica sin reranker.
+3. **Rerank**: `@cf/baai/bge-reranker-base` reordena los candidatos y se quedan los primeros `MAX_CHUNKS` (6).
+4. **Abstención**: `SIMILARITY_THRESHOLD` (0.30). Con reranker no filtra chunk por chunk: si ningún candidato denso lo supera, no hay chunks y Botardo responde que no tiene info.
+5. **Juez de suficiencia** (`src/retrieval.ts`): Jev decide si los chunks alcanzan (umbral `JUDGE_SUFFICIENT_THRESHOLD`, 0.4). Si no alcanzan, hay **una** segunda búsqueda (máximo 2 por mensaje) con la **query alternativa del router**. Jev no genera texto, así que no hay una reescritura libre de la query. Los resultados se mergean por id y se recortan a 6 chunks.
+
+Qué mide ya el harness (`evals/run.ts`, `evals/metrics.ts`): router, latencia y llamadas, recall de chunks (`chunkRecall` sobre prefijos de `expectedChunks`) y hit sobre los **chunks finales**, suficiencia, faithfulness y abstención (estas últimas con jueces Jev, `evals/stage-judges.ts`). Lo que falta es medir **cada etapa del retrieval por separado** (densa vs. rerank vs. contexto final) y métricas de ranking.
+
+## Glosario
+
+- **Recall@k / hit rate@k**: Recall@k es la fracción de los chunks correctos que aparecen en el top k. Hit rate@k es 1 si al menos uno correcto aparece en el top k, si no 0, promediado sobre las preguntas. Con 1 chunk correcto por pregunta son lo mismo.
+- **Precision@k**: qué fracción del top k es relevante. Con 1-2 chunks correctos y k=5 el techo es bajo y dice poco.
+- **MRR (Mean Reciprocal Rank)**: promedio de 1/posición del primer chunk correcto (1 si está primero, 0.5 si está segundo, 0 si no aparece). Mide qué tan arriba queda lo correcto.
+- **nDCG@k**: como MRR pero con relevancia graduada (muy relevante, algo relevante…) y descuento por posición. Sin grados de relevancia se parece mucho a MRR.
+- **Context precision / context recall (estilo RAGAS)**: un juez LLM evalúa si el contexto recuperado es relevante (precision) y si cubre lo que pide la respuesta de referencia (recall). Útil cuando no hay chunks etiquetados; más caro y ruidoso.
+- **Faithfulness / groundedness**: si lo que afirma la respuesta generada está respaldado por los chunks que se le pasaron. Mide la generación, no el retrieval.
+
+## Estrategia para Botardo
+
+La KB es chica y casi todas las preguntas tienen 1-2 chunks correctos. No hace falta una batería de métricas: alcanza con pocos números bien elegidos.
+
+Arrancar con ~30 preguntas y tres números:
+
+1. **Hit rate@5 de la búsqueda densa, antes del rerank**: mide embeddings + chunking. Si el chunk correcto no está entre los primeros 5 densos, el problema está en cómo se indexa.
+2. **MRR después del rerank** (y MRR denso para comparar): si el MRR post-rerank no mejora claramente al denso, el reranker no paga su latencia.
+3. **Aciertos al abstenerse**: contar los dos errores por separado:
+   - abstenerse cuando la info está en la KB;
+   - contestar cuando la info no está.
+     Sirve para calibrar `SIMILARITY_THRESHOLD`.
+
+Además, medir el **valor del juez y de la segunda búsqueda**:
+
+- cuántas preguntas pasan de fallar a acertar después de la segunda búsqueda;
+- cuántas veces el juez dice "alcanza" sin que esté el chunk correcto;
+- si la segunda búsqueda casi nunca rescata nada, es latencia para sacar.
+
+**Recall@6** (contexto final) solo para las preguntas multi-chunk, donde importa traer todas las piezas.
+
+Descartadas por ahora:
+
+- **nDCG**: sin relevancia graduada da casi lo mismo que MRR.
+- **Precision@k**: con 1-2 chunks correctos pesa poco.
+- **Faithfulness**: ya existe en el harness; correrla solo sobre una muestra con juez LLM, no en cada corrida.
+
+## Golden set mínimo
+
+- 30-50 preguntas versionadas en el repo (JSONL, o extendiendo `evals/cases.json`, que ya usa el mismo criterio de prefijos).
+- Campos: pregunta, chunks esperados por **documento + sección** (prefijo de id, no id de vector con hash, para sobrevivir cambios de chunking), contestable sí/no.
+- Mezcla aproximada:
+  - ~40% datos puntuales del CV;
+  - ~20% multi-chunk (proyectos);
+  - ~20% paráfrasis y habla real (inglés, typos);
+  - ~20% no contestables.
+- Generación: un LLM propone 2 preguntas por chunk y Ramiro las cura. Sumar preguntas reales de los logs cuando las haya.
+- Correrlo en el mismo harness de `evals/run.ts`, registrando cada etapa: top 5 denso de Vectorize, orden post-rerank y contexto final.
+
+## Próximos pasos
+
+- [ ] Armar el golden set (30 preguntas para empezar) con la mezcla de arriba.
+- [ ] Definir el schema. Ejemplo (filas **de ejemplo**, no son casos reales):
+
+```jsonl
+{"id": "EJEMPLO-cv-trabajo", "question": "¿Dónde trabaja Ramiro?", "expectedChunks": ["kb-overview"], "answerable": true}
+{"id": "EJEMPLO-no-contestable", "question": "¿Cuál es el color favorito de Ramiro?", "expectedChunks": [], "answerable": false}
+```
+
+- [ ] Extender el harness para guardar los ids por etapa (denso, post-rerank, final) y calcular hit rate@5 denso, MRR denso vs. post-rerank y Recall@6 en multi-chunk.
+- [ ] Medir un baseline y guardarlo en `evals/results/`.
+- [ ] Calibrar `SIMILARITY_THRESHOLD` con los dos errores de abstención.
+- [ ] Decidir si la segunda búsqueda y el juez de suficiencia se quedan, según cuántas preguntas rescatan.
