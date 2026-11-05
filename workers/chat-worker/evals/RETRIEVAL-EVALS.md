@@ -27,28 +27,26 @@ Qué mide ya el harness (`evals/run.ts`, `evals/metrics.ts`): router, latencia y
 
 La KB es chica y casi todas las preguntas tienen 1-2 chunks correctos. No hace falta una batería de métricas: alcanza con pocos números bien elegidos.
 
-Arrancar con ~30 preguntas y tres números:
+Ya están en el harness y **no se duplican**: faithfulness, suficiencia y abstención (`evals/stage-judges.ts`), y `chunkRecall`/hit sobre los chunks finales. Como esos solo miran el contexto final, hoy no se distingue un error de embeddings de uno del reranker. Lo que falta medir, por etapa:
 
-1. **Hit rate@5 de la búsqueda densa, antes del rerank**: mide embeddings + chunking. Si el chunk correcto no está entre los primeros 5 densos, el problema está en cómo se indexa.
-2. **MRR después del rerank** (y MRR denso para comparar): si el MRR post-rerank no mejora claramente al denso, el reranker no paga su latencia.
-3. **Aciertos al abstenerse**: contar los dos errores por separado:
-   - abstenerse cuando la info está en la KB;
-   - contestar cuando la info no está.
-     Sirve para calibrar `SIMILARITY_THRESHOLD`.
-
-Además, medir el **valor del juez y de la segunda búsqueda**:
-
-- cuántas preguntas pasan de fallar a acertar después de la segunda búsqueda;
-- cuántas veces el juez dice "alcanza" sin que esté el chunk correcto;
-- si la segunda búsqueda casi nunca rescata nada, es latencia para sacar.
+1. **Etapa densa (antes del rerank)**:
+   - **hit@15** sobre los candidatos de Vectorize (`RAG_RERANK_CANDIDATES`, 15 en `wrangler.jsonc`): si el chunk correcto no está ahí, el reranker no lo puede rescatar. Mide embeddings + chunking.
+   - **hit@5 denso**: compararlo con el resultado post-rerank muestra cuánto aporta el reranker frente a quedarse con el top 5 de embeddings.
+2. **MRR post-rerank** sobre los `MAX_CHUNKS` (6) que quedan después de `bge-reranker-base`: qué tan arriba queda el chunk correcto.
+3. **Umbral de abstención**: barrer `SIMILARITY_THRESHOLD` (hoy 0.30) contra el mejor puntaje denso de cada pregunta y mirar los dos errores por separado. Sirve para calibrar el umbral:
+   - contestar cuando la info no está;
+   - abstenerse cuando la info está en la KB.
+4. **Segunda búsqueda y juez**:
+   - cuántas preguntas rescata la segunda búsqueda con la query alternativa del router (pasan de fallar a acertar); si casi ninguna, es latencia para sacar;
+   - cuántas veces el juez de suficiencia (umbral `JUDGE_SUFFICIENT_THRESHOLD`, 0.4) dice "alcanza" sin que esté el chunk correcto.
+5. **Precisión del contexto final**: cuántos de los 6 chunks finales son relevantes. Si la mayoría sobra, considerar bajar `MAX_CHUNKS`.
 
 **Recall@6** (contexto final) solo para las preguntas multi-chunk, donde importa traer todas las piezas.
 
 Descartadas por ahora:
 
 - **nDCG**: sin relevancia graduada da casi lo mismo que MRR.
-- **Precision@k**: con 1-2 chunks correctos pesa poco.
-- **Faithfulness**: ya existe en el harness; correrla solo sobre una muestra con juez LLM, no en cada corrida.
+- **Precision@k en la etapa densa**: con 1-2 chunks correctos pesa poco; la precisión que importa es la del contexto final (punto 5).
 
 ## Golden set mínimo
 
@@ -60,7 +58,7 @@ Descartadas por ahora:
   - ~20% paráfrasis y habla real (inglés, typos);
   - ~20% no contestables.
 - Generación: un LLM propone 2 preguntas por chunk y Ramiro las cura. Sumar preguntas reales de los logs cuando las haya.
-- Correrlo en el mismo harness de `evals/run.ts`, registrando cada etapa: top 5 denso de Vectorize, orden post-rerank y contexto final.
+- Correrlo en el mismo harness de `evals/run.ts`, registrando cada etapa: candidatos densos de Vectorize (top 15), orden post-rerank y contexto final.
 
 ## Próximos pasos
 
@@ -72,7 +70,8 @@ Descartadas por ahora:
 {"id": "EJEMPLO-no-contestable", "question": "¿Cuál es el color favorito de Ramiro?", "expectedChunks": [], "answerable": false}
 ```
 
-- [ ] Extender el harness para guardar los ids por etapa (denso, post-rerank, final) y calcular hit rate@5 denso, MRR denso vs. post-rerank y Recall@6 en multi-chunk.
+- [ ] Extender el harness para guardar los ids por etapa (denso, post-rerank, final) y calcular hit@15 y hit@5 densos, MRR post-rerank, precisión del contexto final y Recall@6 en multi-chunk.
 - [ ] Medir un baseline y guardarlo en `evals/results/`.
-- [ ] Calibrar `SIMILARITY_THRESHOLD` con los dos errores de abstención.
-- [ ] Decidir si la segunda búsqueda y el juez de suficiencia se quedan, según cuántas preguntas rescatan.
+- [ ] Barrer `SIMILARITY_THRESHOLD` contra el mejor puntaje denso y calibrarlo con los dos errores de abstención.
+- [ ] Decidir si la segunda búsqueda y el juez de suficiencia se quedan, según cuántas preguntas rescata la segunda búsqueda y cuántos "alcanza" falsos da el juez.
+- [ ] Decidir si bajar `MAX_CHUNKS` según la precisión del contexto final.
