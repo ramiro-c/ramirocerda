@@ -15,7 +15,7 @@ import type { Language } from "./language";
 // for the max-4 merge of two searches). A top-8 would recover nothing more, so
 // the extra chunks would be pure prompt weight. The cost is ~300-500 tokens of
 // generation context per search (chunk median is ~540 chars).
-export const MAX_CHUNKS = 6;
+export const MAX_CHUNKS = 4;
 export const HISTORY_TURNS = 10;
 
 /**

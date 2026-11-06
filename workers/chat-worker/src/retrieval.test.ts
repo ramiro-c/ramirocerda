@@ -11,6 +11,7 @@ import {
   readAdaptiveConfig,
 } from "./config";
 import { buildJudgeState, JUDGE_SNIPPET_CHARS, mergeChunks, retrieveAdaptive, SUFFICIENT_QUESTION } from "./retrieval";
+import { MAX_CHUNKS } from "./rag";
 import { DECISION_OFF, DECISION_VARS, judgeAnswer, stubFetch } from "./test-utils";
 
 function chunk(id: string, score: number) {
@@ -56,9 +57,8 @@ describe("mergeChunks", () => {
       ["b", 0.5],
       ["d", 0.35],
       ["e", 0.32],
-      ["c", 0.31],
-      ["f", 0.3],
     ]);
+    expect(merged).toHaveLength(MAX_CHUNKS);
   });
 });
 

@@ -133,7 +133,7 @@ describe("retrieveChunks with the reranker", () => {
     }
   });
 
-  it("caps the reranked order at MAX_CHUNKS (6)", async () => {
+  it("caps the reranked order at MAX_CHUNKS", async () => {
     const matches = Array.from({ length: 8 }, (_, i) => withText(0.5 - i * 0.01, `kb-${i}`, `texto ${i}`));
     const { env } = ragEnv({
       on: true,
@@ -143,8 +143,9 @@ describe("retrieveChunks with the reranker", () => {
       },
     });
     const result = await retrieveChunks("q", env);
+    const ranked = Array.from({ length: MAX_CHUNKS }, (_, i) => `kb-${7 - i}`);
     expect(result).toHaveLength(MAX_CHUNKS);
-    expect(result.map((c) => c.id).join(",")).toBe("kb-7,kb-6,kb-5,kb-4,kb-3,kb-2");
+    expect(result.map((c) => c.id)).toEqual(ranked);
   });
 
   it("stays off without RAG_RERANK_MODEL, exactly the dense-only path", async () => {
@@ -186,7 +187,7 @@ describe("filterChunks (D3)", () => {
       0.3,
     );
     expect(result).toHaveLength(MAX_CHUNKS);
-    expect(MAX_CHUNKS).toBe(6);
+    expect(MAX_CHUNKS).toBe(4);
   });
 
   it("returns an empty array for no relevant matches", () => {
