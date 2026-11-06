@@ -14,11 +14,13 @@
  *          only judge that spends generation tokens), --out <dir> (default evals/results).
  *
  * The report is split by stage so a failure can be located: router, 1. retrieval
- * (recall / hit), 2. sufficiency (the adaptive Jev judge), 3. faithfulness (claims
- * extracted by the generation model, each checked by Jev against the chunks that
- * were passed to generation) and 4. abstention (Jev judge on generated replies,
- * canned declines count as abstentions). See evals/stage-judges.ts. The stage
- * judges only run in real mode; `pnpm eval:judges` validates them on fixtures.
+ * (recall / hit, plus dense hit@15 / hit@5, MRR post-rerank, final-context precision,
+ * second-search rescue, judge false-sufficient when real mode collects stage ids),
+ * 2. sufficiency (the adaptive Jev judge), 3. faithfulness (claims extracted by the
+ * generation model, each checked by Jev against the chunks that were passed to
+ * generation) and 4. abstention (Jev judge on generated replies, canned declines
+ * count as abstentions). See evals/stage-judges.ts and evals/RETRIEVAL-EVALS.md. The
+ * stage judges only run in real mode; `pnpm eval:judges` validates them on fixtures.
  * Linear and adaptive run in the same report; "linear" is main's frozen pipeline,
  * the same behaviour as the adaptive one with DECISION_MODEL="".
  *
@@ -164,7 +166,13 @@ async function main(): Promise<void> {
               }
             : {
                 kind: "adaptive" as const,
-                run: await runAdaptivePipeline({ message: c.message, history: c.history, env, sessionId }),
+                run: await runAdaptivePipeline({
+                  message: c.message,
+                  history: c.history,
+                  env,
+                  sessionId,
+                  collectRetrievalDiagnostics: mode === "real",
+                }),
               },
         );
         const latencyMs = Date.now() - t0;
@@ -211,6 +219,13 @@ async function main(): Promise<void> {
           // always hit; whether it "searched" is the router's decision to use retrieval.
           searched: value.kind === "adaptive" ? value.run.decision.route === "search" : counters.vectorizeQueries > 0,
           chunkIds: chunks.map((ch) => ch.id),
+          ...(value.kind === "adaptive"
+            ? {
+                firstSearchChunkIds: value.run.firstSearchChunkIds,
+                retrievalIterations: value.run.retrievalIterations,
+                retrievalDiagnostics: value.run.retrievalDiagnostics,
+              }
+            : {}),
           replyKind,
           reply,
           verdict: value.kind === "adaptive" ? value.run.verdict.kind : null,

@@ -26,7 +26,7 @@ import {
   type DecisionTrace,
   type DecisionUsage,
 } from "./decision";
-import { MAX_CHUNKS, retrieveChunks, type RetrievedChunk } from "./rag";
+import { MAX_CHUNKS, retrieveChunks, type RetrievedChunk, type RetrievalDiagnostics } from "./rag";
 import { NOUL_YES } from "./router";
 
 type RetrievalEnv = Parameters<typeof retrieveChunks>[1];
@@ -117,6 +117,10 @@ export function mergeChunks(a: RetrievedChunk[], b: RetrievedChunk[]): Retrieved
 
 export interface AdaptiveRetrieval {
   chunks: RetrievedChunk[];
+  /** Chunk ids from the first search only (before merge). Used for second-search rescue metrics. */
+  firstSearchChunkIds: string[];
+  /** One diagnostics row per Vectorize query (same order as `queries`). Filled when `opts.collectRetrievalDiagnostics` is true. */
+  retrievalDiagnostics: RetrievalDiagnostics[];
   /** Searches actually run: 1 or 2. */
   iterations: number;
   queries: string[];
@@ -136,27 +140,54 @@ export async function retrieveAdaptive(
   },
   env: RetrievalEnv,
   config: AdaptiveConfig,
+  opts?: { collectRetrievalDiagnostics?: boolean },
 ): Promise<AdaptiveRetrieval> {
   const { question, query } = input;
+  const collect = opts?.collectRetrievalDiagnostics === true;
+  const diag1: RetrievalDiagnostics[] = [];
   // First search errors propagate (same as the linear pipeline: MODEL_ERROR).
-  const first = await (input.prefetched ?? retrieveChunks(query, env));
+  const first = input.prefetched
+    ? await input.prefetched
+    : await retrieveChunks(query, env, collect ? { accumulate: diag1 } : undefined);
+  const firstSearchChunkIds = first.map((c) => c.id);
+  const retrievalDiagnostics: RetrievalDiagnostics[] = collect && diag1[0] ? [diag1[0]] : [];
   const queries = [query];
   const cap = Math.max(1, Math.min(config.maxRetrievalIterations, 2));
   const alternate = input.alternateQuery?.trim() || null;
   const retryable = alternate !== null && alternate.toLowerCase() !== query.trim().toLowerCase();
   if (cap < 2 || !config.decision || !retryable) {
-    return { chunks: first, iterations: 1, queries, verdict: { kind: "skipped" }, judgeMs: 0 };
+    return {
+      chunks: first,
+      firstSearchChunkIds,
+      retrievalDiagnostics,
+      iterations: 1,
+      queries,
+      verdict: { kind: "skipped" },
+      judgeMs: 0,
+    };
   }
 
   const tJudge = Date.now();
   const { verdict, usage, trace } = await judgeSufficiency(question, first, config);
   const judgeMs = Date.now() - tJudge;
-  const done = { chunks: first, iterations: 1, queries, verdict, judgeMs, judgeUsage: usage, judgeTrace: trace };
+  const done: AdaptiveRetrieval = {
+    chunks: first,
+    firstSearchChunkIds,
+    retrievalDiagnostics,
+    iterations: 1,
+    queries,
+    verdict,
+    judgeMs,
+    judgeUsage: usage,
+    judgeTrace: trace,
+  };
   if (verdict.kind !== "insufficient") return done;
 
   queries.push(alternate);
+  const diag2: RetrievalDiagnostics[] = [];
   try {
-    const second = await retrieveChunks(alternate, env);
+    const second = await retrieveChunks(alternate, env, collect ? { accumulate: diag2 } : undefined);
+    if (collect && diag2[0]) done.retrievalDiagnostics.push(diag2[0]);
     return { ...done, chunks: mergeChunks(first, second), iterations: 2, queries };
   } catch {
     // A failed re-search keeps whatever the first search found.

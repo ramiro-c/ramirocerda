@@ -25,8 +25,15 @@ import { readAdaptiveConfig, type AdaptiveEnvVars } from "./config";
 import { generateReply, generateReplyStream, type GenerateResult } from "./generate";
 import { detectLanguage, type Language } from "./language";
 import { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
-import { buildRagPrompt, HISTORY_TURNS, retrieveChunks, type ChatMessage, type RetrievedChunk } from "./rag";
-import { retrieveAdaptive, type JudgeVerdict } from "./retrieval";
+import {
+  buildRagPrompt,
+  HISTORY_TURNS,
+  retrieveChunks,
+  type ChatMessage,
+  type RetrievedChunk,
+  type RetrievalDiagnostics,
+} from "./rag";
+import { retrieveAdaptive, type AdaptiveRetrieval, type JudgeVerdict } from "./retrieval";
 import { fallbackDecision, routeMessage, type HistoryTurn, type Route, type RouteDecision } from "./router";
 
 export interface PipelineEnv extends AdaptiveEnvVars {
@@ -78,6 +85,10 @@ export interface PipelineOutcome {
   offerContact: boolean;
   outcome: PipelineReply;
   chunks: RetrievedChunk[];
+  /** First search only (before merge); empty when not collected. */
+  firstSearchChunkIds: string[];
+  /** Per Vectorize query, when `collectRetrievalDiagnostics` was used in runAdaptivePipeline. */
+  retrievalDiagnostics: RetrievalDiagnostics[];
   topScore: number;
   routerMs: number;
   /**
@@ -111,6 +122,8 @@ export async function runAdaptivePipeline(opts: {
   env: PipelineEnv;
   sessionId: string;
   log?: PipelineLogger;
+  /** When true, each Vectorize query records dense / post-rerank / final id order for eval (see RetrievalDiagnostics). */
+  collectRetrievalDiagnostics?: boolean;
   /** Called once the router decided, before retrieval/generation: lets a stream send offerContact first. */
   onRouted?: (decision: RouteDecision) => void;
   /** When set, generation streams (`stream: true`) and every content delta is handed here. */
@@ -123,11 +136,13 @@ export async function runAdaptivePipeline(opts: {
   const siteOrigin = env.SITE_ORIGIN ?? DEFAULT_SITE_ORIGIN;
 
   const tRoute = Date.now();
-  // The first search always uses the raw message (see routeMessage), so it does not
-  // depend on the router: start embed + Vectorize + rerank now and run both at once.
-  // Not a shortcut: when the route is not `search` the result is simply dropped.
-  // A rejection is observed here and re-thrown only if the search path awaits it.
-  const prefetched = config.adaptiveEnabled ? retrieveChunks(message, env) : null;
+  // The first search often uses the raw message (see routeMessage), so when it does we
+  // start embed + Vectorize + rerank in parallel with the router. When the eval hook
+  // needs per-stage ids, we skip this shortcut so diagnostics attach to the same promise
+  // retrieveAdaptive awaits (no double Vectorize).
+  const collectDiag = opts.collectRetrievalDiagnostics === true;
+  const prefetched =
+    config.adaptiveEnabled && !collectDiag ? retrieveChunks(message, env) : null;
   prefetched?.catch(() => {});
   // The flag is the whole point of this switch: off means no decision model at all,
   // so a deployment can turn the adaptive path off without touching any other knob.
@@ -169,6 +184,8 @@ export async function runAdaptivePipeline(opts: {
     decision,
     offerContact,
     chunks: [] as RetrievedChunk[],
+    firstSearchChunkIds: [] as string[],
+    retrievalDiagnostics: [] as RetrievalDiagnostics[],
     topScore: 0,
     routerMs,
     retrievalMs: 0,
@@ -227,15 +244,21 @@ export async function runAdaptivePipeline(opts: {
         },
         env,
         config,
+        collectDiag ? { collectRetrievalDiagnostics: true } : undefined,
       )
-    : {
-        chunks: await retrieveChunks(message, env),
-        iterations: 1,
-        verdict: { kind: "skipped" } as JudgeVerdict,
-        judgeMs: 0,
-        queries: [message],
-        judgeTrace: undefined,
-      };
+    : await (async (): Promise<AdaptiveRetrieval> => {
+        const chunks = await retrieveChunks(message, env);
+        return {
+          chunks,
+          firstSearchChunkIds: chunks.map((c) => c.id),
+          retrievalDiagnostics: [] as RetrievalDiagnostics[],
+          iterations: 1,
+          verdict: { kind: "skipped" } as JudgeVerdict,
+          judgeMs: 0,
+          queries: [message],
+          judgeTrace: undefined,
+        };
+      })();
   const retrievalMs = Date.now() - tRet;
   const chunks = retrieval.chunks;
   const topScore = chunks.reduce((max, c) => Math.max(max, c.score), 0);
@@ -267,6 +290,8 @@ export async function runAdaptivePipeline(opts: {
   const retrieved = {
     ...base,
     chunks,
+    firstSearchChunkIds: retrieval.firstSearchChunkIds,
+    retrievalDiagnostics: retrieval.retrievalDiagnostics,
     topScore,
     retrievalMs,
     judgeMs: retrieval.judgeMs,

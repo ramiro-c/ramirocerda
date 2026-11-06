@@ -1,13 +1,36 @@
 import { describe, expect, it } from "vitest";
 
 import { zeroCounters } from "./backends";
-import { chunkRecall, factHit, markdownTable, summarize, type CaseResult, type EvalCase } from "./metrics";
+import {
+  chunkRecall,
+  factHit,
+  finalContextPrecision,
+  hitAtK,
+  markdownTable,
+  mrr,
+  summarize,
+  type CaseResult,
+  type EvalCase,
+} from "./metrics";
 
 describe("eval metrics", () => {
   it("matches chunk ids by prefix, ignoring the content hash", () => {
     expect(chunkRecall(["kb-educacion"], ["kb-educacion-5b6f6a1d"])).toBe(1);
     expect(chunkRecall(["kb-educacion", "kb-overview"], ["kb-educacion-5b6f6a1d"])).toBe(0.5);
     expect(chunkRecall(["kb-overview"], [])).toBe(0);
+  });
+
+  it("computes hit@k, MRR and final-context precision from ordered ids", () => {
+    const ordered = ["x-1", "kb-target-2", "y-3"];
+    expect(hitAtK(["kb-target"], ordered, 1)).toBe(false);
+    expect(hitAtK(["kb-target"], ordered, 2)).toBe(true);
+    expect(hitAtK(["missing"], ordered, 10)).toBe(false);
+    expect(hitAtK([], ordered, 5)).toBe(false);
+    expect(mrr(["kb-target"], ordered)).toBe(0.5);
+    expect(mrr(["x"], ordered)).toBe(1);
+    expect(mrr(["z"], ordered)).toBe(0);
+    expect(finalContextPrecision(["kb-a", "kb-b"], ["kb-a-h", "noise", "kb-b-x"])).toBe(2 / 3);
+    expect(finalContextPrecision(["kb-a"], [])).toBe(0);
   });
 
   it("detects expected facts case and accent insensitively", () => {
@@ -234,6 +257,7 @@ describe("eval metrics", () => {
     expect(s.nearMissAbstention).toEqual({ hits: 0, total: 1 });
     expect(s.outOfKbAbstention).toEqual({ hits: 1, total: 1 });
     expect(s.falseAbstention).toEqual({ hits: 0, total: 1 });
+    expect(s.stageRetrieval?.graded).toBe(0);
     expect(
       summarize(
         "linear",
@@ -258,5 +282,100 @@ describe("eval metrics", () => {
     ]) {
       expect(row(markdownTable(summaries, { mode: "decision" }), name)).toContain("pending");
     }
+  });
+
+  it("aggregates stage retrieval metrics when diagnostics are present (adaptive)", () => {
+    const cases: EvalCase[] = [
+      {
+        id: "a",
+        category: "kb",
+        lang: "es",
+        message: "q",
+        expected: {
+          route: "search",
+          retrieve: true,
+          answerable: true,
+          expectedChunks: ["kb-good"],
+          offerContact: false,
+        },
+      },
+      {
+        id: "b",
+        category: "kb",
+        lang: "es",
+        message: "q2",
+        expected: {
+          route: "search",
+          retrieve: true,
+          answerable: true,
+          expectedChunks: ["kb-x"],
+          offerContact: false,
+        },
+      },
+    ];
+    const diag = (dense: string[], post: string[]) => ({
+      denseIdsOrdered: dense,
+      denseTopKIds: 5,
+      denseTopIds: dense.slice(0, 5),
+      postRerankIds: post,
+      finalChunkIds: post,
+    });
+    const base: Omit<CaseResult, "caseId"> = {
+      pipeline: "adaptive",
+      route: "search",
+      routeVia: "llm",
+      offerContact: false,
+      searched: true,
+      chunkIds: [],
+      latencyMs: 1,
+      counters: zeroCounters(),
+      replyKind: "generated",
+      reply: "ok",
+      abstained: false,
+      faithful: null,
+    };
+    const results: CaseResult[] = [
+      {
+        ...base,
+        caseId: "a",
+        chunkIds: ["kb-good-h", "noise"],
+        verdict: "insufficient",
+        retrievalIterations: 2,
+        firstSearchChunkIds: ["wrong-1"],
+        retrievalDiagnostics: [
+          diag(
+            ["wrong-1", "kb-good-2", ...Array.from({ length: 14 }, (_, i) => `f-${i}`)],
+            ["noise", "kb-good-h"],
+          ),
+          diag(["kb-good-alt"], ["kb-good-alt"]),
+        ],
+      },
+      {
+        ...base,
+        caseId: "b",
+        chunkIds: ["other"],
+        verdict: "sufficient",
+        retrievalIterations: 1,
+        firstSearchChunkIds: ["other"],
+        retrievalDiagnostics: [
+          diag(
+            ["p1", "p2", "p3", "p4", "p5", "kb-x-9"],
+            ["kb-x-9", "other"],
+          ),
+        ],
+      },
+    ];
+    const s = summarize("adaptive", cases, results);
+    expect(s.stageRetrieval).not.toBeNull();
+    expect(s.stageRetrieval!.graded).toBe(2);
+    expect(s.stageRetrieval!.hitDense15).toEqual({ hits: 2, total: 2 });
+    expect(s.stageRetrieval!.hitDense5).toEqual({ hits: 1, total: 2 });
+    expect(s.stageRetrieval!.mrrPostRerank.mean).toBeCloseTo(0.75);
+    expect(s.stageRetrieval!.secondSearchRescueEligible).toBe(1);
+    expect(s.stageRetrieval!.secondSearchRescue).toEqual({ hits: 1, total: 1 });
+    expect(s.stageRetrieval!.judgeFalseSufficient).toEqual({ hits: 1, total: 1 });
+
+    const linear = summarize("linear", cases, results.map((r) => ({ ...r, pipeline: "linear" })));
+    expect(linear.stageRetrieval).toBeNull();
   });
 });
