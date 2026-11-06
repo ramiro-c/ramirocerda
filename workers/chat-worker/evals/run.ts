@@ -107,6 +107,7 @@ async function main(): Promise<void> {
     "DECISION_INTEGRATION_ID",
     "DECISION_TIMEOUT_MS",
     "DECISION_MIN_CONFIDENCE",
+    "JUDGE_SUFFICIENT_THRESHOLD",
     "MAX_RETRIEVAL_ITERATIONS",
   ]) {
     const v = process.env[k];
@@ -229,6 +230,8 @@ async function main(): Promise<void> {
           replyKind,
           reply,
           verdict: value.kind === "adaptive" ? value.run.verdict.kind : null,
+          judgeProbability:
+            value.kind === "adaptive" && "probability" in value.run.verdict ? value.run.verdict.probability : null,
           abstained: mode === "real" ? (abstention?.abstained ?? null) : null,
           abstentionVia: mode === "real" ? (abstention?.via ?? null) : null,
           faithful: claims ? answerFaithful(claims) : null,

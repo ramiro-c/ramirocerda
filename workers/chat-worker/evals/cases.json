@@ -472,7 +472,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-botardo-implementacion"],
+        "expectedChunks": ["kb-botardo-implementacion", "kb-sitio-web-y-arquitectura-del-bot"],
         "expectedFacts": ["bge-m3"],
         "offerContact": false
       }

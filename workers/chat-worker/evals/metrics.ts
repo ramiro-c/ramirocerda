@@ -54,6 +54,8 @@ export interface CaseResult {
   reply: string | null;
   /** Adaptive only: sufficiency judge verdict (skipped | sufficient | insufficient | error). */
   verdict?: string | null;
+  /** Adaptive only: raw sufficiency judge probability (0-99), when verdict has one. */
+  judgeProbability?: number | null;
   /** true/false when known (canned decline, or the Jev abstention judge); null when not judged. */
   abstained: boolean | null;
   abstentionVia?: "canned" | "judge" | "error" | null;

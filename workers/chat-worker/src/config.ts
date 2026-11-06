@@ -41,7 +41,7 @@ export const DEFAULT_DECISION_TIMEOUT_MS = 1000;
 /** Below this choice confidence a non-search route is not trusted: search instead. */
 export const DEFAULT_DECISION_MIN_CONFIDENCE = 0.5;
 /** Probability threshold for the sufficiency judge: >= means sufficient, else re-search. */
-export const DEFAULT_JUDGE_SUFFICIENT_THRESHOLD = 0.4;
+export const DEFAULT_JUDGE_SUFFICIENT_THRESHOLD = 0.5;
 /**
  * How long the anonymous free tier is skipped by default after it answers 429. The free
  * model's quota is a rolling usage limit, so the exact reset is unknown; 15 minutes keeps
@@ -68,7 +68,7 @@ export interface AdaptiveEnvVars {
   /** "1" or "true" skips the anonymous tier outright (the paid path must exist). */
   DECISION_FREE_DISABLED?: string;
   MAX_RETRIEVAL_ITERATIONS?: string;
-  /** Sufficiency judge threshold (default 0.4). >= means sufficient. */
+  /** Sufficiency judge threshold (default 0.5). >= means sufficient. */
   JUDGE_SUFFICIENT_THRESHOLD?: string;
 }
 

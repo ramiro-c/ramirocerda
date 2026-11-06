@@ -343,10 +343,7 @@ describe("eval metrics", () => {
         retrievalIterations: 2,
         firstSearchChunkIds: ["wrong-1"],
         retrievalDiagnostics: [
-          diag(
-            ["wrong-1", "kb-good-2", ...Array.from({ length: 14 }, (_, i) => `f-${i}`)],
-            ["noise", "kb-good-h"],
-          ),
+          diag(["wrong-1", "kb-good-2", ...Array.from({ length: 14 }, (_, i) => `f-${i}`)], ["noise", "kb-good-h"]),
           diag(["kb-good-alt"], ["kb-good-alt"]),
         ],
       },
@@ -357,12 +354,7 @@ describe("eval metrics", () => {
         verdict: "sufficient",
         retrievalIterations: 1,
         firstSearchChunkIds: ["other"],
-        retrievalDiagnostics: [
-          diag(
-            ["p1", "p2", "p3", "p4", "p5", "kb-x-9"],
-            ["kb-x-9", "other"],
-          ),
-        ],
+        retrievalDiagnostics: [diag(["p1", "p2", "p3", "p4", "p5", "kb-x-9"], ["kb-x-9", "other"])],
       },
     ];
     const s = summarize("adaptive", cases, results);
@@ -375,7 +367,11 @@ describe("eval metrics", () => {
     expect(s.stageRetrieval!.secondSearchRescue).toEqual({ hits: 1, total: 1 });
     expect(s.stageRetrieval!.judgeFalseSufficient).toEqual({ hits: 1, total: 1 });
 
-    const linear = summarize("linear", cases, results.map((r) => ({ ...r, pipeline: "linear" })));
+    const linear = summarize(
+      "linear",
+      cases,
+      results.map((r) => ({ ...r, pipeline: "linear" })),
+    );
     expect(linear.stageRetrieval).toBeNull();
   });
 });
