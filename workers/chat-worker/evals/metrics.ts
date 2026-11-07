@@ -3,6 +3,7 @@
  */
 
 import type { Counters } from "./backends";
+import { MAX_CHUNKS, type RetrievalDiagnostics } from "../src/rag";
 import type { ClaimCheck } from "./stage-judges";
 
 export type PipelineName = "linear" | "adaptive";
@@ -43,10 +44,18 @@ export interface CaseResult {
   offerContact: boolean;
   searched: boolean;
   chunkIds: string[];
+  /** Adaptive, when eval collects diagnostics: chunk ids after search 1 only. */
+  firstSearchChunkIds?: string[];
+  /** Adaptive: 1 or 2 Vectorize rounds. */
+  retrievalIterations?: number;
+  /** Per-query dense / post-rerank / final id order (eval hook). */
+  retrievalDiagnostics?: RetrievalDiagnostics[];
   replyKind: "off_topic" | "no_info" | "generated" | "error";
   reply: string | null;
   /** Adaptive only: sufficiency judge verdict (skipped | sufficient | insufficient | error). */
   verdict?: string | null;
+  /** Adaptive only: raw sufficiency judge probability (0-99), when verdict has one. */
+  judgeProbability?: number | null;
   /** true/false when known (canned decline, or the Jev abstention judge); null when not judged. */
   abstained: boolean | null;
   abstentionVia?: "canned" | "judge" | "error" | null;
@@ -72,6 +81,30 @@ export function chunkRecall(expectedPrefixes: string[], chunkIds: string[]): num
   if (expectedPrefixes.length === 0) return 1;
   const hits = expectedPrefixes.filter((p) => chunkIds.some((id) => id === p || id.startsWith(`${p}-`)));
   return hits.length / expectedPrefixes.length;
+}
+
+/** 1 if any expected prefix matches an id in orderedIds within the first k positions (1-based rank). */
+export function hitAtK(expectedPrefixes: string[], orderedIds: string[], k: number): boolean {
+  if (expectedPrefixes.length === 0) return false;
+  const slice = orderedIds.slice(0, k);
+  return expectedPrefixes.some((p) => slice.some((id) => id === p || id.startsWith(`${p}-`)));
+}
+
+/** Mean reciprocal rank of the first matching expected prefix in orderedIds (0 if none). */
+export function mrr(expectedPrefixes: string[], orderedIds: string[]): number {
+  if (expectedPrefixes.length === 0) return 0;
+  for (let i = 0; i < orderedIds.length; i++) {
+    const id = orderedIds[i];
+    if (expectedPrefixes.some((p) => id === p || id.startsWith(`${p}-`))) return 1 / (i + 1);
+  }
+  return 0;
+}
+
+/** Fraction of finalChunkIds that match any expected prefix (0 if finalChunkIds is empty). */
+export function finalContextPrecision(expectedPrefixes: string[], finalChunkIds: string[]): number {
+  if (finalChunkIds.length === 0) return 0;
+  const relevant = finalChunkIds.filter((id) => expectedPrefixes.some((p) => id === p || id.startsWith(`${p}-`)));
+  return relevant.length / finalChunkIds.length;
 }
 
 /** Any expected fact (case/accent-insensitive substring) present in the reply. */
@@ -108,6 +141,21 @@ export interface SufficiencySummary {
   researches: Ratio;
 }
 
+/** Dense / rerank / rescue metrics (adaptive + real eval with diagnostics). */
+export interface StageRetrievalSummary {
+  /** Cases with expectedChunks and at least one diagnostics row. */
+  graded: number;
+  hitDense15: Ratio;
+  hitDense5: Ratio;
+  mrrPostRerank: { mean: number; total: number };
+  finalContextPrecision: { mean: number; total: number };
+  /** Second search: miss after search 1 (no expected in first-search context), among cases with 2 searches. */
+  secondSearchRescueEligible: number;
+  secondSearchRescue: Ratio;
+  /** Judge said sufficient but no expected chunk in merged final context. */
+  judgeFalseSufficient: Ratio;
+}
+
 export interface PipelineSummary {
   cases: number;
   errors: number;
@@ -136,6 +184,8 @@ export interface PipelineSummary {
   /** Adaptive: router request latency; null when no router call was timed. */
   routerLatency: { p50: number; p95: number } | null;
   perQuery: Counters;
+  /** Stage-wise retrieval (hit@k dense, MRR post-rerank, etc.); null without diagnostics (e.g. linear or stubbed backends). */
+  stageRetrieval: StageRetrievalSummary | null;
 }
 
 export function summarize(pipeline: PipelineName, cases: EvalCase[], results: CaseResult[]): PipelineSummary {
@@ -208,6 +258,62 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     ]),
   ) as unknown as Counters;
 
+  const stageRows =
+    pipeline === "adaptive"
+      ? withCase.filter(
+          ({ r, c }) =>
+            (c.expected.expectedChunks?.length ?? 0) > 0 &&
+            Array.isArray(r.retrievalDiagnostics) &&
+            r.retrievalDiagnostics.length > 0,
+        )
+      : [];
+  let stageRetrieval: StageRetrievalSummary | null = null;
+  if (pipeline === "adaptive") {
+    const hit15Vals = stageRows.map(({ r, c }) => {
+      const dense = r.retrievalDiagnostics![0].denseIdsOrdered;
+      const k = Math.min(15, dense.length);
+      return hitAtK(c.expected.expectedChunks!, dense, k);
+    });
+    const hit5Vals = stageRows.map(({ r, c }) =>
+      hitAtK(c.expected.expectedChunks!, r.retrievalDiagnostics![0].denseIdsOrdered, 5),
+    );
+    const mrrVals = stageRows.map(({ r, c }) =>
+      mrr(c.expected.expectedChunks!, r.retrievalDiagnostics![0].postRerankIds),
+    );
+    const precVals = stageRows.map(({ r, c }) => finalContextPrecision(c.expected.expectedChunks!, r.chunkIds));
+    const rescueEligibleRows = stageRows.filter(
+      ({ r }) => (r.retrievalIterations ?? 0) >= 2 && Array.isArray(r.firstSearchChunkIds),
+    );
+    const rescueFlags = rescueEligibleRows.map(({ r, c }) => {
+      const prefixes = c.expected.expectedChunks!;
+      const missedFirst = !hitAtK(prefixes, r.firstSearchChunkIds!, MAX_CHUNKS);
+      const hitMerged = hitAtK(prefixes, r.chunkIds, MAX_CHUNKS);
+      return missedFirst && hitMerged;
+    });
+    const falseSuffGradedRows = stageRows.filter(
+      ({ r, c }) => r.verdict === "sufficient" && (c.expected.expectedChunks?.length ?? 0) > 0,
+    );
+    const falseSuffFlags = falseSuffGradedRows.map(
+      ({ r, c }) => chunkRecall(c.expected.expectedChunks!, r.chunkIds) === 0,
+    );
+    stageRetrieval = {
+      graded: stageRows.length,
+      hitDense15: ratio(hit15Vals),
+      hitDense5: ratio(hit5Vals),
+      mrrPostRerank: {
+        mean: mrrVals.length ? mrrVals.reduce((a, b) => a + b, 0) / mrrVals.length : 0,
+        total: mrrVals.length,
+      },
+      finalContextPrecision: {
+        mean: precVals.length ? precVals.reduce((a, b) => a + b, 0) / precVals.length : 0,
+        total: precVals.length,
+      },
+      secondSearchRescueEligible: rescueEligibleRows.length,
+      secondSearchRescue: ratio(rescueFlags),
+      judgeFalseSufficient: ratio(falseSuffFlags),
+    };
+  }
+
   return {
     cases: rs.length,
     errors: rs.filter((r) => r.replyKind === "error").length,
@@ -237,6 +343,7 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     },
     routerLatency: routerLat.length ? { p50: percentile(routerLat, 50), p95: percentile(routerLat, 95) } : null,
     perQuery,
+    stageRetrieval,
   };
 }
 
@@ -304,6 +411,60 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
     ],
     ["Hit (al menos un chunk esperado)", real(fmtRatio(linear.hit)), real(fmtRatio(adaptive.hit))],
     ["Respuesta con el dato esperado", real(fmtRatio(linear.facts)), real(fmtRatio(adaptive.facts))],
+    [
+      "Hit@k denso (Vectorize, primer search; k=min(15,candidatos))",
+      "n/a (lineal)",
+      real(
+        adaptive.stageRetrieval && adaptive.stageRetrieval.graded > 0
+          ? fmtRatio(adaptive.stageRetrieval.hitDense15)
+          : "n/a (sin diagnósticos)",
+      ),
+    ],
+    [
+      "Hit@5 denso (antes del rerank)",
+      "n/a (lineal)",
+      real(
+        adaptive.stageRetrieval && adaptive.stageRetrieval.graded > 0
+          ? fmtRatio(adaptive.stageRetrieval.hitDense5)
+          : "n/a (sin diagnósticos)",
+      ),
+    ],
+    [
+      "MRR post-rerank (top 6 tras bge-reranker)",
+      "n/a (lineal)",
+      real(
+        adaptive.stageRetrieval && adaptive.stageRetrieval.graded > 0
+          ? `${f1(adaptive.stageRetrieval.mrrPostRerank.mean)} (n=${adaptive.stageRetrieval.mrrPostRerank.total})`
+          : "n/a (sin diagnósticos)",
+      ),
+    ],
+    [
+      "Precisión contexto final (chunks relevantes / 6)",
+      "n/a (lineal)",
+      real(
+        adaptive.stageRetrieval && adaptive.stageRetrieval.graded > 0
+          ? `${f1(adaptive.stageRetrieval.finalContextPrecision.mean)} (n=${adaptive.stageRetrieval.finalContextPrecision.total})`
+          : "n/a (sin diagnósticos)",
+      ),
+    ],
+    [
+      "Rescate 2.ª búsqueda (miss → hit tras merge)",
+      "n/a (lineal)",
+      real(
+        adaptive.stageRetrieval && adaptive.stageRetrieval.graded > 0
+          ? `${fmtRatio(adaptive.stageRetrieval.secondSearchRescue)} (elegibles=${adaptive.stageRetrieval.secondSearchRescueEligible})`
+          : "n/a (sin diagnósticos)",
+      ),
+    ],
+    [
+      "Juez falso-suficiente (suficiente sin chunk esperado)",
+      "n/a (lineal)",
+      real(
+        adaptive.stageRetrieval && adaptive.stageRetrieval.graded > 0
+          ? fmtRatio(adaptive.stageRetrieval.judgeFalseSufficient)
+          : "n/a (sin diagnósticos)",
+      ),
+    ],
     section("2. Suficiencia (juez Jev)"),
     [
       "Veredictos suficiente / insuficiente / error",

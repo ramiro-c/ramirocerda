@@ -1,0 +1,2 @@
+{"id": "kb-es-stack", "question": "¿Qué stack técnico maneja?", "expectedChunks": ["kb-stack-tecnico"], "answerable": true, "source": "evals/cases.json"}
+{"id": "kb-es-estudios", "question": "¿Qué estudió Ramiro?", "expectedChunks": ["kb-educacion"], "answerable": true, "source": "evals/cases.json"}

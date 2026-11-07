@@ -15,7 +15,7 @@ import type { Language } from "./language";
 // for the max-4 merge of two searches). A top-8 would recover nothing more, so
 // the extra chunks would be pure prompt weight. The cost is ~300-500 tokens of
 // generation context per search (chunk median is ~540 chars).
-export const MAX_CHUNKS = 6;
+export const MAX_CHUNKS = 4;
 export const HISTORY_TURNS = 10;
 
 /**
@@ -34,6 +34,22 @@ export interface RetrievedChunk {
   id: string;
   score: number;
   metadata?: Record<string, unknown>;
+}
+
+/**
+ * Ordered stage ids for retrieval evals (dense Vectorize candidates, post-rerank window, final chunks).
+ * Filled only when `retrieveChunks` is called with `{ accumulate }`; production calls omit it.
+ */
+export interface RetrievalDiagnostics {
+  /** All Vectorize matches in dense score order (size = RAG_RERANK_CANDIDATES or TOP_K). */
+  denseIdsOrdered: string[];
+  /** First k dense ids (same order as Vectorize). */
+  denseTopKIds: number;
+  denseTopIds: string[];
+  /** Up to MAX_CHUNKS ids after rerank when enabled; otherwise same as dense-filtered top. */
+  postRerankIds: string[];
+  /** Ids passed to generation (after threshold / merge), up to MAX_CHUNKS. */
+  finalChunkIds: string[];
 }
 
 export interface VectorizeMatch {
@@ -102,13 +118,47 @@ export function filterChunks(matches: VectorizeMatch[], threshold: number, cap: 
     .map((match) => ({ id: match.id, score: match.score, metadata: match.metadata }));
 }
 
-export async function retrieveChunks(question: string, env: RagEnv): Promise<RetrievedChunk[]> {
+function pushDiagnostics(
+  sink: RetrievalDiagnostics[] | undefined,
+  row: Pick<RetrievalDiagnostics, "denseIdsOrdered" | "postRerankIds" | "finalChunkIds"> & { denseTopKIds?: number },
+): void {
+  if (!sink) return;
+  const denseTopKIds = row.denseTopKIds ?? 5;
+  sink.push({
+    denseIdsOrdered: row.denseIdsOrdered,
+    denseTopKIds,
+    denseTopIds: row.denseIdsOrdered.slice(0, denseTopKIds),
+    postRerankIds: row.postRerankIds,
+    finalChunkIds: row.finalChunkIds,
+  });
+}
+
+export interface RetrieveChunksOptions {
+  /** When set, append one diagnostic row per retrieveChunks invocation (eval / telemetry hook). */
+  accumulate?: RetrievalDiagnostics[];
+}
+
+export async function retrieveChunks(
+  question: string,
+  env: RagEnv,
+  opts?: RetrieveChunksOptions,
+): Promise<RetrievedChunk[]> {
+  const accumulate = opts?.accumulate;
   const threshold = defaultThreshold(env.SIMILARITY_THRESHOLD);
   const vector = await embedQuestion(question, env);
   const rerankModel = (env.RAG_RERANK_MODEL ?? "").trim() || null;
   if (!rerankModel) {
     const matches = await queryIndex(vector, env);
-    return filterChunks(matches, threshold, MAX_CHUNKS);
+    const denseIdsOrdered = matches.map((m) => m.id);
+    const filtered = filterChunks(matches, threshold, MAX_CHUNKS);
+    const finalChunkIds = filtered.map((c) => c.id);
+    pushDiagnostics(accumulate, {
+      denseIdsOrdered,
+      denseTopKIds: Math.min(5, denseIdsOrdered.length),
+      postRerankIds: finalChunkIds,
+      finalChunkIds,
+    });
+    return filtered;
   }
   // Two-stage retrieval: the dense rank stays the round-1 vote and the
   // cross-encoder is the round-2 judge. The dense threshold is not a per-chunk
@@ -120,9 +170,27 @@ export async function retrieveChunks(question: string, env: RagEnv): Promise<Ret
   const parsedCandidates = Number.parseInt(env.RAG_RERANK_CANDIDATES ?? "20", 10);
   const candidates = Number.isFinite(parsedCandidates) && parsedCandidates > 0 ? parsedCandidates : 20;
   const matches = await queryIndex(vector, env, candidates);
-  if (Math.max(...matches.map((m) => m.score), 0) < threshold) return [];
+  const denseIdsOrdered = matches.map((m) => m.id);
+  if (Math.max(...matches.map((m) => m.score), 0) < threshold) {
+    pushDiagnostics(accumulate, {
+      denseIdsOrdered,
+      denseTopKIds: Math.min(5, denseIdsOrdered.length),
+      postRerankIds: [],
+      finalChunkIds: [],
+    });
+    return [];
+  }
   const ordered = await rerankOrder(question, matches, rerankModel, env);
-  return ordered.slice(0, MAX_CHUNKS).map((match) => ({ id: match.id, score: match.score, metadata: match.metadata }));
+  const postRerankSlice = ordered.slice(0, MAX_CHUNKS);
+  const postRerankIds = postRerankSlice.map((m) => m.id);
+  const finalChunkIds = postRerankIds;
+  pushDiagnostics(accumulate, {
+    denseIdsOrdered,
+    denseTopKIds: Math.min(5, denseIdsOrdered.length),
+    postRerankIds,
+    finalChunkIds,
+  });
+  return postRerankSlice.map((match) => ({ id: match.id, score: match.score, metadata: match.metadata }));
 }
 
 /**
