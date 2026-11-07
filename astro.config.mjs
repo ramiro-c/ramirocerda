@@ -11,6 +11,13 @@ export default defineConfig({
       [rehypeExternalLinks, { rel: ["noopener", "noreferrer"], target: "_blank" }],
     ],
   },
+  // Renamed or retired project pages keep their old URLs working.
+  redirects: {
+    "/work/agent-general": "/work/ldp-copilot",
+    "/en/work/agent-general": "/en/work/ldp-copilot",
+    "/work/agent-scout": "/work/ldp-copilot",
+    "/en/work/agent-scout": "/en/work/ldp-copilot",
+  },
   integrations: [
     sitemap({
       i18n: {

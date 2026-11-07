@@ -845,6 +845,230 @@
         "offerContact": true,
         "unanswerableKind": "out_of_kb"
       }
+    },
+    {
+      "id": "pc-es-productos",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Qué productos hizo?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedFacts": ["Avellana", "Kano", "LactarIA", "Libro de Pases"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-es-clientes",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Y sus clientes?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedFacts": ["Kano", "Avellana"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-es-con-quien",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Con qué empresas trabajó?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedFacts": ["Kano", "Avellana"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-es-kano",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Qué hizo para Kano Studio?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-kano-studio"],
+        "expectedFacts": ["sistema de diseño", "SEO", "accesibilidad"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-es-avellana",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Qué es Avellana?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-avellana"],
+        "expectedFacts": ["Avellaneda"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-en-clients",
+      "category": "kb",
+      "lang": "en",
+      "message": "Who has he worked with?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedFacts": ["Kano", "Avellana"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-en-products",
+      "category": "kb",
+      "lang": "en",
+      "message": "What products has he shipped?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedFacts": ["Avellana", "LactarIA", "Libro de Pases"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-es-servicios",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Qué tipo de proyectos hace?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-servicios"],
+        "expectedFacts": ["web", "móvil", "agentes"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-es-copilot",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Qué es LDP Copilot?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-ldp-copilot"],
+        "expectedFacts": ["sub-agentes", "Google ADK"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "pc-en-copilot-evals",
+      "category": "kb",
+      "lang": "en",
+      "message": "How does he evaluate LDP Copilot?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-ldp-copilot", "project-en-ldp-copilot"],
+        "expectedFacts": ["49", "judge"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "cv-es-logro",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Cuál es su logro técnico más importante?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-caso-insignia-en-ldp-motor-de-busqueda"],
+        "expectedFacts": ["61", "1,3", "búsqueda"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "cv-en-search-perf",
+      "category": "kb",
+      "lang": "en",
+      "message": "How much faster did he make the player search?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-caso-insignia-en-ldp-motor-de-busqueda"],
+        "expectedFacts": ["61", "1.3", "1,3"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "cv-es-lactaria",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Qué resultados tuvo el piloto de LactarIA?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-lactaria-resultados-del-piloto"],
+        "expectedFacts": ["77", "100%", "22"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "cv-en-remote",
+      "category": "kb",
+      "lang": "en",
+      "message": "Does he work remotely?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-overview"],
+        "expectedFacts": ["remote", "GMT-3"],
+        "offerContact": null
+      }
+    },
+    {
+      "id": "cv-es-oportunidades",
+      "category": "hire",
+      "lang": "es",
+      "message": "¿Está abierto a nuevas oportunidades?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-overview"],
+        "expectedFacts": ["abierto", "oportunidades"],
+        "offerContact": true
+      }
+    },
+    {
+      "id": "cv-es-marketplace",
+      "category": "kb",
+      "lang": "es",
+      "message": "¿Qué hizo en el marketplace de transferencias?",
+      "expected": {
+        "route": "search",
+        "retrieve": true,
+        "answerable": true,
+        "expectedChunks": ["kb-otras-funcionalidades-y-logros-en-ldp"],
+        "expectedFacts": ["ofertas", "contrato"],
+        "offerContact": null
+      }
     }
   ]
 }
