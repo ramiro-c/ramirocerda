@@ -174,10 +174,10 @@ export const landing: Record<Lang, LandingCopy> = {
             "Muestra grupos, fixture en tu huso horario, cuadro eliminatorio, mapa de sedes y guía de TV por país. Cruza datos históricos entre selecciones. Está online.",
         },
         {
-          id: "agent-general",
-          href: "/work/agent-general/",
+          id: "ldp-copilot",
+          href: "/work/ldp-copilot/",
           label: "IA en producción",
-          title: "Agent General, asistente de producto",
+          title: "LDP Copilot, asistente de producto",
           result:
             "Un agente raíz reparte el trabajo entre subagentes de dominio y responde con los permisos de cada usuario. Lo evalúo con casos reales, sin un modelo que haga de juez.",
         },
@@ -333,10 +333,10 @@ export const landing: Record<Lang, LandingCopy> = {
             "It shows groups, fixtures in your time zone, the knockout bracket, a venue map, and a TV guide by country. It cross references historical data between teams. It is live.",
         },
         {
-          id: "agent-general",
-          href: "/en/work/agent-general/",
+          id: "ldp-copilot",
+          href: "/en/work/ldp-copilot/",
           label: "AI in production",
-          title: "Agent General, product assistant",
+          title: "LDP Copilot, product assistant",
           result:
             "A root agent splits the work across domain sub agents and answers with each user's permissions. I evaluate it on real cases, with no model acting as judge.",
         },
