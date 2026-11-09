@@ -10,7 +10,7 @@
  *   pnpm eval:judges       (evals/judge-check.ts) REAL Jev stage judges on FIXTURES, no credentials
  *
  * Options: --cases <path> (default evals/cases.json), --only <id-substring>,
- *          --prompt <id> (generation prompt variant from src/prompts.ts PROMPTS, default v0),
+ *          --prompt <id> (generation prompt variant from src/prompts.ts PROMPTS, default v1),
  *          --pipelines linear,adaptive, --no-judge (skip the faithfulness eval, the
  *          only judge that spends generation tokens), --out <dir> (default evals/results).
  *
@@ -94,7 +94,7 @@ async function main(): Promise<void> {
   const only = arg("only");
   const pipelines = (arg("pipelines") ?? "linear,adaptive").split(",") as PipelineName[];
   const outDir = arg("out") ?? path.join(EVAL_DIR, "results");
-  const promptId = arg("prompt") ?? "v0";
+  const promptId = arg("prompt") ?? "v1";
   if (!isPromptId(promptId)) throw new Error(`Unknown --prompt ${promptId}; one of ${Object.keys(PROMPTS).join(", ")}`);
   const prompt = PROMPTS[promptId];
 

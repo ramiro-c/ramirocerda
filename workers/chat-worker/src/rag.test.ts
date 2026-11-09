@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { PROMPTS } from "./prompts";
+import { PROMPT } from "./prompts";
 
 import {
   buildRagPrompt,
@@ -218,7 +218,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
   it("injects the last 10 history turns when more are provided (R6)", () => {
     const history = Array.from({ length: 12 }, (_, i) => turn(i % 2 === 0 ? "user" : "assistant", i));
     const messages = buildRagPrompt({
-      prompt: PROMPTS.v0,
+      prompt: PROMPT,
       chunks: [match(0.6)],
       language: "es",
       history,
@@ -232,7 +232,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
   it("includes all turns when fewer than 10 exist (R6)", () => {
     const history = [turn("user", 1), turn("assistant", 2), turn("user", 3)];
     const messages = buildRagPrompt({
-      prompt: PROMPTS.v0,
+      prompt: PROMPT,
       chunks: [match(0.6)],
       language: "es",
       history,
@@ -247,28 +247,28 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
       metadata: { section: "Experiencia", text: "En LDP trabaja como Tech Lead hands-on." },
     };
     const messages = buildRagPrompt({
-      prompt: PROMPTS.v0,
+      prompt: PROMPT,
       chunks: [chunk],
       language: "en",
       message: "Where do you work?",
     });
     const system = messages[0].content;
     expect(system).toContain("En LDP trabaja como Tech Lead hands-on.");
-    expect(system).toContain("=== CONTEXTO RECUPERADO");
-    expect(system).toContain("basate EXCLUSIVAMENTE en el CONTEXTO RECUPERADO");
+    expect(system).toContain("<contexto>");
+    expect(system).toContain("cada dato sale de ahí");
   });
 
   it("adds the firm language instruction (R4, D7)", () => {
-    const es = buildRagPrompt({ prompt: PROMPTS.v0, chunks: [match(0.6)], language: "es", message: "hola" })[0].content;
-    const en = buildRagPrompt({ prompt: PROMPTS.v0, chunks: [match(0.6)], language: "en", message: "hi" })[0].content;
-    expect(es).toContain("IDIOMA OBLIGATORIO (regla firme, no opcional)");
+    const es = buildRagPrompt({ prompt: PROMPT, chunks: [match(0.6)], language: "es", message: "hola" })[0].content;
+    const en = buildRagPrompt({ prompt: PROMPT, chunks: [match(0.6)], language: "en", message: "hi" })[0].content;
+    expect(es).toContain("Respondé en español rioplatense");
     expect(es).toContain("español rioplatense");
-    expect(en).toContain("MANDATORY LANGUAGE RULE (firm, not optional)");
+    expect(en).toContain("Reply in English");
     expect(en).toContain("English");
   });
 
   it("keeps the identity prompt first and the question last", () => {
-    const messages = buildRagPrompt({ prompt: PROMPTS.v0, chunks: [], language: "es", message: "¿Quién sos?" });
+    const messages = buildRagPrompt({ prompt: PROMPT, chunks: [], language: "es", message: "¿Quién sos?" });
     expect(messages[0].role).toBe("system");
     expect(messages[0].content.startsWith("Sos Botardo")).toBe(true);
     expect(messages[messages.length - 1]).toEqual({ role: "user", content: "¿Quién sos?" });
@@ -276,15 +276,15 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
 
   it("marks empty retrieval and keeps the no-invent guardrail (R2/R8)", () => {
     const messages = buildRagPrompt({
-      prompt: PROMPTS.v0,
+      prompt: PROMPT,
       chunks: [],
       language: "es",
       message: "contame un chiste",
     });
     const system = messages[0].content;
     expect(system).toContain("(sin contexto recuperado)");
-    expect(system).toContain("basate EXCLUSIVAMENTE en el CONTEXTO RECUPERADO");
-    expect(system).toContain("Si la respuesta no está en el contexto, decilo con naturalidad");
+    expect(system).toContain("cada dato sale de ahí");
+    expect(system).toContain("decí con naturalidad que de eso no tenés el dato");
   });
 
   it("labels note chunks with their published route so Botardo can link it", () => {
@@ -300,7 +300,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
       },
     };
     const system = buildRagPrompt({
-      prompt: PROMPTS.v0,
+      prompt: PROMPT,
       chunks: [chunk],
       language: "es",
       message: "¿qué onda factory engineering?",
@@ -311,7 +311,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
 
   it("omits the note label for chunks that are not a note", () => {
     const messages = buildRagPrompt({
-      prompt: PROMPTS.v0,
+      prompt: PROMPT,
       chunks: [match(0.6)],
       language: "es",
       message: "¿Quién sos?",
@@ -330,7 +330,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
       },
     };
     const system = buildRagPrompt({
-      prompt: PROMPTS.v0,
+      prompt: PROMPT,
       chunks: [chunk],
       language: "es",
       message: "¿qué onda factory engineering?",

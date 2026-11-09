@@ -15,7 +15,7 @@
  * Usage:
  *   pnpm --filter ramirocerda-chat-worker eval:gen-bench
  *   ... eval:gen-bench -- --dry-run      (no key, no calls: prints the prompts it would send)
- *   ... eval:gen-bench -- --prompt v1    (prompt variant from src/prompts.ts PROMPTS, default v0)
+ *   ... eval:gen-bench -- --prompt v1    (prompt variant from src/prompts.ts PROMPTS, default v1)
  *   ... eval:gen-bench -- --models "deepseek-v4.1-flash,deepseek-v4.1-flash@low" --cases 4 --runs 2 --judge
  * A candidate is `model` or `model@reasoning_effort`; the effort is sent verbatim as
  * `reasoning_effort` (omitted for plain `model`), since each provider names its levels.
@@ -200,7 +200,7 @@ async function main() {
   const runs = Number.parseInt(arg("runs") ?? "1", 10) || 1;
   const maxCases = Number.parseInt(arg("cases") ?? "6", 10) || 6;
   const judge = process.argv.includes("--judge");
-  const promptId = arg("prompt") ?? "v0";
+  const promptId = arg("prompt") ?? "v1";
   if (!isPromptId(promptId)) throw new Error(`Unknown --prompt ${promptId}; one of ${Object.keys(PROMPTS).join(", ")}`);
 
   const kb: Array<{ id: string; text: string; metadata?: Record<string, unknown> }> = await loadKBChunks(ROOT_DIR);
