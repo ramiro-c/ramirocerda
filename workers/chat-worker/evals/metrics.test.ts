@@ -409,6 +409,43 @@ describe("replyStyle", () => {
   it("flags a reply in a language other than the visitor's", () => {
     expect(replyStyle("Ramiro is a full-stack engineer and he works at LDP.", "es").wrongLanguage).toBe(true);
     expect(replyStyle("Ramiro is a full-stack engineer and he works at LDP.", "en").wrongLanguage).toBe(false);
+    expect(replyStyle("Ramiro es Full-Stack Engineer y trabaja en LDP como Tech Lead.", "en").wrongLanguage).toBe(true);
+  });
+
+  // Real v1 eval replies the first detector flagged: product and course names are not the reply's language.
+  it("does not count product and course names as the other language", () => {
+    expect(
+      replyStyle("Botardo uses **bge-m3** from Workers AI to turn questions into embeddings.", "en").wrongLanguage,
+    ).toBe(false);
+    expect(
+      replyStyle(
+        "Ramiro completed 10 Google Cloud AI Agents certifications in two batches: four in June 2026 and six in July 2026.",
+        "en",
+      ).wrongLanguage,
+    ).toBe(false);
+    expect(
+      replyStyle(
+        "Ramiro completó el recorrido de **Google Cloud en AI Agents**, con 10 certificaciones oficiales:\n\n- **Junio 2026:** Engineer AI Agents with Agent Development Kit (ADK), Optimize Agent Behavior, Add Agent Capabilities With Tools y Manage Agent Memory and State.",
+        "es",
+      ).wrongLanguage,
+    ).toBe(false);
+    expect(
+      replyStyle(
+        "LDP Copilot es el asistente con IA que Ramiro construyó para Libro de Pases. [Mirá el proyecto](https://ramirocerda.com.ar/work/ldp-copilot).",
+        "es",
+      ).wrongLanguage,
+    ).toBe(false);
+  });
+
+  it("flags saying a detail is missing from the source in English", () => {
+    expect(
+      replyStyle("The predictor’s accuracy isn’t specified. It’s a multiclass XGBoost model.", "en").mechanism,
+    ).toBe(true);
+    expect(replyStyle("His salary is not mentioned.", "en").mechanism).toBe(true);
+    expect(replyStyle("La precisión del modelo no se especifica.", "es").mechanism).toBe(true);
+    expect(replyStyle("I don't have the predictor's accuracy. It's a multiclass XGBoost model.", "en").mechanism).toBe(
+      false,
+    );
   });
 });
 
