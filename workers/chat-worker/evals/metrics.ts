@@ -3,7 +3,7 @@
  */
 
 import type { Counters } from "./backends";
-import { detectLanguage, type Language } from "../src/language";
+import type { Language } from "../src/language";
 import { MAX_CHUNKS, type RetrievalDiagnostics } from "../src/rag";
 import type { ClaimCheck } from "./stage-judges";
 
@@ -117,7 +117,39 @@ export function factHit(expectedFacts: string[], reply: string | null): boolean 
 
 // Phrases that expose the retrieval mechanism instead of answering as someone who knows the profile.
 const MECHANISM =
-  /\b(en el contexto|el contexto (proporcionado|recuperado)|knowledge base|base de conocimiento|no se menciona|seg[uú]n (los|la) (datos|informaci[oó]n)|informaci[oó]n (que tengo|disponible|proporcionada)|datos disponibles|(in|from) the (provided )?context|provided context|information (i have|provided|available)|is not mentioned)\b/i;
+  /\b(en el contexto|el contexto (proporcionado|recuperado)|knowledge base|base de conocimiento|no se menciona|seg[uú]n (los|la) (datos|informaci[oó]n)|informaci[oó]n (que tengo|disponible|proporcionada)|datos disponibles|(in|from) the (provided )?context|provided context|information (i have|provided|available)|(is|are|isn['’]t|aren['’]t) not (mentioned|specified|listed)|(isn['’]t|aren['’]t) (mentioned|specified|listed)|no se especifica|no est[aá] especificad[oa])\b/i;
+
+// Function words: they carry the reply's language, while names (bge-m3, Workers AI, course titles) do not.
+// detectLanguage() in src/language.ts is tuned for short visitor questions, not for answers full of names.
+const ES_WORDS = new Set(
+  "el la los las del de que y en es son un una unos con por para se su sus como más pero también lo al le les está están fue tiene hay sobre desde entre".split(
+    " ",
+  ),
+);
+const EN_WORDS = new Set(
+  "the an of and to in is are was were with for on that this it its his he by from as at but also into has have uses which".split(
+    " ",
+  ),
+);
+
+/** Language of a generated reply, ignoring links, code, bold names and Title Case runs; null when it has no signal. */
+export function replyLanguage(reply: string): Language | null {
+  const prose = reply
+    .replace(/\]\([^)]*\)/g, "]")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/\*\*[^*]*\*\*/g, " ")
+    // Runs of capitalised words joined by any word: "Agent Development Kit", "Add Agent Capabilities With Tools".
+    .replace(/\b[A-Z][\w-]*(?:\s+(?:[A-Z][\w-]*|with|and|of|for|to|the|your|in))*\s+[A-Z][\w-]*/g, " ");
+  let es = 0;
+  let en = 0;
+  for (const word of prose.toLowerCase().match(/[a-záéíóúñü]+/g) ?? []) {
+    if (ES_WORDS.has(word)) es++;
+    if (EN_WORDS.has(word)) en++;
+  }
+  if (es === en) return null;
+  return es > en ? "es" : "en";
+}
 // Ramiro's profile in first person. Botardo introducing itself ("Soy Botardo") is the allowed first person.
 const FIRST_PERSON =
   /\b(soy (?!botardo)(un |una )?(tech lead|full-?stack|desarroll|ingenier|engineer|dev)|he trabajado|mi (stack|experiencia|trabajo)|i'?m (?!botardo)(a |an )?(tech lead|full-?stack|developer|engineer)|i am (?!botardo)(a |an )?(tech lead|full-?stack|developer|engineer)|i have worked|i'?ve worked|my (stack|experience))/i;
@@ -140,7 +172,7 @@ export function replyStyle(reply: string, lang: Language): ReplyStyle {
     mechanism: MECHANISM.test(reply),
     tuteo: lang === "es" && TUTEO.test(reply),
     firstPerson: FIRST_PERSON.test(reply),
-    wrongLanguage: detectLanguage(reply) !== lang,
+    wrongLanguage: (replyLanguage(reply) ?? lang) !== lang,
     words: reply.split(/\s+/).filter(Boolean).length,
   };
 }
