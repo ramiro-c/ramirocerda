@@ -8,6 +8,7 @@
  */
 
 import type { Language } from "./language";
+import type { PromptSet } from "./prompts";
 
 // 6 measured, not guessed: 9 of 28 eval cases missed their expected chunk and,
 // with the ranking unchanged, widening the window recovers three of them
@@ -253,17 +254,6 @@ async function rerankOrder(
   }
 }
 
-const LANG_INSTRUCTIONS: Record<Language, string> = {
-  es: "IDIOMA OBLIGATORIO (regla firme, no opcional): respondé SOLO en español rioplatense, con voseo y tono cercano. No mezcles idiomas.",
-  en: "MANDATORY LANGUAGE RULE (firm, not optional): reply ONLY in English, clear and professional. Refer to Ramiro in third person. Do not mix languages.",
-};
-
-/**
- * Assemble the messages array for generation:
- * system = identity prompt + retrieved chunks (the only factual context) +
- * firm language instruction; then the last HISTORY_TURNS turns of history;
- * then the visitor's message (design R2/R3/R4/R6).
- */
 /**
  * Renders one retrieved chunk as a labeled block. Note chunks carry their
  * published route, so Botardo can send the visitor to the full note instead of
@@ -281,31 +271,27 @@ function chunkHeader(chunk: RetrievedChunk, index: number, siteOrigin?: string):
   return `${parts.join(" — ")}]`;
 }
 
+/**
+ * Assemble the messages array for generation: the prompt variant's system
+ * message around the retrieved chunks (the only factual context), then the last
+ * HISTORY_TURNS turns of history, then the visitor's message (design R2/R3/R4/R6).
+ */
 export function buildRagPrompt(opts: {
-  identityPrompt: string;
+  prompt: PromptSet;
   chunks: RetrievedChunk[];
   language: Language;
   history?: Array<{ role: "user" | "assistant"; content: string }>;
   message: string;
   siteOrigin?: string;
 }): ChatMessage[] {
-  const { identityPrompt, chunks, language, history = [], message, siteOrigin } = opts;
+  const { prompt, chunks, language, history = [], message, siteOrigin } = opts;
 
   const contextText =
     chunks.length === 0
       ? "(sin contexto recuperado)"
       : chunks.map((chunk, i) => `${chunkHeader(chunk, i, siteOrigin)}\n${chunk.metadata?.text ?? ""}`).join("\n\n");
 
-  const systemContent = [
-    identityPrompt,
-    "",
-    "=== CONTEXTO RECUPERADO (única fuente de hechos sobre Ramiro) ===",
-    contextText,
-    "=== FIN CONTEXTO ===",
-    "",
-    "REGLAS FIRMES DE CONTEXTO: basate EXCLUSIVAMENTE en el CONTEXTO RECUPERADO. No inventes datos ni uses conocimiento externo sobre Ramiro. Si la respuesta no está en el contexto, decilo con naturalidad.",
-    LANG_INSTRUCTIONS[language],
-  ].join("\n");
+  const systemContent = prompt.rag(contextText, language);
 
   const messages: ChatMessage[] = [{ role: "system", content: systemContent }];
   for (const entry of history.slice(-HISTORY_TURNS)) {

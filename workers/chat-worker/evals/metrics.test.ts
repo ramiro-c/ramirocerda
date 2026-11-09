@@ -8,6 +8,7 @@ import {
   hitAtK,
   markdownTable,
   mrr,
+  replyStyle,
   summarize,
   type CaseResult,
   type EvalCase,
@@ -373,5 +374,76 @@ describe("eval metrics", () => {
       results.map((r) => ({ ...r, pipeline: "linear" })),
     );
     expect(linear.stageRetrieval).toBeNull();
+  });
+});
+
+describe("replyStyle", () => {
+  it("passes a short third-person reply in the visitor's language", () => {
+    expect(replyStyle("Ramiro es Full-Stack Engineer. En LDP trabaja como Tech Lead hands-on.", "es")).toEqual({
+      mechanism: false,
+      tuteo: false,
+      firstPerson: false,
+      wrongLanguage: false,
+      words: 11,
+    });
+  });
+
+  it("flags talk about the retrieval mechanism", () => {
+    expect(replyStyle("Según los datos disponibles, Ramiro trabaja en LDP.", "es").mechanism).toBe(true);
+    expect(replyStyle("No se menciona en el contexto.", "es").mechanism).toBe(true);
+    expect(replyStyle("The provided context does not say.", "en").mechanism).toBe(true);
+  });
+
+  it("flags speaking as Ramiro but not Botardo introducing itself", () => {
+    expect(replyStyle("Soy Tech Lead en LDP y he trabajado con React.", "es").firstPerson).toBe(true);
+    expect(replyStyle("I'm a full-stack engineer with React experience.", "en").firstPerson).toBe(true);
+    expect(replyStyle("Soy Botardo, el asistente de la web de Ramiro.", "es").firstPerson).toBe(false);
+    expect(replyStyle("I'm Botardo, Ramiro's assistant.", "en").firstPerson).toBe(false);
+  });
+
+  it("flags tuteo in Spanish replies only", () => {
+    expect(replyStyle("Si quieres, puedes ver la nota.", "es").tuteo).toBe(true);
+    expect(replyStyle("Si querés, podés ver la nota.", "es").tuteo).toBe(false);
+  });
+
+  it("flags a reply in a language other than the visitor's", () => {
+    expect(replyStyle("Ramiro is a full-stack engineer and he works at LDP.", "es").wrongLanguage).toBe(true);
+    expect(replyStyle("Ramiro is a full-stack engineer and he works at LDP.", "en").wrongLanguage).toBe(false);
+  });
+});
+
+describe("summarize style", () => {
+  const kase: EvalCase = {
+    id: "s1",
+    category: "kb",
+    lang: "es",
+    message: "¿Dónde trabaja?",
+    expected: { route: "search", retrieve: true, answerable: true, offerContact: false },
+  };
+  const base: CaseResult = {
+    caseId: "s1",
+    pipeline: "adaptive",
+    route: "search",
+    routeVia: "llm",
+    offerContact: false,
+    searched: true,
+    chunkIds: [],
+    replyKind: "generated",
+    reply: "Según los datos disponibles, Ramiro trabaja en LDP.",
+    abstained: null,
+    faithful: null,
+    latencyMs: 1,
+    counters: zeroCounters(),
+  };
+
+  it("grades generated replies only and reports the issue rates", () => {
+    const s = summarize(
+      "adaptive",
+      [kase, { ...kase, id: "s2" }],
+      [base, { ...base, caseId: "s2", replyKind: "no_info" }],
+    );
+    expect(s.style.mechanism).toEqual({ hits: 1, total: 1 });
+    expect(s.style.firstPerson).toEqual({ hits: 0, total: 1 });
+    expect(s.style.words.p50).toBe(8);
   });
 });

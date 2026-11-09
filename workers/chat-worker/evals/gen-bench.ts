@@ -15,6 +15,7 @@
  * Usage:
  *   pnpm --filter ramirocerda-chat-worker eval:gen-bench
  *   ... eval:gen-bench -- --dry-run      (no key, no calls: prints the prompts it would send)
+ *   ... eval:gen-bench -- --prompt v1    (prompt variant from src/prompts.ts PROMPTS, default v1)
  *   ... eval:gen-bench -- --models "deepseek-v4.1-flash,deepseek-v4.1-flash@low" --cases 4 --runs 2 --judge
  * A candidate is `model` or `model@reasoning_effort`; the effort is sent verbatim as
  * `reasoning_effort` (omitted for plain `model`), since each provider names its levels.
@@ -26,7 +27,7 @@ import { fileURLToPath } from "node:url";
 
 import { parseSseLines } from "../src/generate";
 import { detectLanguage } from "../src/language";
-import { IDENTITY_PROMPT } from "../src/prompts";
+import { isPromptId, PROMPTS } from "../src/prompts";
 import { buildRagPrompt, type ChatMessage, type RetrievedChunk } from "../src/rag";
 import { loadLocalSecrets } from "./env";
 import { answerFaithful, claimSnippets, evalJudgeConfig, extractClaims, judgeClaims } from "./stage-judges";
@@ -199,6 +200,8 @@ async function main() {
   const runs = Number.parseInt(arg("runs") ?? "1", 10) || 1;
   const maxCases = Number.parseInt(arg("cases") ?? "6", 10) || 6;
   const judge = process.argv.includes("--judge");
+  const promptId = arg("prompt") ?? "v1";
+  if (!isPromptId(promptId)) throw new Error(`Unknown --prompt ${promptId}; one of ${Object.keys(PROMPTS).join(", ")}`);
 
   const kb: Array<{ id: string; text: string; metadata?: Record<string, unknown> }> = await loadKBChunks(ROOT_DIR);
   const cases = (JSON.parse(readFileSync(path.join(EVAL_DIR, "cases.json"), "utf8")).cases as Array<any>)
@@ -211,7 +214,7 @@ async function main() {
         .filter((k) => (c.expected.expectedChunks as string[]).some((prefix) => k.id.startsWith(prefix)))
         .map((k) => ({ id: k.id, score: 1, metadata: { ...k.metadata, text: k.text } }));
       const messages = buildRagPrompt({
-        identityPrompt: IDENTITY_PROMPT,
+        prompt: PROMPTS[promptId],
         chunks,
         language: detectLanguage(c.message),
         message: c.message,
@@ -294,7 +297,10 @@ async function main() {
   }
   mkdirSync(path.join(EVAL_DIR, "results"), { recursive: true });
   const out = path.join(EVAL_DIR, "results", `gen-bench-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
-  writeFileSync(out, JSON.stringify({ endpoint, runs, cases: cases.map((c) => c.id), results }, null, 2));
+  writeFileSync(
+    out,
+    JSON.stringify({ endpoint, prompt: promptId, runs, cases: cases.map((c) => c.id), results }, null, 2),
+  );
   console.log(`\nRespuestas guardadas en ${path.relative(process.cwd(), out)}`);
 }
 

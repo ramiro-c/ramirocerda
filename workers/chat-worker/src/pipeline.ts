@@ -24,7 +24,7 @@
 import { readAdaptiveConfig, type AdaptiveEnvVars } from "./config";
 import { generateReply, generateReplyStream, type GenerateResult } from "./generate";
 import { detectLanguage, type Language } from "./language";
-import { IDENTITY_PROMPT, NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
+import { NO_INFO_REPLY, OFF_TOPIC_REPLY, PROMPT, type PromptSet } from "./prompts";
 import {
   buildRagPrompt,
   HISTORY_TURNS,
@@ -108,8 +108,8 @@ export interface PipelineOutcome {
 
 export type PipelineLogger = (event: string, data?: Record<string, unknown>) => void;
 
-function smalltalkMessages(history: HistoryTurn[] | undefined, message: string): ChatMessage[] {
-  const messages: ChatMessage[] = [{ role: "system", content: `${IDENTITY_PROMPT}\n\n${SMALLTALK_INSTRUCTION}` }];
+function smalltalkMessages(prompt: PromptSet, history: HistoryTurn[] | undefined, message: string): ChatMessage[] {
+  const messages: ChatMessage[] = [{ role: "system", content: prompt.smalltalk }];
   for (const entry of (history ?? []).slice(-HISTORY_TURNS))
     messages.push({ role: entry.role, content: entry.content });
   messages.push({ role: "user", content: message });
@@ -128,8 +128,10 @@ export async function runAdaptivePipeline(opts: {
   onRouted?: (decision: RouteDecision) => void;
   /** When set, generation streams (`stream: true`) and every content delta is handed here. */
   onDelta?: (text: string) => void;
+  /** Prompt variant; defaults to the production PROMPT. Evals pass others to compare. */
+  prompt?: PromptSet;
 }): Promise<PipelineOutcome> {
-  const { message, history, env, sessionId, onDelta } = opts;
+  const { message, history, env, sessionId, onDelta, prompt = PROMPT } = opts;
   const log: PipelineLogger = opts.log ?? (() => {});
   const config = readAdaptiveConfig(env);
   const lang = detectLanguage(message);
@@ -226,7 +228,7 @@ export async function runAdaptivePipeline(opts: {
     return { ...base, outcome: { kind: "off_topic", reply: OFF_TOPIC_REPLY[lang] } };
   }
   if (decision.route === "smalltalk") {
-    const { result, generationMs } = await generate(smalltalkMessages(history, message));
+    const { result, generationMs } = await generate(smalltalkMessages(prompt, history, message));
     return { ...base, generationMs, outcome: { kind: "generated", result } };
   }
 
@@ -305,7 +307,7 @@ export async function runAdaptivePipeline(opts: {
   }
 
   const messages = buildRagPrompt({
-    identityPrompt: IDENTITY_PROMPT,
+    prompt,
     chunks,
     language: lang,
     history,

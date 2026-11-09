@@ -12,7 +12,7 @@
 import { generateReply, type GenerateResult } from "../src/generate";
 import { detectLanguage, type Language } from "../src/language";
 import { DEFAULT_SITE_ORIGIN, type PipelineEnv } from "../src/pipeline";
-import { IDENTITY_PROMPT, NO_INFO_REPLY } from "../src/prompts";
+import { NO_INFO_REPLY, PROMPT, type PromptSet } from "../src/prompts";
 import { buildRagPrompt, type RetrievedChunk } from "../src/rag";
 
 const LINEAR_MAX_CHUNKS = 4;
@@ -47,15 +47,16 @@ export async function runLinearPipeline(opts: {
   history: Array<{ role: "user" | "assistant"; content: string }> | undefined;
   env: PipelineEnv;
   sessionId: string;
+  prompt?: PromptSet;
 }): Promise<LinearOutcome> {
-  const { message, history, env, sessionId } = opts;
+  const { message, history, env, sessionId, prompt = PROMPT } = opts;
   const lang = detectLanguage(message);
   const chunks = await linearRetrieve(message, env);
   if (chunks.length === 0) {
     return { lang, chunks, outcome: { kind: "no_info", reply: NO_INFO_REPLY[lang] } };
   }
   const messages = buildRagPrompt({
-    identityPrompt: IDENTITY_PROMPT,
+    prompt,
     chunks,
     language: lang,
     history,
