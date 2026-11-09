@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { PROMPTS } from "./prompts";
+
 import {
   buildRagPrompt,
   DEFAULT_RAG_RERANK_MODEL,
@@ -9,8 +11,6 @@ import {
   retrieveChunks,
   type VectorizeMatch,
 } from "./rag";
-
-const IDENTITY = "Sos Botardo, el asistente virtual de la web personal de Ramiro Cerdá.";
 
 function match(score: number, id = `kb-${score}`): VectorizeMatch {
   return { id, score, metadata: { section: "Overview", source: "knowledge-base", idx: 0, text: `texto de ${id}` } };
@@ -218,7 +218,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
   it("injects the last 10 history turns when more are provided (R6)", () => {
     const history = Array.from({ length: 12 }, (_, i) => turn(i % 2 === 0 ? "user" : "assistant", i));
     const messages = buildRagPrompt({
-      identityPrompt: IDENTITY,
+      prompt: PROMPTS.v0,
       chunks: [match(0.6)],
       language: "es",
       history,
@@ -232,7 +232,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
   it("includes all turns when fewer than 10 exist (R6)", () => {
     const history = [turn("user", 1), turn("assistant", 2), turn("user", 3)];
     const messages = buildRagPrompt({
-      identityPrompt: IDENTITY,
+      prompt: PROMPTS.v0,
       chunks: [match(0.6)],
       language: "es",
       history,
@@ -247,7 +247,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
       metadata: { section: "Experiencia", text: "En LDP trabaja como Tech Lead hands-on." },
     };
     const messages = buildRagPrompt({
-      identityPrompt: IDENTITY,
+      prompt: PROMPTS.v0,
       chunks: [chunk],
       language: "en",
       message: "Where do you work?",
@@ -259,10 +259,8 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
   });
 
   it("adds the firm language instruction (R4, D7)", () => {
-    const es = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "es", message: "hola" })[0]
-      .content;
-    const en = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [match(0.6)], language: "en", message: "hi" })[0]
-      .content;
+    const es = buildRagPrompt({ prompt: PROMPTS.v0, chunks: [match(0.6)], language: "es", message: "hola" })[0].content;
+    const en = buildRagPrompt({ prompt: PROMPTS.v0, chunks: [match(0.6)], language: "en", message: "hi" })[0].content;
     expect(es).toContain("IDIOMA OBLIGATORIO (regla firme, no opcional)");
     expect(es).toContain("español rioplatense");
     expect(en).toContain("MANDATORY LANGUAGE RULE (firm, not optional)");
@@ -270,7 +268,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
   });
 
   it("keeps the identity prompt first and the question last", () => {
-    const messages = buildRagPrompt({ identityPrompt: IDENTITY, chunks: [], language: "es", message: "¿Quién sos?" });
+    const messages = buildRagPrompt({ prompt: PROMPTS.v0, chunks: [], language: "es", message: "¿Quién sos?" });
     expect(messages[0].role).toBe("system");
     expect(messages[0].content.startsWith("Sos Botardo")).toBe(true);
     expect(messages[messages.length - 1]).toEqual({ role: "user", content: "¿Quién sos?" });
@@ -278,7 +276,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
 
   it("marks empty retrieval and keeps the no-invent guardrail (R2/R8)", () => {
     const messages = buildRagPrompt({
-      identityPrompt: IDENTITY,
+      prompt: PROMPTS.v0,
       chunks: [],
       language: "es",
       message: "contame un chiste",
@@ -302,7 +300,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
       },
     };
     const system = buildRagPrompt({
-      identityPrompt: IDENTITY,
+      prompt: PROMPTS.v0,
       chunks: [chunk],
       language: "es",
       message: "¿qué onda factory engineering?",
@@ -313,12 +311,12 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
 
   it("omits the note label for chunks that are not a note", () => {
     const messages = buildRagPrompt({
-      identityPrompt: IDENTITY,
+      prompt: PROMPTS.v0,
       chunks: [match(0.6)],
       language: "es",
       message: "¿Quién sos?",
     });
-    expect(messages[0].content).not.toContain("nota:");
+    expect(messages[0].content).not.toContain("— nota:");
   });
 
   it("renders the note route as an absolute URL when the site origin is known", () => {
@@ -332,7 +330,7 @@ describe("buildRagPrompt (R2/R3/R4/R6)", () => {
       },
     };
     const system = buildRagPrompt({
-      identityPrompt: IDENTITY,
+      prompt: PROMPTS.v0,
       chunks: [chunk],
       language: "es",
       message: "¿qué onda factory engineering?",

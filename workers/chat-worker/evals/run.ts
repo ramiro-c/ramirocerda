@@ -10,6 +10,7 @@
  *   pnpm eval:judges       (evals/judge-check.ts) REAL Jev stage judges on FIXTURES, no credentials
  *
  * Options: --cases <path> (default evals/cases.json), --only <id-substring>,
+ *          --prompt <id> (generation prompt variant from src/prompts.ts PROMPTS, default v0),
  *          --pipelines linear,adaptive, --no-judge (skip the faithfulness eval, the
  *          only judge that spends generation tokens), --out <dir> (default evals/results).
  *
@@ -43,6 +44,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { runAdaptivePipeline, type PipelineEnv } from "../src/pipeline";
+import { isPromptId, PROMPTS } from "../src/prompts";
 import { instrument, offlineBindings, realBindings, zeroCounters, type MockRouterAnswer } from "./backends";
 import { evalDecisionAuth, loadLocalSecrets } from "./env";
 import { runLinearPipeline } from "./linear-pipeline";
@@ -92,6 +94,9 @@ async function main(): Promise<void> {
   const only = arg("only");
   const pipelines = (arg("pipelines") ?? "linear,adaptive").split(",") as PipelineName[];
   const outDir = arg("out") ?? path.join(EVAL_DIR, "results");
+  const promptId = arg("prompt") ?? "v0";
+  if (!isPromptId(promptId)) throw new Error(`Unknown --prompt ${promptId}; one of ${Object.keys(PROMPTS).join(", ")}`);
+  const prompt = PROMPTS[promptId];
 
   const allCases = (JSON.parse(readFileSync(casesPath, "utf8")) as { cases: EvalCase[] }).cases;
   const cases = only ? allCases.filter((c) => c.id.includes(only)) : allCases;
@@ -163,7 +168,7 @@ async function main(): Promise<void> {
           pipeline === "linear"
             ? {
                 kind: "linear" as const,
-                run: await runLinearPipeline({ message: c.message, history: c.history, env, sessionId }),
+                run: await runLinearPipeline({ message: c.message, history: c.history, env, sessionId, prompt }),
               }
             : {
                 kind: "adaptive" as const,
@@ -172,6 +177,7 @@ async function main(): Promise<void> {
                   history: c.history,
                   env,
                   sessionId,
+                  prompt,
                   collectRetrievalDiagnostics: mode === "real",
                 }),
               },
@@ -277,14 +283,14 @@ async function main(): Promise<void> {
         ? `DECISIÓN REAL (router y juez: ${decisionModel}) con Vectorize sin matches y generación stub. Son reales la ruta, el offerContact, los fallbacks, la latencia y los tokens del router; recall, respuestas y latencia total quedan pendientes.`
         : `REAL (router y juez: ${decisionModel}; Workers AI + Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"}; generación ${vars.GENERATION_MODEL}; jueces de etapa: abstención Jev ${jev.model}${useClaims ? `, fidelidad = claims con ${process.env.EVAL_JUDGE_MODEL ?? vars.GENERATION_MODEL} + soporte Jev ${jev.model}` : ", fidelidad apagada (--no-judge)"}${jev.fallbackModel ? ` (fallback pago ${jev.fallbackModel})` : ""})`;
   const table = markdownTable(summaries, { mode });
-  const report = `### Evals Botardo: lineal vs adaptativo, por etapa\n\nModo: ${modeText}\nCasos: ${cases.length} (${new Date().toISOString()})\n\n${table}\n`;
+  const report = `### Evals Botardo: lineal vs adaptativo, por etapa\n\nModo: ${modeText}\nPrompt: ${promptId}\nCasos: ${cases.length} (${new Date().toISOString()})\n\n${table}\n`;
   console.log(report);
 
   mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const base = path.join(outDir, `${stamp}-${mode}`);
+  const base = path.join(outDir, `${stamp}-${mode}-${promptId}`);
   writeFileSync(`${base}.md`, report);
-  writeFileSync(`${base}.json`, JSON.stringify({ mode, summaries, results }, null, 2));
+  writeFileSync(`${base}.json`, JSON.stringify({ mode, prompt: promptId, summaries, results }, null, 2));
   console.error(`Wrote ${base}.md and ${base}.json`);
 }
 

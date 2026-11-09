@@ -3,6 +3,7 @@
  */
 
 import type { Counters } from "./backends";
+import { detectLanguage, type Language } from "../src/language";
 import { MAX_CHUNKS, type RetrievalDiagnostics } from "../src/rag";
 import type { ClaimCheck } from "./stage-judges";
 
@@ -114,6 +115,41 @@ export function factHit(expectedFacts: string[], reply: string | null): boolean 
   return expectedFacts.some((f) => r.includes(fold(f)));
 }
 
+// Phrases that expose the retrieval mechanism instead of answering as someone who knows the profile.
+const MECHANISM =
+  /\b(en el contexto|el contexto (proporcionado|recuperado)|knowledge base|base de conocimiento|no se menciona|seg[uú]n (los|la) (datos|informaci[oó]n)|informaci[oó]n (que tengo|disponible|proporcionada)|datos disponibles|(in|from) the (provided )?context|provided context|information (i have|provided|available)|is not mentioned)\b/i;
+// Ramiro's profile in first person. Botardo introducing itself ("Soy Botardo") is the allowed first person.
+const FIRST_PERSON =
+  /\b(soy (?!botardo)(un |una )?(tech lead|full-?stack|desarroll|ingenier|engineer|dev)|he trabajado|mi (stack|experiencia|trabajo)|i'?m (?!botardo)(a |an )?(tech lead|full-?stack|developer|engineer)|i am (?!botardo)(a |an )?(tech lead|full-?stack|developer|engineer)|i have worked|i'?ve worked|my (stack|experience))/i;
+
+export interface ReplyStyle {
+  mechanism: boolean;
+  firstPerson: boolean;
+  wrongLanguage: boolean;
+  words: number;
+}
+
+/** Deterministic style checks on a generated reply: the rules a prompt change can break silently. */
+export function replyStyle(reply: string, lang: Language): ReplyStyle {
+  return {
+    mechanism: MECHANISM.test(reply),
+    firstPerson: FIRST_PERSON.test(reply),
+    wrongLanguage: detectLanguage(reply) !== lang,
+    words: reply.split(/\s+/).filter(Boolean).length,
+  };
+}
+
+/** Replies longer than this read as a dump in the chat widget (the prompt asks for 2-3 short paragraphs at most). */
+export const LONG_REPLY_WORDS = 120;
+
+export interface StyleSummary {
+  mechanism: Ratio;
+  firstPerson: Ratio;
+  wrongLanguage: Ratio;
+  long: Ratio;
+  words: { p50: number; p95: number };
+}
+
 export interface Ratio {
   hits: number;
   total: number;
@@ -186,6 +222,8 @@ export interface PipelineSummary {
   perQuery: Counters;
   /** Stage-wise retrieval (hit@k dense, MRR post-rerank, etc.); null without diagnostics (e.g. linear or stubbed backends). */
   stageRetrieval: StageRetrievalSummary | null;
+  /** Stage 5, style: deterministic checks over generated replies (see replyStyle). */
+  style: StyleSummary;
 }
 
 export function summarize(pipeline: PipelineName, cases: EvalCase[], results: CaseResult[]): PipelineSummary {
@@ -246,6 +284,10 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     ratio(withCase.filter(({ r, c }) => pred(c) && r.abstained !== null).map(({ r }) => r.abstained === true));
   const unanswerable = (c: EvalCase) => c.expected.answerable === false;
   const lat = rs.map((r) => r.latencyMs).toSorted((a, b) => a - b);
+  const styles = withCase
+    .filter(({ r }) => r.replyKind === "generated" && r.reply)
+    .map(({ r, c }) => replyStyle(r.reply!, c.lang));
+  const words = styles.map((s) => s.words).toSorted((a, b) => a - b);
   const routerLat = rs
     .map((r) => r.routerMs)
     .filter((x): x is number => typeof x === "number")
@@ -344,6 +386,13 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     routerLatency: routerLat.length ? { p50: percentile(routerLat, 50), p95: percentile(routerLat, 95) } : null,
     perQuery,
     stageRetrieval,
+    style: {
+      mechanism: ratio(styles.map((s) => s.mechanism)),
+      firstPerson: ratio(styles.map((s) => s.firstPerson)),
+      wrongLanguage: ratio(styles.map((s) => s.wrongLanguage)),
+      long: ratio(styles.map((s) => s.words > LONG_REPLY_WORDS)),
+      words: { p50: percentile(words, 50), p95: percentile(words, 95) },
+    },
   };
 }
 
@@ -500,6 +549,32 @@ export function markdownTable(summaries: Record<PipelineName, PipelineSummary>, 
       "Falsa abstención (answerable=true)",
       real(fmtRatio(linear.falseAbstention)),
       real(fmtRatio(adaptive.falseAbstention)),
+    ],
+    section("5. Estilo (checks deterministas sobre respuestas generadas)"),
+    [
+      'Habla del mecanismo ("en el contexto", "según los datos"...)',
+      real(fmtRatio(linear.style.mechanism)),
+      real(fmtRatio(adaptive.style.mechanism)),
+    ],
+    [
+      "Primera persona como Ramiro",
+      real(fmtRatio(linear.style.firstPerson)),
+      real(fmtRatio(adaptive.style.firstPerson)),
+    ],
+    [
+      "Idioma distinto al del visitante",
+      real(fmtRatio(linear.style.wrongLanguage)),
+      real(fmtRatio(adaptive.style.wrongLanguage)),
+    ],
+    [
+      `Respuestas largas (> ${LONG_REPLY_WORDS} palabras)`,
+      real(fmtRatio(linear.style.long)),
+      real(fmtRatio(adaptive.style.long)),
+    ],
+    [
+      "Palabras por respuesta p50 / p95",
+      real(`${linear.style.words.p50} / ${linear.style.words.p95}`),
+      real(`${adaptive.style.words.p50} / ${adaptive.style.words.p95}`),
     ],
     section("Costo y latencia"),
     [

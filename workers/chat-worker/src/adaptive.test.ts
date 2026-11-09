@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetFreeTierBreaker } from "./breaker";
 import { DEFAULT_DECISION_FREE_COOLDOWN_MS } from "./config";
 import worker from "./index";
-import { NO_INFO_REPLY, OFF_TOPIC_REPLY, SMALLTALK_INSTRUCTION } from "./prompts";
+import { NO_INFO_REPLY, OFF_TOPIC_REPLY, PROMPT } from "./prompts";
 import {
   DECISION_OFF,
   DECISION_VARS,
@@ -118,7 +118,7 @@ describe("adaptive RAG through handleRag", () => {
     expect(calls.judge).toHaveLength(0);
     expect(calls.generation).toHaveLength(1);
     const gen = calls.generation[0] as { messages: Array<{ role: string; content: string }> };
-    expect(gen.messages[0].content).toContain(SMALLTALK_INSTRUCTION);
+    expect(gen.messages[0].content).toBe(PROMPT.smalltalk);
     expect(gen.messages.at(-1)).toEqual({ role: "user", content: "hola!" });
     expect(datapoints[0]?.doubles?.slice(4, 11)).toEqual([1, 0, 0, expect.any(Number), 0, 0, 0]);
   });

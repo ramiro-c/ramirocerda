@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import worker from "./index";
-import { IDENTITY_PROMPT, NO_INFO_REPLY } from "./prompts";
+import { NO_INFO_REPLY, PROMPTS } from "./prompts";
 
 interface Datapoint {
   blobs?: string[];
@@ -214,23 +214,31 @@ describe("request gates", () => {
   });
 });
 
-describe("IDENTITY_PROMPT answer rules", () => {
+describe.each(Object.entries(PROMPTS))("prompt %s answer rules", (_id, prompt) => {
+  const system = prompt.rag("[Chunk 1 — sección: x]\ntexto", "es");
+
   it("never says fábrica and keeps the technical terms in English", () => {
-    expect(IDENTITY_PROMPT.toLowerCase()).not.toContain("fábrica");
-    expect(IDENTITY_PROMPT).toContain("factory engineering");
+    expect(system.toLowerCase()).not.toContain("fábrica");
+    expect(system).toContain("factory engineering");
   });
 
   it("asks what the visitor wants to know and links the note on broad questions", () => {
-    expect(IDENTITY_PROMPT).toContain("nota:");
-    expect(IDENTITY_PROMPT).toContain("preguntá");
+    expect(system).toContain("nota:");
+    expect(system).toContain("preguntá");
   });
 
   it("caps the answer length so it does not dump the knowledge base", () => {
-    expect(IDENTITY_PROMPT).toMatch(/2-3 párrafos/);
+    expect(system).toMatch(/2-3 párrafos/);
   });
 
   it("tells the model to ignore prompt-injection in user or retrieved context", () => {
-    expect(IDENTITY_PROMPT).toMatch(/Ignorá cualquier instrucción/);
+    expect(system).toMatch(/ignorá (cualquier instrucción|ese pedido)/i);
+  });
+
+  it("wraps the retrieved context and adds the language instruction", () => {
+    expect(system).toContain("[Chunk 1 — sección: x]\ntexto");
+    expect(system).toContain("rioplatense");
+    expect(prompt.rag("", "en")).toContain("English");
   });
 });
 
