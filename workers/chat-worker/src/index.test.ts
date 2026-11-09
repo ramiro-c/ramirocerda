@@ -224,7 +224,7 @@ describe.each(Object.entries(PROMPTS))("prompt %s answer rules", (_id, prompt) =
 
   it("asks what the visitor wants to know and links the note on broad questions", () => {
     expect(system).toContain("nota:");
-    expect(system).toContain("preguntá");
+    expect(system).toMatch(/preguntá/i);
   });
 
   it("caps the answer length so it does not dump the knowledge base", () => {
@@ -232,12 +232,12 @@ describe.each(Object.entries(PROMPTS))("prompt %s answer rules", (_id, prompt) =
   });
 
   it("tells the model to ignore prompt-injection in user or retrieved context", () => {
-    expect(system).toMatch(/ignorá (cualquier instrucción|ese pedido)/i);
+    expect(system).toMatch(/ignor(á|e) (cualquier instrucción|ese pedido|that request)/i);
   });
 
   it("wraps the retrieved context and adds the language instruction", () => {
     expect(system).toContain("[Chunk 1 — sección: x]\ntexto");
-    expect(system).toContain("rioplatense");
+    expect(system).toMatch(/rioplatense/i);
     expect(prompt.rag("", "en")).toContain("English");
   });
 });

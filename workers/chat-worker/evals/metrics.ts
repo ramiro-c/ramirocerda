@@ -122,8 +122,13 @@ const MECHANISM =
 const FIRST_PERSON =
   /\b(soy (?!botardo)(un |una )?(tech lead|full-?stack|desarroll|ingenier|engineer|dev)|he trabajado|mi (stack|experiencia|trabajo)|i'?m (?!botardo)(a |an )?(tech lead|full-?stack|developer|engineer)|i am (?!botardo)(a |an )?(tech lead|full-?stack|developer|engineer)|i have worked|i'?ve worked|my (stack|experience))/i;
 
+// Tuteo in a Spanish reply: the site speaks Rioplatense voseo ("podés", "preguntame").
+const TUTEO = /\b(puedes|quieres|tienes|sabes|eres|pregúntame|cuéntame|dime|escríbele|te interesaría)\b/i;
+
 export interface ReplyStyle {
   mechanism: boolean;
+  /** Spanish reply using tú instead of vos; always false for English. */
+  tuteo: boolean;
   firstPerson: boolean;
   wrongLanguage: boolean;
   words: number;
@@ -133,6 +138,7 @@ export interface ReplyStyle {
 export function replyStyle(reply: string, lang: Language): ReplyStyle {
   return {
     mechanism: MECHANISM.test(reply),
+    tuteo: lang === "es" && TUTEO.test(reply),
     firstPerson: FIRST_PERSON.test(reply),
     wrongLanguage: detectLanguage(reply) !== lang,
     words: reply.split(/\s+/).filter(Boolean).length,
@@ -144,6 +150,7 @@ export const LONG_REPLY_WORDS = 120;
 
 export interface StyleSummary {
   mechanism: Ratio;
+  tuteo: Ratio;
   firstPerson: Ratio;
   wrongLanguage: Ratio;
   long: Ratio;
@@ -388,6 +395,7 @@ export function summarize(pipeline: PipelineName, cases: EvalCase[], results: Ca
     stageRetrieval,
     style: {
       mechanism: ratio(styles.map((s) => s.mechanism)),
+      tuteo: ratio(styles.map((s) => s.tuteo)),
       firstPerson: ratio(styles.map((s) => s.firstPerson)),
       wrongLanguage: ratio(styles.map((s) => s.wrongLanguage)),
       long: ratio(styles.map((s) => s.words > LONG_REPLY_WORDS)),

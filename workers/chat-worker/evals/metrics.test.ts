@@ -381,6 +381,7 @@ describe("replyStyle", () => {
   it("passes a short third-person reply in the visitor's language", () => {
     expect(replyStyle("Ramiro es Full-Stack Engineer. En LDP trabaja como Tech Lead hands-on.", "es")).toEqual({
       mechanism: false,
+      tuteo: false,
       firstPerson: false,
       wrongLanguage: false,
       words: 11,
@@ -398,6 +399,11 @@ describe("replyStyle", () => {
     expect(replyStyle("I'm a full-stack engineer with React experience.", "en").firstPerson).toBe(true);
     expect(replyStyle("Soy Botardo, el asistente de la web de Ramiro.", "es").firstPerson).toBe(false);
     expect(replyStyle("I'm Botardo, Ramiro's assistant.", "en").firstPerson).toBe(false);
+  });
+
+  it("flags tuteo in Spanish replies only", () => {
+    expect(replyStyle("Si quieres, puedes ver la nota.", "es").tuteo).toBe(true);
+    expect(replyStyle("Si querés, podés ver la nota.", "es").tuteo).toBe(false);
   });
 
   it("flags a reply in a language other than the visitor's", () => {
