@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-11-07T17:17:16.745Z",
+  "generatedAt": "2026-11-10T02:13:56.729Z",
   "sources": {
     "kb": 33,
     "notes": 42,
@@ -18,7 +18,7 @@
     "kb-desarrollador-mobile-front-end-ssr-react-native--b55de9a3",
     "kb-devgam-secretaria-de-tic-utn-frlp-y-new-logic-2a8b7070",
     "kb-educacion-0a3cae8f",
-    "kb-full-stack-tech-lead-hands-on-abr-2025-actualida-82319aba",
+    "kb-full-stack-tech-lead-hands-on-abr-2025-actualida-24b6162f",
     "kb-google-cloud-ai-agents-path-completo-jun-jul-202-38072511",
     "kb-judgment-day-e3192d1e",
     "kb-kano-studio-landing-y-diagnostico-interactivo-co-0330ad32",
@@ -27,7 +27,7 @@
     "kb-ldp-copilot-asistente-de-producto-multi-agente-0b9c735e",
     "kb-linkedin-markdownificator-f05bc688",
     "kb-mundial-2026-soccer-analytics-world-cup-companio-de506c59",
-    "kb-otras-funcionalidades-y-logros-en-ldp-d2dfb331",
+    "kb-otras-funcionalidades-y-logros-en-ldp-4c24a88d",
     "kb-overview-5a1747f9",
     "kb-partners-slack-cb90af80",
     "kb-performance-backend-en-ldp-antes-y-despues-25ba9cd3",
