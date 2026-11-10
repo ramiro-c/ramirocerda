@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-11-10T02:13:56.729Z",
+  "generatedAt": "2026-11-10T03:02:47.568Z",
   "sources": {
     "kb": 33,
     "notes": 42,
@@ -63,7 +63,7 @@
     "note-esto-a-quien-se-lo-vendes-78481eca",
     "note-formas-de-implementarlo-32635b18",
     "note-further-reading-fe6e0ee3",
-    "note-how-i-know-it-decides-well-72f6f913",
+    "note-how-i-know-it-decides-well-7105cc36",
     "note-how-it-s-built-f4e04431",
     "note-la-alternativa-casos-dorados-y-graders-determini-37fa67e0",
     "note-las-variantes-mas-comunes-17d900a7",
@@ -80,7 +80,7 @@
     "note-the-resources-2d961356",
     "note-ways-to-implement-it-146e20db",
     "note-what-the-f-ck-is-an-embedding-af1619e4",
-    "note-where-botardo-ended-up-b48f3115",
+    "note-where-botardo-ended-up-70bd0bd6",
     "note-where-this-does-not-reach-5dcc2f44",
     "note-who-do-you-sell-this-to-12a7bc6a",
     "project-en-agent-evals-c186545d",
