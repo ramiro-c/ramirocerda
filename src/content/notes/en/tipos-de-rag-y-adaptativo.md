@@ -34,7 +34,7 @@ Now it's adaptive with a corrective step:
 1. A router with a small decision model classifies each message as search, smalltalk or off-topic. It also decides whether the conversation history is needed and whether the visitor wants to get in touch.
 2. Smalltalk and off-topic get an answer without searching.
 3. For search, it retrieves chunks from Vectorize and reorders them with a reranker.
-4. A judge checks whether those chunks are enough to answer. If not, it runs a second search with the question rewritten using the context, merges the results and checks again.
+4. When the router can also rewrite the question with the conversation context, a judge checks whether those chunks are enough. If not, it runs that second search and merges both results. The merged set goes straight to the answer — nothing checks it again.
 5. Only then it generates the answer, streamed.
 6. If no chunks clear the similarity threshold, it replies that it doesn't have that info, without generating.
 
@@ -44,7 +44,7 @@ So the decision doesn't add waiting time, retrieval starts in parallel with the 
 
 ## How I know it decides well
 
-I measured it with a set of eval cases against the production router: it got whether to search right in every case, the message classification in every case, and caught contact intent in all but one. The decision takes around 120 ms at the median.
+I measured it with a set of eval cases against the production router: it got whether to search right in every case, the message classification in every case, and caught contact intent in all but one. The decision takes around 400 ms at the median (531 ms at p95).
 
 ## Further reading
 
