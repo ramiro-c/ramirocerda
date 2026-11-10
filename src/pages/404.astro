@@ -8,8 +8,11 @@ import { useTranslations } from "../i18n/utils";
  * A 404 is one static file. The host serves it for every missing path, so there
  * is no request path to read at build time: the previous version derived the
  * language from Astro.url.pathname, which is always "/404" here, and every
- * visitor silently got Spanish. Rendering both languages is the only way to
- * serve an English reader without relying on JavaScript.
+ * visitor silently got Spanish. Rendering both languages in the markup is the
+ * no-JS fallback; a tiny inline script then picks one at request time from the
+ * URL path: under /en/ only the English block stays (and the title, meta
+ * description and document language switch to English), everywhere else only
+ * the Spanish hero stays.
  */
 const lang = "es";
 const t = useTranslations(lang);
@@ -21,21 +24,47 @@ const tEn = useTranslations("en");
 
   <section class="hero">
     <p class="brand-line mono caption-3">404</p>
-    <h1 class="heading-1">{t("notfound.title")}</h1>
-    <p class="support body-3">{t("notfound.support")}</p>
-    <div class="ctas">
-      <a class="cta-primary" href="/">
-        {t("notfound.cta")}
-      </a>
+    <div data-404-es>
+      <h1 class="heading-1">{t("notfound.title")}</h1>
+      <p class="support body-3">{t("notfound.support")}</p>
+      <div class="ctas">
+        <a class="cta-primary" href="/">
+          {t("notfound.cta")}
+        </a>
+      </div>
     </div>
 
-    <div class="en-fallback" lang="en">
+    <div class="en-fallback" lang="en" data-404-en>
       <p class="en-title title-1">{tEn("notfound.title")}</p>
       <p class="en-support body-6">{tEn("notfound.support")}</p>
       <a class="cta-link" href="/en/">
         {tEn("notfound.cta")}
       </a>
     </div>
+
+    <script is:inline>
+      const enBlock = document.querySelector("[data-404-en]");
+      const esBlock = document.querySelector("[data-404-es]");
+      const isEn = /^\/en(\/|$)/.test(window.location.pathname);
+      if (enBlock && esBlock) {
+        if (isEn) {
+          document.documentElement.lang = "en";
+          const enTitle = enBlock.querySelector(".en-title");
+          document.title = enTitle.textContent || "";
+          // The visible en-title stays a paragraph in markup (it steps down for
+          // the no-JS Spanish primary); promote it for heading navigation.
+          enTitle.setAttribute("role", "heading");
+          enTitle.setAttribute("aria-level", "1");
+          const meta = document.querySelector('meta[name="description"]');
+          if (meta) {
+            meta.setAttribute("content", enBlock.querySelector(".en-support").textContent || "");
+          }
+          esBlock.hidden = true;
+        } else {
+          enBlock.hidden = true;
+        }
+      }
+    </script>
   </section>
 
   <SiteFooter slot="footer" lang={lang} />
@@ -66,12 +95,18 @@ const tEn = useTranslations("en");
   }
   /* The English block sits below the Spanish one and steps down in weight, so a
      Spanish reader never has to read past it and an English reader finds the
-     whole message in one place. */
+     whole message in one place. When the script picks English and hides the
+     Spanish block, the divider and top spacing go with it. */
   .en-fallback {
     max-width: 680px;
     margin-top: var(--space-600);
     padding-top: var(--space-300);
     border-top: 1px solid var(--border);
+  }
+  [data-404-es][hidden] + .en-fallback {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
   }
   .en-title {
     margin: 0 0 var(--space-50);
