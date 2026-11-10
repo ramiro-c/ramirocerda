@@ -366,7 +366,7 @@ const offer = landing[lang].botardoOffer;
 
   function renderMarkdown(text) {
     const raw = String(text);
-    const urlPattern = /(https?:\/\/\S+|\/[a-zA-Z0-9/_\-.?#=&%]+)/g;
+    const urlPattern = /(?<![\w./%-])(https?:\/\/\S+|\/[a-zA-Z0-9/_\-.?#=&%]+)/g;
     let html = "";
     let lastIndex = 0;
     for (const match of raw.matchAll(urlPattern)) {
