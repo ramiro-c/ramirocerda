@@ -57,14 +57,14 @@ Avellana es un producto de Kano Studio en el que Ramiro colaboró. Es una app gr
 
 #### Full Stack Tech Lead (Hands-on) | Abr 2025 - Actualidad
 Desarrollo end-to-end de funcionalidades core de la plataforma SaaS de scouting y mercado de jugadores profesionales de fútbol.
-* **Día a día (tareas concretas):** desarrollo de features completas end-to-end, tocando frontend y backend por igual; integraciones con n8n para automatizar flujos de negocio; y trabajo transversal sobre la plataforma SaaS.
+* **Día a día (tareas concretas):** desarrollo de features completas end-to-end, tocando frontend, backend y app móvil por igual; ownership de los pipelines de CI/CD; integraciones con n8n para automatizar flujos de negocio; y trabajo transversal sobre la plataforma SaaS.
 * **Refactor de arquitectura backend:** lideré la migración de ~400 endpoints en clases monolíticas (hasta 15k líneas) hacia una arquitectura desacoplada con Patrón Repositorio e inyección de dependencias, reduciendo drásticamente la deuda técnica.
 * **Performance a escala:** eliminé cuellos de botella críticos (N+1, operaciones síncronas bloqueantes) con vistas materializadas, paralelización y singletons, logrando 75–90% de mejora en tiempos de respuesta en múltiples endpoints.
 * **Perf quick wins (jul-2026):** a partir de New Relic (prod), 6 familias de endpoints concentraban el 92,5% del tiempo total de la API; el costo dominante era BigQuery sin caché. Implementé caché en 3 capas (Cloudflare edge + in-process TTL/singleflight + pool DB), paralelisé llamadas BQ, eliminé N+1 y corregí un desajuste FE/BE que generaba ~9,25% de error rate en guests/users.
 * **Observabilidad y seguridad:** centralicé el monitoreo con Sentry, New Relic y logs estructurados (Pino); implementé sanitización de datos en middlewares y validación automatizada de identidad de usuarios.
-* **QA Automation y CI/CD:** definí la estrategia global de testing (unit + API + smoke + E2E) en pipelines con reportes a Slack, liderando la adopción de QA Automation en el equipo.
-* **IA y desarrollo core:** desarrollo end-to-end de flujos críticos; diseñé e implementé el front-end completo de un asistente conversacional con IA.
-* **Liderazgo técnico:** diseñé el challenge técnico de contratación full-stack (code review + entrevistas) y capacité al equipo en herramientas de IA (Cursor, Claude Code, sub-agentes, context management).
+* **QA Automation y CI/CD:** definí la estrategia global de testing (unit + API + smoke + E2E) en pipelines con reportes a Slack, liderando la transición del equipo de QA 100% manual a QA Automation; tras la salida de la analista QA sostengo la suite de forma hands-on.
+* **IA y desarrollo core:** desarrollo end-to-end de flujos críticos; diseñé e implementé el front-end completo de un asistente conversacional con IA y construí el LDP Copilot, el asistente de producto multi-agente de LDP (Google ADK + Gemini desplegado en Vertex AI Agent Engine), detallado en la sección Proyectos Destacados.
+* **Liderazgo técnico:** diseñé el challenge técnico de contratación full-stack (code review + entrevistas) y capacité al equipo en herramientas de IA (Cursor, Claude Code, sub-agentes, context management), con un formato semanal de demostraciones hands-on (Speed Demos).
 
 #### Caso insignia en LDP: motor de búsqueda de jugadores (ago–sep 2026)
 (In English: flagship case — Ramiro rewrote the player search engine at LDP: p95 from 61 s to 1.3 s, p50 from 2.69 s to 387 ms, 30 ms / 247 ms on the cached path, over 1.9M records on PostgreSQL. Keywords: performance, latency, search, optimization, biggest achievement.)
@@ -90,14 +90,17 @@ Auditoría de performance con New Relic sobre 389 endpoints y unos 1,5 millones 
 (In English: other LDP work — squad planner module, transfer marketplace, technical debt audit, frontend security audit, QA automation, Spec Driven Development, AI chat frontend, admin panel migration to Vite.)
 * **Planificador de plantillas (módulo nuevo end-to-end):** clubes y agentes arman alineaciones hipotéticas con jugadores del mercado. Diseñó el modelo de datos, la API (equipos, etiquetas, membresías, límites por plan) y la interfaz: cancha con formaciones, drag & drop, filtros y borradores, con tests E2E propios.
 * **Marketplace de transferencias:** ownership end-to-end del módulo donde clubes y agentes publican, ofertan y cierran operaciones por jugadores: compatibilidad por rol, flujo de ofertas, firma de contrato, notificaciones por email y seguimiento de la transferencia.
+* **Features core adicionales:** desarrollé junto al equipo otros módulos centrales de la plataforma: la Comparativa (panel multi-entidad para comparar jugadores, clubes y ligas) y el scouting propio (listas, shadow teams y dashboards).
 * **Auditoría de deuda técnica del backend (iniciativa propia):** análisis de ~400 endpoints con 14 hallazgos priorizados por impacto y esfuerzo y un roadmap por sprints. La arquitectura objetivo (Repository Pattern, inyección de dependencias y Zod) se validó con una prueba de concepto de 17 tests en 3 capas.
 * **Auditoría de seguridad del frontend:** 10 hallazgos verificados y corregidos en 4 módulos.
 * **QA Automation:** más de 60 casos de API en Bruno, E2E con Playwright sobre varios entornos y 3 roles de usuario, y pipelines con reporte a Slack.
 * **Spec Driven Development como proceso del equipo:** explorar, proponer, especificar, diseñar, dividir en tareas, implementar y verificar, con review adversarial antes del PR.
+* **Bots propios de monitoreo y seguimiento (grokbot, sep 2026):** creé bots que monitorean New Relic y Sentry, generan reportes automáticos y levantan issues, entre otras automatizaciones internas del equipo.
 * **Asistente conversacional con IA:** la capa frontend completa del chat embebido en el producto.
 * **Panel de administración interno:** migración de Create React App a Vite (React 19, deploys a S3 y CloudFront).
 * **Automatización:** flujos de n8n integrados con APIs externas como WhatsApp Business.
 * **Observabilidad:** Service Levels y alertas en New Relic, digest semanal a Slack y Sentry en el frontend.
+* **Gobierno de costos en GCP:** junto al equipo aplicó políticas en Google Cloud orientadas a bajar los gastos de la nube.
 
 #### Desarrollador Mobile / Front-end SSR (React Native y React) | Jun 2022 - Abr 2025
 (Etapas: React Native Developer de jun 2022 a dic 2023 y Full-Stack Developer de ene 2024 a mar 2025.)
