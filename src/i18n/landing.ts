@@ -142,6 +142,14 @@ export const landing: Record<Lang, LandingCopy> = {
             "Entré por la app móvil y hoy lidero el desarrollo full stack. Hice refactors de búsqueda que bajaron la latencia más del 75%. Sumé monitoreo de errores y performance, tests y CI.",
         },
         {
+          id: "ldp-copilot",
+          href: "/work/ldp-copilot/",
+          label: "IA en producción",
+          title: "LDP Copilot, asistente de producto",
+          result:
+            "Un agente raíz reparte el trabajo entre subagentes de dominio y responde con los permisos de cada usuario. Lo evalúo con casos reales, sin un modelo que haga de juez.",
+        },
+        {
           id: "kano",
           href: "https://kano.studio/",
           label: "Colaboración",
@@ -172,14 +180,6 @@ export const landing: Record<Lang, LandingCopy> = {
           title: "Mundial 2026, la app para seguir el torneo",
           result:
             "Muestra grupos, fixture en tu huso horario, cuadro eliminatorio, mapa de sedes y guía de TV por país. Cruza datos históricos entre selecciones. Está online.",
-        },
-        {
-          id: "ldp-copilot",
-          href: "/work/ldp-copilot/",
-          label: "IA en producción",
-          title: "LDP Copilot, asistente de producto",
-          result:
-            "Un agente raíz reparte el trabajo entre subagentes de dominio y responde con los permisos de cada usuario. Lo evalúo con casos reales, sin un modelo que haga de juez.",
         },
         {
           id: "freelance",
@@ -301,6 +301,14 @@ export const landing: Record<Lang, LandingCopy> = {
             "I joined on the mobile app and now lead full stack development. I did search refactors that cut latency by more than 75%. I added error and performance monitoring, tests, and CI.",
         },
         {
+          id: "ldp-copilot",
+          href: "/en/work/ldp-copilot/",
+          label: "AI in production",
+          title: "LDP Copilot, product assistant",
+          result:
+            "A root agent splits the work across domain sub agents and answers with each user's permissions. I evaluate it on real cases, with no model acting as judge.",
+        },
+        {
           id: "kano",
           href: "https://kano.studio/",
           label: "Collaboration",
@@ -331,14 +339,6 @@ export const landing: Record<Lang, LandingCopy> = {
           title: "Mundial 2026, the app to follow the tournament",
           result:
             "It shows groups, fixtures in your time zone, the knockout bracket, a venue map, and a TV guide by country. It cross references historical data between teams. It is live.",
-        },
-        {
-          id: "ldp-copilot",
-          href: "/en/work/ldp-copilot/",
-          label: "AI in production",
-          title: "LDP Copilot, product assistant",
-          result:
-            "A root agent splits the work across domain sub agents and answers with each user's permissions. I evaluate it on real cases, with no model acting as judge.",
         },
         {
           id: "freelance",
