@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-11-10T03:02:47.568Z",
+  "generatedAt": "2026-11-10T17:19:09.073Z",
   "sources": {
     "kb": 33,
     "notes": 42,
@@ -24,7 +24,7 @@
     "kb-kano-studio-landing-y-diagnostico-interactivo-co-0330ad32",
     "kb-knowledge-vault-665f7171",
     "kb-lactaria-resultados-del-piloto-8f4024a4",
-    "kb-ldp-copilot-asistente-de-producto-multi-agente-0b9c735e",
+    "kb-ldp-copilot-asistente-de-producto-multi-agente-71692432",
     "kb-linkedin-markdownificator-f05bc688",
     "kb-mundial-2026-soccer-analytics-world-cup-companio-de506c59",
     "kb-otras-funcionalidades-y-logros-en-ldp-4c24a88d",
