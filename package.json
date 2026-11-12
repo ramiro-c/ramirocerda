@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "site:stats": "node scripts/site-stats.mjs",
     "links": "node scripts/check-links.mjs",
+    "og:render": "node scripts/render-og.mjs",
     "chat:eval": "bun run --filter ramirocerda-chat-worker eval",
     "prepare": "husky"
   },
