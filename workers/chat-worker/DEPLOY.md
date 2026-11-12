@@ -104,6 +104,38 @@ heuristics). Routing and the sufficiency check are decided by **Jev**
 `https://opencode.ai/inference/systemone/v1/systemone` (`src/decision.ts`).
 The code validates every answer and enforces the limits.
 
+End-to-end map (each node names the file that implements it; the sections below
+detail every stage):
+
+```mermaid
+flowchart TD
+    W["Astro widget<br/>src/components/Botardo.astro"] -->|"POST /ask"| H["Request handler<br/>src/index.ts"]
+    H --> ORG{"Origin allowed?"}
+    ORG -->|"no"| F403["403 origin_blocked"]
+    ORG -->|"yes"| RL{"Rate limit<br/>CHAT_RATE_LIMITER, per IP"}
+    RL -->|"over limit"| R429["429 rate_limited"]
+    RL -->|"allowed"| LANG["detectLanguage ES/EN<br/>src/language.ts"]
+    LANG --> P["runAdaptivePipeline<br/>src/pipeline.ts"]
+    P -->|"raw-message search starts<br/>in parallel with the router"| EMB
+    P --> RT{"Router, Jev<br/>src/router.ts"}
+    RT -->|"off_topic"| OT["Fixed localized reply<br/>no retrieval"]
+    RT -->|"smalltalk"| ST["One short generation<br/>identity prompt, no KB facts"]
+    RT -->|"search, or any router failure"| RET
+    EMB["Embed query<br/>bge-m3, Workers AI"] --> IDX[("Vectorize<br/>botardo-kb")]
+    RET["Retrieval<br/>src/retrieval.ts"] --> IDX
+    IDX --> GATE{"Any candidate at or above<br/>SIMILARITY_THRESHOLD?"}
+    GATE -->|"no"| NI["no_info reply"]
+    GATE -->|"yes"| TOP["Top 4 chunks (MAX_CHUNKS)<br/>reranked when RAG_RERANK_MODEL is set"]
+    TOP --> JUDGE{"Sufficiency judge, Jev<br/>only when an alternate query exists"}
+    JUDGE -->|"sufficient, or judge failed"| GEN
+    JUDGE -->|"insufficient, iterations left"| RE2["Second search with the alternate query<br/>merge by chunk id, keep the best score"]
+    RE2 --> MERGED["Merged chunks, capped at 4"] --> GEN
+    GEN["Generate<br/>GENERATION_MODEL (gpt-6-luna) via OpenCode Go<br/>src/generate.ts"] --> OUT["200 reply + offerContact<br/>delta / done events when streaming"]
+    OT --> OUT
+    ST --> OUT
+    NI --> OUT
+```
+
 ### Decision API (System One, not OpenAI-compatible)
 
 Request (`POST`, `Content-Type: application/json`):
