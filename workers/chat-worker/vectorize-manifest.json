@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-11-10T17:19:09.073Z",
+  "generatedAt": "2026-11-12T20:05:45.059Z",
   "sources": {
     "kb": 33,
     "notes": 42,
@@ -85,7 +85,7 @@
     "note-who-do-you-sell-this-to-12a7bc6a",
     "project-en-agent-evals-c186545d",
     "project-en-ai-agents-hub-377b84c4",
-    "project-en-botardo-476ae029",
+    "project-en-botardo-2b6f558d",
     "project-en-gastify-c5deacb8",
     "project-en-knowledge-vault-624ac4f9",
     "project-en-lactaria-38be02a0",
@@ -101,7 +101,7 @@
     "project-en-spec-refinery-0e504014",
     "project-es-agent-evals-9cbd9caa",
     "project-es-ai-agents-hub-18172a11",
-    "project-es-botardo-5b80d17d",
+    "project-es-botardo-995d7868",
     "project-es-gastify-ee94ad54",
     "project-es-knowledge-vault-6867c021",
     "project-es-lactaria-d7a687d0",
