@@ -67,7 +67,7 @@ export const ui = {
     "workflow.legend.hitl": "Human in the loop",
     "workflow.howTerminatesLabel": "Cómo termina",
     "workflow.howTerminates":
-      "El pipeline termina cuando card-pr publica el PR, Judgment Day da veredicto limpio, y el canal de Partners recibe la notificación. No hay auto-merge: la decisión final siempre es humana.",
+      "El pipeline termina cuando card-pr publica el PR, interrogate no deja hallazgos probados y Slack recibe el aviso. Si un gate no puede correr o el ciclo de fixes no converge, la card vuelve a mí como needs_human con el motivo. No hay auto-merge: la decisión final siempre es humana.",
     "work.title": "Proyectos",
     "work.description": "Agentes de IA y productos full stack que construí, en producción y en mis repos.",
     "work.trackAiTitle": "Sistemas de IA",
@@ -158,7 +158,7 @@ export const ui = {
     "workflow.legend.hitl": "Human in the loop",
     "workflow.howTerminatesLabel": "How it terminates",
     "workflow.howTerminates":
-      "The pipeline ends when card-pr publishes the PR, Judgment Day returns a clean verdict, and the Partners channel receives the notification. No auto-merge: the final decision is always human.",
+      "The pipeline ends when card-pr publishes the PR, interrogate leaves no proven findings, and Slack gets the notice. If a gate cannot run or the fix cycle does not converge, the card comes back to me as needs_human with the reason. No auto-merge: the final decision is always human.",
     "work.title": "Work",
     "work.description": "AI agents and full stack products I built, in production and in my repos.",
     "work.trackAiTitle": "AI systems",

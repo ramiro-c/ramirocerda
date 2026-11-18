@@ -6,7 +6,6 @@ interface Props {
     id: string;
     number: string;
     label: string;
-    role: string;
     panelTitle: string;
     panelBody: string;
     isHitl?: boolean;
@@ -16,8 +15,9 @@ interface Props {
 }
 const { nodes, hitlLabel, panelHint } = Astro.props;
 const returns: Record<number, string> = {
-  3: "↩ fix-cycle → 03",
-  5: "↩ escalation → 03",
+  5: "↩ fix → verify → 04",
+  6: "↩ fix → verify → 04",
+  7: "↩ 1 fix round → 04",
 };
 ---
 

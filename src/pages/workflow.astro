@@ -13,10 +13,10 @@ const nodes = [
     id: "triage",
     number: "01",
     label: "Triage",
-    panelTitle: "Triage inicial",
+    panelTitle: "Triage y framing gate",
     panelBody:
-      "Se toma una card del backlog en To Do con label agent:loop. Todavía lo disparo yo (no hay cron): cada tick agarra como máximo una card. Clasifica tipo de tarea y asigna prioridad.",
-    isHitl: false,
+      "Toma como máximo una card de Jira en To Do con label agent:loop y labels repo:* y env:*. Antes de reclamarla pasa el framing gate: título accionable, contexto de negocio y resultado esperado. Si falta algo, o si trae un Figma sin el mapeo variante → pantalla, vuelve a mí como needs_human sin gastar tokens en diseño.",
+    isHitl: true,
   },
   {
     id: "card-start",
@@ -24,58 +24,76 @@ const nodes = [
     label: "card-start",
     panelTitle: "card-start",
     panelBody:
-      "Crea un worktree aislado con su propia rama a partir de la card de Jira. Resuelve el repo y la rama base desde los labels de la card. Listo para trabajar sin tocar el checkout principal.",
+      "Trae la card por el MCP de Atlassian, resuelve repo y rama base desde los labels y crea un git worktree con su propia rama. La card pasa a In Progress y queda registrada en un state.json compartido, así varios loops corren en paralelo sin pisarse.",
     isHitl: false,
   },
   {
-    id: "sdd-auto",
+    id: "design",
     number: "03",
-    label: "SDD auto",
-    panelTitle: "SDD auto",
+    label: "Design",
+    panelTitle: "Design (architect)",
     panelBody:
-      "Pipeline completo de 5 fases: Explore (contexto), Propose (intención), Spec (requisitos + escenarios), Design (arquitectura técnica), Tasks (desglose en tareas). Todo generado por agentes antes de tocar código.",
-    isHitl: true,
+      "Un subagente sigue el skill architect de pstack: bosqueja tipos, firmas y límites de módulos antes de escribir código. Si la card no entra en un solo PR, primero la corta con figure-it-out; si igual no entra, la escala.",
+    isHitl: false,
+  },
+  {
+    id: "apply",
+    number: "04",
+    label: "Apply",
+    panelTitle: "Apply (poteto-mode)",
+    panelBody:
+      "Un writer implementa el bosquejo en poteto-mode: código simple, cambios chicos y verificados. Cada handoff lleva la lista explícita de archivos que puede tocar. En cards de bug primero tiene que mostrar un test en rojo (tdd) antes de tocar código de producción.",
+    isHitl: false,
+  },
+  {
+    id: "verify",
+    number: "05",
+    label: "Verify",
+    panelTitle: "Verify (prove it works)",
+    panelBody:
+      "Otro subagente prueba los criterios de aceptación ejecutando el comportamiento real. Un test escrito pero no corrido no cuenta como evidencia.",
+    isHitl: false,
+  },
+  {
+    id: "card-validate",
+    number: "06",
+    label: "card-validate",
+    panelTitle: "card-validate",
+    panelBody:
+      "Elige los gates según el diff: un mutation check que prueba que cada test nuevo puede fallar, ejecución real (Bruno contra el backend local, Playwright headless en el frontend) y comparación contra Figma solo si cambia UI. Un gate que no pudo correr no es un pass: frena el loop.",
+    isHitl: false,
   },
   {
     id: "card-review",
-    number: "04",
+    number: "07",
     label: "card-review",
     panelTitle: "card-review",
     panelBody:
-      "Revisión pre-PR usando los cuatro lentes 4R (Requirements, Reliability, Readability, Risk). Report-only: encuentra issues antes de abrir el PR. Opcionalmente simplifica código si el usuario lo pide.",
+      "Review pre-PR con un lente por subagente (risk, reliability, readability, resilience) contra la rama base de la card. Report-only. Todo hallazgo Critical/High entra al ciclo fix → verify: hasta 3 rondas, y corta antes si no converge o si el fix se sale del alcance.",
     isHitl: false,
   },
   {
     id: "card-pr",
-    number: "05",
-    label: "card-pr",
-    panelTitle: "card-pr",
+    number: "08",
+    label: "card-pr + interrogate",
+    panelTitle: "card-pr + interrogate",
     panelBody:
-      "Push de la rama y apertura del PR en GitHub. No mergea: deja el diff listo para la revisión adversarial del paso siguiente.",
+      "Push, PR en GitHub y review adversarial con interrogate de pstack: varios modelos (Opus, Sonnet y uno de otra familia vía OpenCode) intentan romper el cambio, y solo sobreviven los hallazgos que una ejecución reproduce. Si hay hallazgos probados, hace una única ronda de fix y vuelve a interrogar.",
     isHitl: false,
-  },
-  {
-    id: "judgment-day",
-    number: "06",
-    label: "Judgment Day",
-    panelTitle: "Judgment Day",
-    panelBody:
-      "Revisión adversarial ciega: dos agentes revisan el diff de forma independiente, comparan hallazgos y emiten un veredicto. Si encuentra issues, vuelve a SDD para fix + re-judgment (máximo 2 rondas).",
-    isHitl: true,
   },
   {
     id: "partners-slack",
-    number: "07",
+    number: "09",
     label: "Partners / Slack",
     panelTitle: "Partners / Slack",
     panelBody:
-      "La card se mueve a Partners/Code Review en Jira y se manda una sola notificación al canal de Slack (backend o frontend). El merge es humano — el loop nunca auto-mergea.",
-    isHitl: false,
+      "La card pasa a Partners/Code Review en Jira y sale un solo aviso al canal de Slack de backend o frontend. El merge es humano: el loop nunca mergea.",
+    isHitl: true,
   },
 ] as const;
 
 const thesis =
-  "Así itero con agentes de IA en Libro de pases: cada card pasa por siete etapas conectadas. El loop alterna entre fases autónomas y puntos de decisión humana.";
+  "Así itero con agentes de IA en Libro de pases, con pstack como base: un orquestador en Opus delega cada fase a un subagente con el modelo que pide su rol, y cada card pasa por nueve etapas. Ninguna avanza sin la evidencia de una ejecución real.";
 const cta = "¿Querés verlo en acción en un proyecto real?";
 const ctaLink = "Mirá los proyectos";
 const panelHint = "Elegí una etapa para ver el detalle";
