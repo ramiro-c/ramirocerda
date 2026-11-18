@@ -16,7 +16,7 @@ The three skills I use:
 - `/architect` to lock types and structure before writing.
 - `/poteto-mode` to execute with a check that either passes or fails.
 
-I don't use it with the default models, because they blow up my tokens. I use a more token-friendly mix, configured with `/setup-pstack`.
+I never even ran it with the default models: on the 20 USD subscription it just wasn't viable. I use a more token-friendly mix, configured with `/setup-pstack`.
 
 ## Further reading
 

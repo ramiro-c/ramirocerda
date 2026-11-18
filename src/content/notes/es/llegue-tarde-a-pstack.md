@@ -16,7 +16,7 @@ Las tres skills que uso:
 - `/architect` para fijar tipos y estructura antes de escribir.
 - `/poteto-mode` para ejecutar con un chequeo que pase o falle.
 
-No lo uso con los modelos default, porque me explotan los tokens. Uso un mix más token friendly, que se configura con `/setup-pstack`.
+Con los modelos default ni llegué a correrlo: con la suscripción de 20 USD era inviable. Lo uso con un mix más token friendly, que se configura con `/setup-pstack`.
 
 ## Para profundizar
 
