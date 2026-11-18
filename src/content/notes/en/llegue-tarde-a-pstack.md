@@ -18,6 +18,8 @@ The three skills I use:
 
 I never even ran it with the default models: on the 20 USD subscription it just wasn't viable. I use a more token-friendly mix, configured with `/setup-pstack`.
 
+In my cards loop it replaced SDD. The flow is on the [workflow](/en/workflow/) page.
+
 ## Further reading
 
 - [pstack in cursor/plugins](https://github.com/cursor/plugins/tree/main/pstack)

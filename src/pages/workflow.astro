@@ -28,12 +28,12 @@ const nodes = [
     isHitl: false,
   },
   {
-    id: "sdd-auto",
+    id: "pstack",
     number: "03",
-    label: "SDD auto",
-    panelTitle: "SDD auto",
+    label: "pstack",
+    panelTitle: "pstack",
     panelBody:
-      "Pipeline completo de 5 fases: Explore (contexto), Propose (intención), Spec (requisitos + escenarios), Design (arquitectura técnica), Tasks (desglose en tareas). Todo generado por agentes antes de tocar código.",
+      "Uso pstack, el plugin de Lauren Tan para Cursor. /how para entender el código como está antes de tocarlo, /architect para fijar tipos y estructura antes de escribir y /poteto-mode para ejecutar con un chequeo que pase o falle. Lo corro con un mix de modelos más token friendly que el default.",
     isHitl: true,
   },
   {
@@ -60,7 +60,7 @@ const nodes = [
     label: "Judgment Day",
     panelTitle: "Judgment Day",
     panelBody:
-      "Revisión adversarial ciega: dos agentes revisan el diff de forma independiente, comparan hallazgos y emiten un veredicto. Si encuentra issues, vuelve a SDD para fix + re-judgment (máximo 2 rondas).",
+      "Revisión adversarial ciega: dos agentes revisan el diff de forma independiente, comparan hallazgos y emiten un veredicto. Si encuentra issues, vuelve a pstack para fix + re-judgment (máximo 2 rondas).",
     isHitl: true,
   },
   {
@@ -90,6 +90,10 @@ const panelHint = "Elegí una etapa para ver el detalle";
     <p class="thesis body-3">{thesis}</p>
 
     <WorkflowSplit nodes={nodes} hitlLabel={t("workflow.legend.hitl")} panelHint={panelHint} />
+
+    <p class="workflow-note body-6">
+      Escribí más sobre pstack en <a href="/notes/llegue-tarde-a-pstack/">Llegué tarde a pstack</a>.
+    </p>
 
     <section class="how-terminates">
       <h2 class="section-label caption-3">{t("workflow.howTerminatesLabel")}</h2>
@@ -124,6 +128,20 @@ const panelHint = "Elegí una etapa para ver el detalle";
     max-width: 680px;
     margin: 0 0 var(--space-200);
     color: var(--muted);
+  }
+  .workflow-note {
+    max-width: 680px;
+    margin: var(--space-200) 0 0;
+    color: var(--muted);
+  }
+  .workflow-note a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    transition: color var(--dur-color) var(--ease-out);
+  }
+  .workflow-note a:hover {
+    color: var(--accent-text);
   }
   .section-label {
     margin: 0 0 var(--space-75);
