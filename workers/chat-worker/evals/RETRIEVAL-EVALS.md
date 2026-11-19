@@ -108,3 +108,25 @@ Descartadas por ahora:
 - [ ] Barrer `SIMILARITY_THRESHOLD` contra el mejor puntaje denso y calibrarlo con los dos errores de abstención — **Ramiro / trabajo futuro** (no automatizado en el harness).
 - [ ] Decidir si la segunda búsqueda y el juez de suficiencia se quedan, según cuántas preguntas rescata la segunda búsqueda y cuántos "alcanza" falsos da el juez.
 - [ ] Decidir si bajar `MAX_CHUNKS` según la precisión del contexto final.
+
+## Estado al 2026-11-19 (después de indexar el sitio)
+
+Indexar el `dist/` del sitio (#36) bajó recall de 0.90 a 0.69. Lo que se hizo para recuperarlo:
+
+| PR | Cambio | Efecto medido |
+|----|--------|---------------|
+| #37 | Intro de cada página como chunk propio, `/privacy` excluido, sección `## Contacto` en el KB, `--local-index` en el eval | recall 0.69 → 0.80 (Vectorize en vivo) |
+| #39 | Umbral del juez de suficiencia a 0.75 | recall 0.82; arregla "¿qué modelo de embeddings?" como follow-up |
+| #40, #42 | Fallback de generación a Workers AI (Llama 3.3), timeout de Jev a 2 s | respuestas en prod en ~3-7 s con OpenCode caído |
+| #41 | RRF entre las dos búsquedas; la query contextual lleva los primeros 160 caracteres de la respuesta anterior | "What stack did he use for that one?" resuelve el referente |
+| #43 | Breaker: si el modelo principal falla, se saltea 5 min (`GENERATION_BREAKER_MS`) | sin latencia extra mientras el proveedor está caído |
+
+Respuestas con el dato esperado: ~88-91% (antes de #36: 93%). Los números de #39 en adelante se midieron con OpenCode degradado (503 en generación, timeouts de Jev), así que son ruidosos.
+
+## Próximos pasos (2026-11-19)
+
+- [ ] **Eval completo con el proveedor sano.** Correr `bun run chat:eval` (en serie, nunca dos a la vez: se pisan los rate limits del juez y el router) cuando gpt-6-luna y Jev respondan normal, para medir #37-#43 juntos y guardar el resultado en `evals/results/` como nuevo baseline.
+- [ ] **Chunk de catálogo de proyectos.** "What projects has he built?" no nombra Soccer Analytics ni Mundial 2026: el listado de `/work` está marcado `data-kb="skip"` y ningún chunk enumera todos los proyectos. Generar un chunk `kb-proyectos-catalogo` (o similar) desde `src/content/projects` en `populate-index.mjs`, con nombre + una línea por proyecto, y agregar un caso al eval.
+- [ ] **Caso `fu-es-antes`.** "¿Y antes de eso qué hacía?" contesta bien ("app móvil") pero el eval espera palabras en inglés. Agregar "móvil" a los facts esperados. La búsqueda semántica no expresa "antes de X"; si hace falta más, el contexto temporal tiene que venir de la query contextual, no del embedding.
+- [ ] **Vector huérfano.** `botardo-kb` tiene 152 vectores y el manifest 151. Vectorize no tiene endpoint para listar ids, así que no se puede identificar directo. Opción: reconstruir el índice desde cero en una ventana tranquila (`--dry-run` primero), o ignorarlo mientras no aparezca en resultados.
+- [ ] **Revisar el breaker en logs.** Después de la próxima caída de OpenCode, buscar `chat.ai_breaker_open` y `primary_skipped: true` en los logs del worker y confirmar que el fallback cubrió sin errores visibles para el visitante.
