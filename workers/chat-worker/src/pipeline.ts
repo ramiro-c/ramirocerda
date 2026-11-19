@@ -22,7 +22,7 @@
  */
 
 import { readAdaptiveConfig, type AdaptiveEnvVars } from "./config";
-import { generateReply, generateReplyStream, type GenerateResult } from "./generate";
+import { generateReply, generateReplyStream, generateWithWorkersAI, type GenerateResult } from "./generate";
 import { detectLanguage, type Language } from "./language";
 import { NO_INFO_REPLY, OFF_TOPIC_REPLY, PROMPT, type PromptSet } from "./prompts";
 import {
@@ -50,6 +50,8 @@ export interface PipelineEnv extends AdaptiveEnvVars {
   RAG_RERANK_MODEL?: string;
   RAG_RERANK_CANDIDATES?: string;
   GENERATION_MODEL: string;
+  /** Workers AI model used only when the primary generation fails. Empty or unset disables the fallback. */
+  GENERATION_FALLBACK_MODEL?: string;
   OPENCODE_GO_ENDPOINT: string;
   EMBEDDING_MODEL: string;
   SITE_ORIGIN?: string;
@@ -207,7 +209,36 @@ export async function runAdaptivePipeline(opts: {
       messages,
       sessionId,
     };
-    const result = onDelta ? await generateReplyStream({ ...request, onDelta }) : await generateReply(request);
+    let emitted = false;
+    const trackedDelta = onDelta
+      ? (text: string) => {
+          emitted = true;
+          onDelta(text);
+        }
+      : undefined;
+    const primary = trackedDelta
+      ? await generateReplyStream({ ...request, onDelta: trackedDelta })
+      : await generateReply(request);
+    let result: GenerateResult = primary;
+    let fallbackUsed = false;
+    const fallbackModel = env.GENERATION_FALLBACK_MODEL?.trim();
+    if (fallbackModel && (primary.status === 429 || primary.status === 500) && !emitted) {
+      try {
+        const content = await generateWithWorkersAI(env.AI, fallbackModel, messages);
+        if (content) {
+          result = { status: 200, content };
+          fallbackUsed = true;
+          onDelta?.(content);
+        } else {
+          log("chat.ai_fallback_failed", { fallback_model: fallbackModel, error: "empty reply" });
+        }
+      } catch (error) {
+        log("chat.ai_fallback_failed", {
+          fallback_model: fallbackModel,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
     const generationMs = Date.now() - tGen;
     log("chat.ai_done", {
       latency_ms: generationMs,
@@ -220,6 +251,7 @@ export async function runAdaptivePipeline(opts: {
       // doubled-budget retry: the visitor got an answer cut mid-sentence.
       truncated: result.status === 200 && result.truncated === true,
       streamed: Boolean(onDelta),
+      ...(fallbackUsed ? { fallback: true, fallback_model: fallbackModel, primary_status: primary.status } : {}),
     });
     return { result, generationMs };
   };
