@@ -394,6 +394,11 @@ also fails or answers empty, the original primary failure is returned. Empty or 
 `chat.ai_done` line then carries `fallback: true`, `fallback_model` and `primary_status`; a failed fallback logs
 `chat.ai_fallback_failed`.
 
+While the primary is known to be failing, a per-isolate breaker skips it and answers from the fallback directly
+(`chat.ai_done` carries `primary_skipped: true`). It opens, with `chat.ai_breaker_open`, on a 429 (honouring
+`Retry-After`), an upstream 401/402/403/5xx, or a network/timeout failure, never on other 4xx, and only when a fallback
+is configured. It closes by timing out after `GENERATION_BREAKER_MS` (default 300000 ms), not on a primary success.
+
 ## Secret (step 2.6 — requires the real OpenCode Go key, run manually)
 
 ```bash

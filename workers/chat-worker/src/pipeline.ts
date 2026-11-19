@@ -22,6 +22,7 @@
  */
 
 import { readAdaptiveConfig, type AdaptiveEnvVars } from "./config";
+import { isPrimaryGenerationOpen, notePrimaryGenerationFailure } from "./breaker";
 import { generateReply, generateReplyStream, generateWithWorkersAI, type GenerateResult } from "./generate";
 import { detectLanguage, type Language } from "./language";
 import { NO_INFO_REPLY, OFF_TOPIC_REPLY, PROMPT, type PromptSet } from "./prompts";
@@ -52,6 +53,8 @@ export interface PipelineEnv extends AdaptiveEnvVars {
   GENERATION_MODEL: string;
   /** Workers AI model used only when the primary generation fails. Empty or unset disables the fallback. */
   GENERATION_FALLBACK_MODEL?: string;
+  /** How long (ms) a failing primary generation is skipped in favour of the fallback. Default 300000. */
+  GENERATION_BREAKER_MS?: string;
   OPENCODE_GO_ENDPOINT: string;
   EMBEDDING_MODEL: string;
   SITE_ORIGIN?: string;
@@ -109,6 +112,25 @@ export interface PipelineOutcome {
 }
 
 export type PipelineLogger = (event: string, data?: Record<string, unknown>) => void;
+
+const DEFAULT_GENERATION_BREAKER_MS = 300_000;
+
+function breakerCooldownMs(value: string | undefined): number {
+  const parsed = Number(value);
+  return value?.trim() && Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_GENERATION_BREAKER_MS;
+}
+
+/**
+ * Failures that mean the provider itself is unavailable: quota (429), credentials or
+ * billing (401/402/403), 5xx, or network/timeout (no upstream status). Other 4xx are
+ * request bugs the fallback would only hide.
+ */
+function primaryUnavailable(result: GenerateResult): boolean {
+  if (result.status === 429) return true;
+  if (result.status !== 500) return false;
+  const { upstream } = result;
+  return upstream === undefined || upstream >= 500 || upstream === 401 || upstream === 402 || upstream === 403;
+}
 
 function smalltalkMessages(prompt: PromptSet, history: HistoryTurn[] | undefined, message: string): ChatMessage[] {
   const messages: ChatMessage[] = [{ role: "system", content: prompt.smalltalk }];
@@ -216,13 +238,28 @@ export async function runAdaptivePipeline(opts: {
           onDelta(text);
         }
       : undefined;
-    const primary = trackedDelta
-      ? await generateReplyStream({ ...request, onDelta: trackedDelta })
-      : await generateReply(request);
+    const fallbackModel = env.GENERATION_FALLBACK_MODEL?.trim();
+    // The primary is known to be failing: go straight to the fallback.
+    const primarySkipped = Boolean(fallbackModel) && isPrimaryGenerationOpen(Date.now());
+    let primary: GenerateResult = { status: 500, code: "MODEL_ERROR" };
+    if (!primarySkipped) {
+      primary = trackedDelta
+        ? await generateReplyStream({ ...request, onDelta: trackedDelta })
+        : await generateReply(request);
+      if (fallbackModel && primaryUnavailable(primary)) {
+        const cooldownMs =
+          (primary.status === 429 ? primary.retryAfterMs : undefined) ?? breakerCooldownMs(env.GENERATION_BREAKER_MS);
+        notePrimaryGenerationFailure(Date.now(), cooldownMs);
+        log("chat.ai_breaker_open", {
+          primary_status: primary.status,
+          ...(primary.status === 500 && primary.upstream !== undefined ? { upstream_status: primary.upstream } : {}),
+          cooldown_ms: cooldownMs,
+        });
+      }
+    }
     let result: GenerateResult = primary;
     let fallbackUsed = false;
-    const fallbackModel = env.GENERATION_FALLBACK_MODEL?.trim();
-    if (fallbackModel && (primary.status === 429 || primary.status === 500) && !emitted) {
+    if (fallbackModel && (primarySkipped || ((primary.status === 429 || primary.status === 500) && !emitted))) {
       try {
         const content = await generateWithWorkersAI(env.AI, fallbackModel, messages);
         if (content) {
@@ -251,7 +288,14 @@ export async function runAdaptivePipeline(opts: {
       // doubled-budget retry: the visitor got an answer cut mid-sentence.
       truncated: result.status === 200 && result.truncated === true,
       streamed: Boolean(onDelta),
-      ...(fallbackUsed ? { fallback: true, fallback_model: fallbackModel, primary_status: primary.status } : {}),
+      ...(primarySkipped ? { primary_skipped: true } : {}),
+      ...(fallbackUsed
+        ? {
+            fallback: true,
+            fallback_model: fallbackModel,
+            ...(primarySkipped ? {} : { primary_status: primary.status }),
+          }
+        : {}),
     });
     return { result, generationMs };
   };
