@@ -4,7 +4,8 @@
  *   search 1 -> decision-model sufficiency judge (one System One request, noul)
  *     sufficient, judge failure, no alternate query or judge off -> keep search 1
  *     insufficient                                                -> search 2 with the
- *                                                                    alternate query, merge by id
+ *                                                                    alternate query, merge by
+ *                                                                    reciprocal rank (RRF)
  *
  * Jev does not generate text, so the judge cannot invent a reformulation: the
  * re-search uses the router's alternate query (the contextual query when search
@@ -106,14 +107,51 @@ export async function judgeSufficiency(
   };
 }
 
-/** Dedupe by chunk id keeping the best score; best first, capped at MAX_CHUNKS. */
+/** Reciprocal-rank-fusion constant: dampens the top of each list so one list cannot dominate. */
+const RRF_K = 60;
+
+/** id -> 1-based rank for one search result list (first occurrence wins). */
+function rankList(chunks: RetrievedChunk[]): Map<string, number> {
+  const ranks = new Map<string, number>();
+  chunks.forEach((chunk, index) => {
+    if (!ranks.has(chunk.id)) ranks.set(chunk.id, index + 1);
+  });
+  return ranks;
+}
+
+/**
+ * Reciprocal rank fusion of two searches by their ORDER, deduped by id, capped at MAX_CHUNKS.
+ *
+ * `chunk.score` is the dense cosine similarity, so it is not comparable across two different
+ * queries: the reranker has already re-ordered each list, and only the position carries that
+ * verdict. Measured: the right chunk sat 3rd after rerank in search 2 with a dense score of
+ * 0.405, and a score-sorted merge evicted it from the top MAX_CHUNKS.
+ *
+ * Each chunk scores `sum(1 / (RRF_K + rank))` over the lists it appears in, with rank 1-based.
+ * Ties break on the first list's rank (chunks missing there rank last), then on id ascending.
+ * A chunk in both lists keeps the object from the first list; `score` is never overwritten.
+ */
 export function mergeChunks(a: RetrievedChunk[], b: RetrievedChunk[]): RetrievedChunk[] {
-  const best = new Map<string, RetrievedChunk>();
-  for (const chunk of [...a, ...b]) {
-    const current = best.get(chunk.id);
-    if (!current || chunk.score > current.score) best.set(chunk.id, chunk);
+  const lists = [a, b];
+  const ranks = lists.map(rankList);
+  const chunks = new Map<string, RetrievedChunk>();
+  for (const list of lists) {
+    for (const chunk of list) {
+      if (!chunks.has(chunk.id)) chunks.set(chunk.id, chunk);
+    }
   }
-  return [...best.values()].toSorted((x, y) => y.score - x.score).slice(0, MAX_CHUNKS);
+  const fused = [...chunks.values()].map((chunk) => ({
+    chunk,
+    rrf: ranks.reduce((sum, rank) => {
+      const position = rank.get(chunk.id);
+      return position === undefined ? sum : sum + 1 / (RRF_K + position);
+    }, 0),
+    firstRank: ranks[0].get(chunk.id) ?? Number.POSITIVE_INFINITY,
+  }));
+  return fused
+    .toSorted((x, y) => y.rrf - x.rrf || x.firstRank - y.firstRank || (x.chunk.id < y.chunk.id ? -1 : 1))
+    .slice(0, MAX_CHUNKS)
+    .map((entry) => entry.chunk);
 }
 
 export interface AdaptiveRetrieval {

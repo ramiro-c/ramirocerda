@@ -342,7 +342,7 @@ describe("adaptive RAG through handleRag", () => {
     );
     expect(body.reply).toBe("Respuesta");
     expect(query).toHaveBeenCalledTimes(2);
-    expect(run.mock.calls[1][1]).toEqual({ text: ["¿Dónde trabaja Ramiro? ¿hizo cursos?"] });
+    expect(run.mock.calls[1][1]).toEqual({ text: ["¿Dónde trabaja Ramiro? En LDP. ¿hizo cursos?"] });
     expect(calls.judge).toHaveLength(1);
     const gen = calls.generation[0] as { messages: Array<{ content: string }> };
     expect(gen.messages[0].content).toContain("GCP");
@@ -400,7 +400,7 @@ describe("adaptive RAG through handleRag", () => {
     // Both searches, in order: the raw message first, the history-merged query second.
     expect(retrieved?.queries).toHaveLength(2);
     expect(retrieved?.queries?.[0]).toBe("¿Y sus estudios?");
-    expect(retrieved?.queries?.[1]).toBe("¿Dónde trabaja Ramiro? ¿Y sus estudios?");
+    expect(retrieved?.queries?.[1]).toBe("¿Dónde trabaja Ramiro? En LDP. ¿Y sus estudios?");
   });
 });
 

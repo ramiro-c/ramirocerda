@@ -47,18 +47,50 @@ afterEach(() => {
 });
 
 describe("mergeChunks", () => {
-  it("dedupes by id keeping the best score, sorted, capped at MAX_CHUNKS", () => {
-    const merged = mergeChunks(
-      [chunk("a", 0.4), chunk("b", 0.5), chunk("c", 0.31)],
-      [chunk("a", 0.6), chunk("d", 0.35), chunk("e", 0.32), chunk("f", 0.3), chunk("g", 0.29)],
-    );
-    expect(merged.map((c) => [c.id, c.score])).toEqual([
-      ["a", 0.6],
-      ["b", 0.5],
-      ["d", 0.35],
-      ["e", 0.32],
-    ]);
+  it("ranks by RRF order, not by dense score: 1st in b beats 4th in a despite a lower score", () => {
+    // Dense scores say the opposite of the reranker order (search 2's best chunk scored 0.405 live).
+    const a = [chunk("a1", 0.7), chunk("a2", 0.65), chunk("a3", 0.6), chunk("a4", 0.95)];
+    const b = [chunk("b1", 0.2)];
+    const merged = mergeChunks(a, b);
+    // b1 = 1/61, a4 = 1/64: list b's winner makes the cut, list a's fourth does not.
+    expect(merged.map((c) => c.id)).toEqual(["a1", "b1", "a2", "a3"]);
+    expect(merged.find((c) => c.id === "a4")).toBeUndefined();
+  });
+
+  it("a chunk present in both lists wins", () => {
+    const a = [chunk("only-a", 0.99), chunk("both", 0.5)];
+    const b = [chunk("only-b", 0.98), chunk("both", 0.4)];
+    const merged = mergeChunks(a, b);
+    // both = 1/62 + 1/62, above any single-list entry (1/61 max).
+    expect(merged[0].id).toBe("both");
+    expect(merged.map((c) => c.id)).toEqual(["both", "only-a", "only-b"]);
+  });
+
+  it("dedupes by id, keeping the object from the first list and its original score", () => {
+    const merged = mergeChunks([chunk("a", 0.4), chunk("b", 0.3)], [chunk("a", 0.9), chunk("a", 0.8)]);
+    expect(merged.filter((c) => c.id === "a")).toHaveLength(1);
+    expect(merged.find((c) => c.id === "a")?.score).toBe(0.4);
+    // The rrf value is a ranking key, never written back into the chunk.
+    expect(merged.every((c) => c.score === 0.4 || c.score === 0.3)).toBe(true);
+    expect(merged.find((c) => c.id === "a")?.metadata).toEqual({ text: "texto a", section: "Stack" });
+  });
+
+  it("caps the merged list at MAX_CHUNKS", () => {
+    const a = [chunk("a1", 0.9), chunk("a2", 0.8), chunk("a3", 0.7)];
+    const b = [chunk("b1", 0.6), chunk("b2", 0.5), chunk("b3", 0.4)];
+    const merged = mergeChunks(a, b);
     expect(merged).toHaveLength(MAX_CHUNKS);
+    expect(new Set(merged.map((c) => c.id)).size).toBe(MAX_CHUNKS);
+  });
+
+  it("breaks ties deterministically: first list's rank, then id", () => {
+    // a1 and b1 tie on rrf (1/61 each); a1 wins on the first list's rank, same for a2/b2.
+    const a = [chunk("a1", 0.5), chunk("a2", 0.4)];
+    const b = [chunk("b1", 0.5), chunk("b2", 0.4)];
+    const once = mergeChunks(a, b).map((c) => c.id);
+    expect(once).toEqual(["a1", "b1", "a2", "b2"]);
+    expect(mergeChunks(a, b).map((c) => c.id)).toEqual(once);
+    expect(mergeChunks([...a], [...b]).map((c) => c.id)).toEqual(once);
   });
 });
 
@@ -114,8 +146,9 @@ describe("retrieveAdaptive", () => {
     expect(result.iterations).toBe(2);
     expect(result.queries).toEqual([followUp.query, followUp.alternateQuery]);
     expect(result.chunks.map((c) => [c.id, c.score])).toEqual([
+      // "weak" is in both lists (rank 1 then rank 2), so RRF keeps it first and keeps list a's object.
+      ["weak", 0.33],
       ["good", 0.7],
-      ["weak", 0.34],
     ]);
   });
 
