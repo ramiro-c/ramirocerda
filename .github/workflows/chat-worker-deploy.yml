@@ -31,7 +31,11 @@ jobs:
         with:
           node-version: 22
 
-      - run: bun install --frozen-lockfile --filter ramirocerda-chat-worker
+      # Full install + site build: the eval-data tests load the KB, whose site
+      # source reads the built dist/ (same as chat-worker-tests.yml).
+      - run: bun install --frozen-lockfile
+
+      - run: bun run build
 
       - name: Test
         run: bun run --filter ramirocerda-chat-worker test
