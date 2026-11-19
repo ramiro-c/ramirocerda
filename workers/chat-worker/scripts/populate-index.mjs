@@ -369,8 +369,11 @@ export async function loadKBChunks(rootDir) {
     if (source.type === "site") {
       // Index what the site actually publishes: every indexable HTML page Astro
       // emitted to dist/. dist must exist (the CI/populate runbook builds it
-      // first); without it there is nothing honest to index.
-      const pages = await loadSiteChunks(path.resolve(rootDir, source.dir));
+      // first); without it there is nothing honest to index. The exclude list
+      // keeps whole routes (e.g. /privacy) out of the KB.
+      const pages = await loadSiteChunks(path.resolve(rootDir, source.dir), {
+        exclude: source.exclude ?? [],
+      });
       chunks.push(...pages.map((c) => ({ ...c, source: source.id })));
       continue;
     }

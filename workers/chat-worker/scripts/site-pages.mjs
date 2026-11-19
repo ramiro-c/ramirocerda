@@ -9,8 +9,9 @@
  * source of truth.
  *
  * Pages opt out with <meta name="robots" content="noindex"> (the 404 page and
- * Astro redirect stubs), and page fragments that are UI — not content — opt
- * out with data-kb="skip", hidden, or aria-hidden="true" wrappers.
+ * Astro redirect stubs), page fragments that are UI — not content — opt
+ * out with data-kb="skip", hidden, or aria-hidden="true" wrappers, and whole
+ * routes opt out via the site source's exclude list in kb-sources.json.
  *
  * Everything is deterministic: same dist/ in, same chunk ids out.
  */
@@ -394,10 +395,17 @@ export function chunkSitePage(page) {
  * Load all site chunks from a built dist directory: every indexable HTML page,
  * in sorted file order, chunked deterministically.
  *
+ * opts.exclude lists route paths (same normalized form as page.url: no
+ * trailing slash, "/" for the root) that must not be indexed. Excluded pages
+ * are skipped after readSitePage, so noindex pages are still dropped first,
+ * and every exclude entry must match an indexable page — a stale entry fails
+ * loudly instead of silently doing nothing.
+ *
  * @param {string} distDir absolute path to the Astro build output
+ * @param {{ exclude?: string[] }} [opts]
  * @returns {Promise<Array<{ id: string, text: string, section: string, idx: number, url: string, urlAlt?: string }>>}
  */
-export async function loadSiteChunks(distDir) {
+export async function loadSiteChunks(distDir, opts = {}) {
   const DIST_MISSING = "dist/ missing: run `bun run build` before populate";
   let st;
   try {
@@ -407,6 +415,13 @@ export async function loadSiteChunks(distDir) {
   }
   if (!st.isDirectory()) throw new Error(DIST_MISSING);
 
+  const exclude = opts.exclude ?? [];
+  if (!Array.isArray(exclude) || exclude.some((route) => typeof route !== "string" || !route.startsWith("/"))) {
+    throw new Error('site exclude: must be an array of route paths starting with "/"');
+  }
+  const excludeSet = new Set(exclude);
+  const unmatched = new Set(excludeSet);
+
   const pages = [];
   const seen = new Map();
   for (const file of await globFiles(distDir, "**/*.html")) {
@@ -414,10 +429,17 @@ export async function loadSiteChunks(distDir) {
     const html = await readFile(file, "utf8");
     const page = readSitePage(html, rel);
     if (!page) continue;
+    if (excludeSet.has(page.url)) {
+      unmatched.delete(page.url);
+      continue;
+    }
     const first = seen.get(page.url);
     if (first) throw new Error(`duplicate site page url ${page.url} (${first} and ${rel})`);
     seen.set(page.url, rel);
     pages.push(page);
+  }
+  if (unmatched.size > 0) {
+    throw new Error(`site exclude: no published page at ${[...unmatched].join(", ")}`);
   }
   return pages.flatMap(chunkSitePage);
 }
