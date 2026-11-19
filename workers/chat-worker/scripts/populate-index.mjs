@@ -45,8 +45,8 @@ if (!process.env.CLOUDFLARE_API_TOKEN) {
   }
 }
 
-const EMBEDDING_MODEL = "@cf/baai/bge-m3";
-const EMBED_BATCH_SIZE = 16;
+export const EMBEDDING_MODEL = "@cf/baai/bge-m3";
+export const EMBED_BATCH_SIZE = 16;
 const INDEX_NAME = process.env.VECTORIZE_INDEX ?? "botardo-kb";
 
 /**
@@ -538,6 +538,26 @@ export function diffIds(currentIds, manifestIds) {
   };
 }
 
+/**
+ * Vectorize metadata for one chunk: the exact object shape the live index
+ * upserts. Shared with the evals' local index (evals/local-index.ts) so both
+ * index the same metadata.
+ *
+ * @param {{ section: string, source: string, idx: number, text: string, url?: string, urlAlt?: string }} chunk
+ * @returns {{ section: string, source: string, idx: number, text: string, url?: string, urlAlt?: string }}
+ */
+export function vectorMetadata(chunk) {
+  return {
+    section: chunk.section,
+    source: chunk.source,
+    idx: chunk.idx,
+    text: chunk.text,
+    // Notes only: the published route the bot links to instead of dumping the
+    // knowledge base. Curated KB chunks have no route and stay unchanged.
+    ...(chunk.url ? { url: chunk.url, urlAlt: chunk.urlAlt } : {}),
+  };
+}
+
 function cloudflareFetch(pathname, { accountId, apiToken, body }) {
   return fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}${pathname}`, {
     method: "POST",
@@ -673,15 +693,7 @@ async function main() {
   const vectors = chunks.map((c, i) => ({
     id: c.id,
     values: values[i],
-    metadata: {
-      section: c.section,
-      source: c.source,
-      idx: c.idx,
-      text: c.text,
-      // Notes only: the published route the bot links to instead of dumping the
-      // knowledge base. Curated KB chunks have no route and stay unchanged.
-      ...(c.url ? { url: c.url, urlAlt: c.urlAlt } : {}),
-    },
+    metadata: vectorMetadata(c),
   }));
 
   const previousIds = await readManifestIds();

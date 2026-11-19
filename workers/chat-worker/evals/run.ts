@@ -12,7 +12,9 @@
  * Options: --cases <path> (default evals/cases.json), --only <id-substring>,
  *          --prompt <id> (generation prompt variant from src/prompts.ts PROMPTS, default v1),
  *          --pipelines linear,adaptive, --no-judge (skip the faithfulness eval, the
- *          only judge that spends generation tokens), --out <dir> (default evals/results).
+ *          only judge that spends generation tokens), --out <dir> (default evals/results),
+ *          --local-index (real mode only: query an in-memory cosine index built from
+ *          the local chunks — needs a built dist/ — instead of the live Vectorize index).
  *
  * The report is split by stage so a failure can be located: router, 1. retrieval
  * (recall / hit, plus dense hit@15 / hit@5, MRR post-rerank, final-context precision,
@@ -47,6 +49,7 @@ import { runAdaptivePipeline, type PipelineEnv } from "../src/pipeline";
 import { isPromptId, PROMPTS } from "../src/prompts";
 import { instrument, offlineBindings, realBindings, zeroCounters, type MockRouterAnswer } from "./backends";
 import { evalDecisionAuth, loadLocalSecrets } from "./env";
+import { buildLocalIndex } from "./local-index";
 import { runLinearPipeline } from "./linear-pipeline";
 import { markdownTable, summarize, type CaseResult, type EvalCase, type EvalMode, type PipelineName } from "./metrics";
 import {
@@ -86,6 +89,11 @@ function loadCredentials(): void {
 
 async function main(): Promise<void> {
   const mode: EvalMode = flag("offline") ? "offline" : flag("decision-only") ? "decision" : "real";
+  // The local index needs the real AI binding to embed the chunks.
+  const localIndex = flag("local-index");
+  if (localIndex && mode !== "real") {
+    throw new Error("--local-index solo es válido en modo real (necesita Workers AI para los embeddings).");
+  }
   const offline = mode === "offline";
   // Stage judges only grade real answers: decision/offline replies are stubs.
   const useClaims = mode === "real" && !flag("no-judge");
@@ -135,6 +143,13 @@ async function main(): Promise<void> {
       apiToken: process.env.CLOUDFLARE_API_TOKEN!,
       indexName: process.env.VECTORIZE_INDEX ?? "botardo-kb",
     });
+    if (localIndex) {
+      // Same real AI binding; only the retrieval source changes: local chunks
+      // instead of the live Vectorize index (loadKBChunks throws without dist/).
+      const local = await buildLocalIndex({ rootDir: ROOT_DIR, ai: bindings.AI });
+      bindings = { AI: bindings.AI, VECTORIZE: local };
+      console.error(`local index: ${local.chunkCount} chunks (${local.embedded} embedded)`);
+    }
   }
 
   // Decision mode calls the real router, so it keeps the paid path: without it the
@@ -281,7 +296,7 @@ async function main(): Promise<void> {
       ? "OFFLINE con modelo de decisión MOCKEADO (oráculo: devuelve la ruta y el hire_intent esperados de cada caso; el juez de suficiencia siempre dice insuficiente), Vectorize sin matches y generación stub. Solo son reales el conteo de llamadas bajo esos mocks; nada de esto mide la calidad del router."
       : mode === "decision"
         ? `DECISIÓN REAL (router y juez: ${decisionModel}) con Vectorize sin matches y generación stub. Son reales la ruta, el offerContact, los fallbacks, la latencia y los tokens del router; recall, respuestas y latencia total quedan pendientes.`
-        : `REAL (router y juez: ${decisionModel}; Workers AI + Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"}; generación ${vars.GENERATION_MODEL}; jueces de etapa: abstención Jev ${jev.model}${useClaims ? `, fidelidad = claims con ${process.env.EVAL_JUDGE_MODEL ?? vars.GENERATION_MODEL} + soporte Jev ${jev.model}` : ", fidelidad apagada (--no-judge)"}${jev.fallbackModel ? ` (fallback pago ${jev.fallbackModel})` : ""})`;
+        : `REAL (router y juez: ${decisionModel}; Workers AI + ${localIndex ? "índice local (dist/)" : `Vectorize ${process.env.VECTORIZE_INDEX ?? "botardo-kb"}`}; generación ${vars.GENERATION_MODEL}; jueces de etapa: abstención Jev ${jev.model}${useClaims ? `, fidelidad = claims con ${process.env.EVAL_JUDGE_MODEL ?? vars.GENERATION_MODEL} + soporte Jev ${jev.model}` : ", fidelidad apagada (--no-judge)"}${jev.fallbackModel ? ` (fallback pago ${jev.fallbackModel})` : ""})`;
   const table = markdownTable(summaries, { mode });
   const report = `### Evals Botardo: lineal vs adaptativo, por etapa\n\nModo: ${modeText}\nPrompt: ${promptId}\nCasos: ${cases.length} (${new Date().toISOString()})\n\n${table}\n`;
   console.log(report);
