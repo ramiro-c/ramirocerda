@@ -388,7 +388,7 @@ quality. Results are written to `evals/results/` (gitignored).
 
 ## Generation fallback
 
-`GENERATION_FALLBACK_MODEL` (wrangler var, `@cf/openai/gpt-oss-120b`) is a Workers AI chat model used only when the
+`GENERATION_FALLBACK_MODEL` (wrangler var, `@cf/openai/llama-3.3-70b-instruct-fp8-fast`) is a Workers AI chat model used only when the
 primary generation (OpenCode Go) returns 429 or 500 and no streamed delta has reached the visitor yet. If the fallback
 also fails or answers empty, the original primary failure is returned. Empty or unset disables the fallback. The
 `chat.ai_done` line then carries `fallback: true`, `fallback_model` and `primary_status`; a failed fallback logs
