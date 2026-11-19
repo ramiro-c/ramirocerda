@@ -2,8 +2,9 @@
  * Workers AI generation fallback: used only when the primary fails (429/500)
  * and nothing was streamed to the visitor yet.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resetPrimaryGenerationBreaker } from "./breaker";
 import { extractWorkersAIText } from "./generate";
 import { DECISION_OFF, GENERATION_ENDPOINT } from "./test-utils";
 
@@ -79,6 +80,7 @@ describe("generation fallback", () => {
   beforeEach(() => {
     mocks.generateReply.mockReset();
     mocks.generateReplyStream.mockReset();
+    resetPrimaryGenerationBreaker();
   });
 
   it.each([
@@ -161,5 +163,116 @@ describe("generation fallback", () => {
     delete env.GENERATION_FALLBACK_MODEL;
     expect((await ask(env)).result).toEqual(fail500);
     expect(fallbackRun).not.toHaveBeenCalled();
+  });
+});
+
+describe("generation breaker", () => {
+  beforeEach(() => {
+    mocks.generateReply.mockReset();
+    mocks.generateReplyStream.mockReset();
+    resetPrimaryGenerationBreaker();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(1_000_000);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  async function askWithLog(env: PipelineEnv) {
+    const log = vi.fn<(event: string, data?: Record<string, unknown>) => void>();
+    await runAdaptivePipeline({ message: "¿Dónde trabaja Ramiro?", history: [], env, sessionId: "s", log });
+    const find = (name: string) => log.mock.calls.find(([event]) => event === name)?.[1];
+    return { done: find("chat.ai_done"), opened: find("chat.ai_breaker_open") };
+  }
+
+  it("after a primary 500/upstream 503, the next request skips the primary", async () => {
+    mocks.generateReply.mockResolvedValue(fail500);
+    const { env, fallbackRun } = makeEnv(async () => ({ response: "Trabaja en LDP." }));
+    const first = await askWithLog(env);
+    expect(first.opened).toMatchObject({ primary_status: 500, upstream_status: 503, cooldown_ms: 300_000 });
+    expect(first.done).not.toHaveProperty("primary_skipped");
+    expect(mocks.generateReply).toHaveBeenCalledTimes(1);
+
+    const second = await askWithLog(env);
+    expect(mocks.generateReply).toHaveBeenCalledTimes(1);
+    expect(fallbackRun).toHaveBeenCalledTimes(2);
+    expect(second.done).toMatchObject({ status: 200, primary_skipped: true, fallback: true });
+    expect(second.opened).toBeUndefined();
+  });
+
+  it("streaming: a skipped primary emits the fallback text once", async () => {
+    mocks.generateReplyStream.mockResolvedValue(fail429);
+    const { env } = makeEnv(async () => ({ response: "Hola" }));
+    await ask(env, vi.fn());
+    const onDelta = vi.fn();
+    const { result } = await ask(env, onDelta);
+    expect(mocks.generateReplyStream).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ status: 200, content: "Hola" });
+    expect(onDelta).toHaveBeenCalledTimes(1);
+  });
+
+  it("skipped primary and a failing fallback: MODEL_ERROR without calling the primary", async () => {
+    mocks.generateReply.mockResolvedValue(fail500);
+    const { env } = makeEnv(async () => {
+      throw new Error("ai down");
+    });
+    await ask(env);
+    const { result } = await ask(env);
+    expect(result).toEqual({ status: 500, code: "MODEL_ERROR" });
+    expect(mocks.generateReply).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses the Retry-After the primary surfaced", async () => {
+    mocks.generateReply.mockResolvedValue({ ...fail429, retryAfterMs: 42_000 });
+    const { env } = makeEnv(async () => ({ response: "x" }));
+    expect((await askWithLog(env)).opened).toMatchObject({ primary_status: 429, cooldown_ms: 42_000 });
+  });
+
+  it.each([
+    ["upstream 401", { status: 500, code: "MODEL_ERROR", upstream: 401 }],
+    ["upstream 402", { status: 500, code: "MODEL_ERROR", upstream: 402 }],
+    ["upstream 403", { status: 500, code: "MODEL_ERROR", upstream: 403 }],
+    ["no upstream status", { status: 500, code: "MODEL_ERROR" }],
+  ])("opens on %s", async (_n, failure) => {
+    mocks.generateReply.mockResolvedValue(failure);
+    const { env } = makeEnv(async () => ({ response: "x" }));
+    expect((await askWithLog(env)).opened).toBeDefined();
+  });
+
+  it.each([400, 422])("does not open on upstream %s", async (upstream) => {
+    mocks.generateReply.mockResolvedValue({ status: 500, code: "MODEL_ERROR", upstream });
+    const { env } = makeEnv(async () => ({ response: "x" }));
+    expect((await askWithLog(env)).opened).toBeUndefined();
+    await askWithLog(env);
+    expect(mocks.generateReply).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not open when no fallback model is configured", async () => {
+    mocks.generateReply.mockResolvedValue(fail500);
+    const { env } = makeEnv(null, { GENERATION_FALLBACK_MODEL: "" });
+    expect((await askWithLog(env)).opened).toBeUndefined();
+    await askWithLog(env);
+    expect(mocks.generateReply).toHaveBeenCalledTimes(2);
+  });
+
+  it("a primary success leaves it closed", async () => {
+    mocks.generateReply.mockResolvedValue({ status: 200, content: "ok" });
+    const { env } = makeEnv(null);
+    expect((await askWithLog(env)).opened).toBeUndefined();
+    await askWithLog(env);
+    expect(mocks.generateReply).toHaveBeenCalledTimes(2);
+  });
+
+  it("GENERATION_BREAKER_MS sets the cooldown, and the primary is retried once it passes", async () => {
+    mocks.generateReply.mockResolvedValue(fail500);
+    const { env } = makeEnv(async () => ({ response: "x" }), { GENERATION_BREAKER_MS: "10000" });
+    expect((await askWithLog(env)).opened).toMatchObject({ cooldown_ms: 10_000 });
+    await askWithLog(env);
+    expect(mocks.generateReply).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(1_000_000 + 10_001);
+    mocks.generateReply.mockResolvedValue({ status: 200, content: "primary is back" });
+    const { done } = await askWithLog(env);
+    expect(mocks.generateReply).toHaveBeenCalledTimes(2);
+    expect(done).toMatchObject({ status: 200, reply_length: 15 });
+    expect(done).not.toHaveProperty("primary_skipped");
   });
 });

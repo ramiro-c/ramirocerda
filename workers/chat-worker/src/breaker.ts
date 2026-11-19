@@ -33,3 +33,40 @@ export function noteFreeTierExhausted(now: number, cooldownMs: number): void {
 export function resetFreeTierBreaker(): void {
   exhaustedUntil = 0;
 }
+
+/**
+ * Isolate-level breaker for the PRIMARY generation (OpenCode Go).
+ *
+ * When OpenCode is down or its quota is spent, every request used to wait for the primary
+ * to fail (a 5xx is retried with backoff, ~5 s measured) before the Workers AI fallback
+ * answered. This remembers the failure for a bounded window so the following requests go
+ * straight to the fallback.
+ *
+ * Scope and safety:
+ * - Independent from the free decision tier breaker above: separate state, separate window.
+ * - Per isolate, in memory only. A cold isolate starts closed, which is the safe direction
+ *   (one slow request).
+ * - Only opened when a fallback model is configured, and only for failures that say the
+ *   provider is unavailable (429, 401/402/403, 5xx, network or timeout). Other 4xx are
+ *   request bugs that the fallback would hide, so they never open it.
+ * - A primary success does not close it: it closes only by timing out.
+ * - The window only ever grows (Math.max), so concurrent failures converge on the later
+ *   deadline.
+ */
+
+let primaryGenerationDownUntil = 0;
+
+/** True while the primary generation is assumed down for this isolate. */
+export function isPrimaryGenerationOpen(now: number): boolean {
+  return now < primaryGenerationDownUntil;
+}
+
+/** Remember a primary generation failure, keeping any longer window already open. */
+export function notePrimaryGenerationFailure(now: number, cooldownMs: number): void {
+  primaryGenerationDownUntil = Math.max(primaryGenerationDownUntil, now + cooldownMs);
+}
+
+/** Close the breaker. For tests: the state is process-wide, so suites must not inherit it. */
+export function resetPrimaryGenerationBreaker(): void {
+  primaryGenerationDownUntil = 0;
+}

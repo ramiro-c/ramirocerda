@@ -14,11 +14,13 @@
  * budget, and only then flagged as `truncated` when it still runs out.
  */
 
+import { parseRetryAfterMs } from "./decision";
 import type { ChatMessage } from "./rag";
 
 export type GenerateResult =
   | { status: 200; content: string; truncated?: true }
-  | { status: 429; code: "RATE_LIMITED" }
+  /** `retryAfterMs` is the parsed Retry-After header when the upstream sent one. */
+  | { status: 429; code: "RATE_LIMITED"; retryAfterMs?: number }
   /** `upstream` is the raw HTTP status from OpenCode Go when one was received. */
   | { status: 500; code: "MODEL_ERROR"; upstream?: number };
 
@@ -54,6 +56,11 @@ export const DEFAULT_GENERATION_TIMEOUT_MS = 12_000;
  */
 export const DEFAULT_GENERATION_ATTEMPTS = 2;
 
+function rateLimited(response: Response): GenerateResult {
+  const retryAfterMs = parseRetryAfterMs(response.headers.get("retry-after"), Date.now());
+  return { status: 429, code: "RATE_LIMITED", ...(retryAfterMs === null ? {} : { retryAfterMs }) };
+}
+
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
 
 type AttemptOutcome = { kind: "done"; result: GenerateResult } | { kind: "retry"; upstream?: number };
@@ -85,7 +92,7 @@ async function attemptOnce(
     });
 
     if (response.status === 429) {
-      return { kind: "done", result: { status: 429, code: "RATE_LIMITED" } };
+      return { kind: "done", result: rateLimited(response) };
     }
     if (!response.ok) {
       return RETRYABLE_STATUS.has(response.status)
@@ -234,7 +241,7 @@ async function streamOnce(options: StreamOptions, maxTokens: number, timeoutMs: 
       body: JSON.stringify({ model, messages, max_tokens: maxTokens, temperature, stream: true }),
       signal: controller.signal,
     });
-    if (response.status === 429) return { kind: "done", result: { status: 429, code: "RATE_LIMITED" } };
+    if (response.status === 429) return { kind: "done", result: rateLimited(response) };
     if (!response.ok || !response.body) {
       return RETRYABLE_STATUS.has(response.status) || !response.body
         ? { kind: "retry", upstream: response.status, emitted }

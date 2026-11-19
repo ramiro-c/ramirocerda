@@ -49,6 +49,7 @@
     "RAG_RERANK_CANDIDATES": "15",
     "GENERATION_MODEL": "gpt-6-luna",
     "GENERATION_FALLBACK_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "GENERATION_BREAKER_MS": "300000",
     "OPENCODE_GO_ENDPOINT": "https://opencode.ai/zen/go/v1/chat/completions",
     "EMBEDDING_MODEL": "@cf/baai/bge-m3",
     "SITE_ORIGIN": "https://ramirocerda.com.ar",
