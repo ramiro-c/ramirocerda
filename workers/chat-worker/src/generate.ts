@@ -301,3 +301,34 @@ export async function generateReplyStream(options: StreamOptions): Promise<Gener
   }
   return { status: 500, code: "MODEL_ERROR", ...(lastUpstream === undefined ? {} : { upstream: lastUpstream }) };
 }
+
+/** Minimal Workers AI binding shape (structurally satisfied by `PipelineEnv["AI"]`). */
+export interface TextAiBinding {
+  run: (model: string, input: unknown) => Promise<unknown>;
+}
+
+/**
+ * Reply text from a Workers AI chat response. Models answer either
+ * `{ response: string }` or an OpenAI-style `{ choices: [{ message: { content } }] }`;
+ * anything else yields "".
+ */
+export function extractWorkersAIText(output: unknown): string {
+  if (typeof output !== "object" || output === null) return "";
+  const { response, choices } = output as { response?: unknown; choices?: unknown };
+  if (typeof response === "string") return response.trim();
+  if (Array.isArray(choices)) {
+    const content = (choices[0] as { message?: { content?: unknown } } | undefined)?.message?.content;
+    if (typeof content === "string") return content.trim();
+  }
+  return "";
+}
+
+/** One non-streaming chat completion on Workers AI. Throws when the binding throws. */
+export async function generateWithWorkersAI(
+  ai: TextAiBinding,
+  model: string,
+  messages: ChatMessage[],
+  maxTokens: number = DEFAULT_MAX_TOKENS,
+): Promise<string> {
+  return extractWorkersAIText(await ai.run(model, { messages, max_tokens: maxTokens }));
+}
