@@ -27,6 +27,7 @@ import {
   type DecisionUsage,
 } from "./decision";
 import { MAX_CHUNKS, retrieveChunks, type RetrievedChunk, type RetrievalDiagnostics } from "./rag";
+import type { Language } from "./language";
 import { NOUL_YES } from "./router";
 
 type RetrievalEnv = Parameters<typeof retrieveChunks>[1];
@@ -137,18 +138,24 @@ export async function retrieveAdaptive(
     alternateQuery: string | null;
     /** The first search for `query`, already in flight (started in parallel with the router). */
     prefetched?: Promise<RetrievedChunk[]>;
+    /** Visitor language: prefer its chunks at retrieval (see preferLanguage in rag.ts). */
+    lang?: Language;
   },
   env: RetrievalEnv,
   config: AdaptiveConfig,
   opts?: { collectRetrievalDiagnostics?: boolean },
 ): Promise<AdaptiveRetrieval> {
-  const { question, query } = input;
+  const { question, query, lang } = input;
   const collect = opts?.collectRetrievalDiagnostics === true;
+  const chunkOpts = (accumulate?: RetrievalDiagnostics[]) => ({
+    ...(lang ? { lang } : {}),
+    ...(accumulate ? { accumulate } : {}),
+  });
   const diag1: RetrievalDiagnostics[] = [];
   // First search errors propagate (same as the linear pipeline: MODEL_ERROR).
   const first = input.prefetched
     ? await input.prefetched
-    : await retrieveChunks(query, env, collect ? { accumulate: diag1 } : undefined);
+    : await retrieveChunks(query, env, chunkOpts(collect ? diag1 : undefined));
   const firstSearchChunkIds = first.map((c) => c.id);
   const retrievalDiagnostics: RetrievalDiagnostics[] = collect && diag1[0] ? [diag1[0]] : [];
   const queries = [query];
@@ -186,7 +193,7 @@ export async function retrieveAdaptive(
   queries.push(alternate);
   const diag2: RetrievalDiagnostics[] = [];
   try {
-    const second = await retrieveChunks(alternate, env, collect ? { accumulate: diag2 } : undefined);
+    const second = await retrieveChunks(alternate, env, chunkOpts(collect ? diag2 : undefined));
     if (collect && diag2[0]) done.retrievalDiagnostics.push(diag2[0]);
     return { ...done, chunks: mergeChunks(first, second), iterations: 2, queries };
   } catch {

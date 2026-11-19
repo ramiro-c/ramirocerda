@@ -143,7 +143,7 @@ export async function runAdaptivePipeline(opts: {
   // needs per-stage ids, we skip this shortcut so diagnostics attach to the same promise
   // retrieveAdaptive awaits (no double Vectorize).
   const collectDiag = opts.collectRetrievalDiagnostics === true;
-  const prefetched = config.adaptiveEnabled && !collectDiag ? retrieveChunks(message, env) : null;
+  const prefetched = config.adaptiveEnabled && !collectDiag ? retrieveChunks(message, env, { lang }) : null;
   prefetched?.catch(() => {});
   // The flag is the whole point of this switch: off means no decision model at all,
   // so a deployment can turn the adaptive path off without touching any other knob.
@@ -242,13 +242,14 @@ export async function runAdaptivePipeline(opts: {
           query: decision.query,
           alternateQuery: decision.alternateQuery,
           ...(prefetched && decision.query === message ? { prefetched } : {}),
+          lang,
         },
         env,
         config,
         collectDiag ? { collectRetrievalDiagnostics: true } : undefined,
       )
     : await (async (): Promise<AdaptiveRetrieval> => {
-        const chunks = await retrieveChunks(message, env);
+        const chunks = await retrieveChunks(message, env, { lang });
         return {
           chunks,
           firstSearchChunkIds: chunks.map((c) => c.id),
