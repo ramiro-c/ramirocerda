@@ -134,7 +134,7 @@ describe("chunkSitePage", () => {
   it("makes one chunk per h2 section with title prefix and › section chain", () => {
     const page = parse("<h1>Flujo</h1><p>Intro.</p><h2>Uno</h2><p>cuerpo uno</p><h2>Dos</h2><p>cuerpo dos</p>");
     const chunks = chunkSitePage(page);
-    expect(chunks).toHaveLength(2);
+    expect(chunks).toHaveLength(3);
     for (const c of chunks) {
       expect(c.text.startsWith("# Flujo\n\n")).toBe(true);
       expect(c.id).toMatch(/^site-[a-z0-9-]+-[0-9a-f]{8}$/);
@@ -142,10 +142,27 @@ describe("chunkSitePage", () => {
       expect(c.url).toBe("/workflow");
       expect(c.urlAlt).toBe("/en/workflow");
     }
+    expect(chunks[0].section).toBe("Flujo");
     expect(chunks[0].text).toContain("Intro.");
-    expect(chunks[0].section).toBe("Flujo › Uno");
-    expect(chunks[1].text).toContain("cuerpo dos");
-    expect(chunks[1].section).toBe("Flujo › Dos");
+    expect(chunks[1].text).not.toContain("Intro.");
+    expect(chunks[1].text).toContain("cuerpo uno");
+    expect(chunks[1].section).toBe("Flujo › Uno");
+    expect(chunks[2].text).toContain("cuerpo dos");
+    expect(chunks[2].section).toBe("Flujo › Dos");
+  });
+
+  it("emits the page intro as its own first chunk with an intro id leaf", () => {
+    const page = parse(
+      "<h1>Flujo</h1><p>Hero de portada.</p><h2>Uno</h2><p>cuerpo uno</p><h2>Dos</h2><p>cuerpo dos</p>",
+    );
+    const chunks = chunkSitePage(page);
+    expect(chunks).toHaveLength(3);
+    expect(chunks[0].section).toBe("Flujo");
+    expect(chunks[0].id).toMatch(/^site-workflow-intro-[0-9a-f]{8}$/);
+    expect(chunks[0].text).toBe("# Flujo\n\nHero de portada.");
+    for (const sectionChunk of chunks.slice(1)) {
+      expect(sectionChunk.text).not.toContain("Hero de portada.");
+    }
   });
 
   it("splits long chunks at blank-line boundaries, repeating headings and suffixing the section", () => {
@@ -320,7 +337,7 @@ describe("loadKBChunks with a site source", () => {
 });
 
 describe("site source against the real dist/", () => {
-  it.skipIf(!existsSync(repoDistDir))("chunks /workflow and /en/workflow one chunk per stage", async () => {
+  it.skipIf(!existsSync(repoDistDir))("chunks /workflow: one chunk per stage carrying the stages label", async () => {
     const chunks = await loadSiteChunks(repoDistDir);
     const shared = [
       "card-start",
@@ -332,17 +349,24 @@ describe("site source against the real dist/", () => {
       "card-pr + interrogate",
       "Partners / Slack",
     ];
-    const pages = {
-      "/workflow": ["Triage y framing gate", ...shared],
-      "/en/workflow": ["Triage and framing gate", ...shared],
-    };
-    for (const [url, stages] of Object.entries(pages)) {
-      const sections = chunks.filter((c) => c.url === url).map((c) => c.section);
+    const pages = [
+      {
+        url: "/workflow",
+        label: "Las nueve etapas de mi workflow con agentes de IA",
+        stages: ["Triage y framing gate", ...shared],
+      },
+      {
+        url: "/en/workflow",
+        label: "The nine stages of my AI agent workflow",
+        stages: ["Triage and framing gate", ...shared],
+      },
+    ];
+    for (const { url, label, stages } of pages) {
+      const pageChunks = chunks.filter((c) => c.url === url);
       for (const stage of stages) {
-        expect(
-          sections.filter((s) => s.endsWith(` › ${stage}`)),
-          `${url}: ${stage}`,
-        ).toHaveLength(1);
+        const stageChunks = pageChunks.filter((c) => c.section.endsWith(` › ${stage}`));
+        expect(stageChunks, `${url}: ${stage}`).toHaveLength(1);
+        expect(stageChunks[0].text.includes(label), `${url}: ${stage}`).toBe(true);
       }
     }
   });

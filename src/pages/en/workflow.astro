@@ -107,7 +107,12 @@ const panelHint = "Pick a stage to see the details";
     <h1 class="heading-1">{t("workflow.title")}</h1>
     <p class="thesis body-3">{thesis}</p>
 
-    <WorkflowSplit nodes={nodes} hitlLabel={t("workflow.legend.hitl")} panelHint={panelHint} />
+    <WorkflowSplit
+      nodes={nodes}
+      hitlLabel={t("workflow.legend.hitl")}
+      panelHint={panelHint}
+      stagesLabel={t("workflow.stagesLabel")}
+    />
 
     <section class="how-terminates">
       <h2 class="section-label caption-3">{t("workflow.howTerminatesLabel")}</h2>
