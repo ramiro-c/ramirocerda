@@ -9,7 +9,8 @@
  *
  * There are no keyword heuristics: the model decides. Jev does not generate
  * text, so the standalone search query is composed in code from the model's
- * needs_history decision: the previous user turn plus the latest message.
+ * needs_history decision: the previous user turn, the assistant reply to it and
+ * the latest message.
  *
  * The code validates every answer strictly and applies the safe default on ANY
  * problem (decision model off, HTTP error, timeout, invalid JSON, unknown label,
@@ -111,12 +112,33 @@ export function buildRouterState(message: string, history: HistoryTurn[] | undef
   return { conversation: recentHistory(history), latest_message: message };
 }
 
-/** Previous user turn + latest message, whitespace-normalized and capped. null without a previous user turn. */
+/** How much of the assistant reply the contextual query keeps (the referent usually lives there). */
+export const CONTEXT_ASSISTANT_CHARS = 160;
+
+function normalizeWhitespace(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Previous user turn + the assistant reply to it + the latest message, whitespace-normalized and
+ * capped at MAX_QUERY_CHARS keeping the message. null without a previous user turn.
+ *
+ * The reply matters: "What stack did he use for that one?" points at the bot's own answer
+ * ("Yes, for example Mundial 2026…"), not at the user's question, so the previous user turn
+ * alone loses the referent. The reply keeps its first CONTEXT_ASSISTANT_CHARS chars, and the
+ * previous user turn gets whatever room is left.
+ */
 export function contextualQuery(message: string, history: HistoryTurn[] | undefined): string | null {
-  const previous = (history ?? []).toReversed().find((t) => t.role === "user")?.content;
+  const turns = history ?? [];
+  const userIndex = turns.findLastIndex((t) => t.role === "user");
+  if (userIndex === -1) return null;
+  const previous = turns[userIndex].content;
   if (!previous) return null;
-  const joined = `${previous} ${message}`.replace(/\s+/g, " ").trim();
-  return joined.slice(-MAX_QUERY_CHARS);
+  const replyTurn = turns.slice(userIndex + 1).find((t) => t.role === "assistant");
+  const reply = replyTurn ? normalizeWhitespace(replyTurn.content).slice(0, CONTEXT_ASSISTANT_CHARS) : "";
+  const tail = normalizeWhitespace(`${reply} ${message}`);
+  const head = previous.slice(0, Math.max(0, MAX_QUERY_CHARS - tail.length - 1));
+  return normalizeWhitespace(`${head} ${tail}`).slice(-MAX_QUERY_CHARS);
 }
 
 export function fallbackDecision(message: string, via: RouteVia, trace?: DecisionTrace): RouteDecision {

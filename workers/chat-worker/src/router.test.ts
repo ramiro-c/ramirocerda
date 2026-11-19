@@ -9,8 +9,10 @@ import {
 import { DECISION_USER_AGENT, parseAnswer, parseDecisionResponse, type DecisionQuestion } from "./decision";
 import {
   buildRouterState,
+  CONTEXT_ASSISTANT_CHARS,
   contextualQuery,
   HIRE_INTENT_QUESTION,
+  MAX_QUERY_CHARS,
   NEEDS_HISTORY_QUESTION,
   ROUTE_QUESTION,
   routeMessage,
@@ -173,7 +175,7 @@ describe("routeMessage", () => {
     expect(decision).toMatchObject({
       route: "search",
       query: "¿Y antes de eso?",
-      alternateQuery: "¿Dónde trabaja Ramiro? ¿Y antes de eso?",
+      alternateQuery: "¿Dónde trabaja Ramiro? Trabaja en LDP desde 2025. ¿Y antes de eso?",
       scores: { routeConfidence: 0.97, hireIntent: 0.03, needsHistory: 0.93 },
     });
   });
@@ -183,7 +185,7 @@ describe("routeMessage", () => {
     const decision = await routeMessage("¿Qué stack usa?", history, config);
     expect(decision).toMatchObject({
       query: "¿Qué stack usa?",
-      alternateQuery: "¿Dónde trabaja Ramiro? ¿Qué stack usa?",
+      alternateQuery: "¿Dónde trabaja Ramiro? Trabaja en LDP desde 2025. ¿Qué stack usa?",
     });
   });
 
@@ -361,6 +363,38 @@ describe("router state", () => {
     const q = contextualQuery("¿y antes?", [{ role: "user", content: "a".repeat(400) }]);
     expect(q).toHaveLength(300);
     expect(q?.endsWith(" ¿y antes?")).toBe(true);
+  });
+
+  it("includes the assistant reply that holds the referent", () => {
+    // "that one" points at the bot's own answer, not at the user's question.
+    const q = contextualQuery("What stack did he use for that one?", [
+      { role: "user", content: "Does Ramiro have any football related project?" },
+      { role: "assistant", content: "Yes, for example Mundial 2026, a World Cup companion app…" },
+    ]);
+    expect(q).toContain("Mundial 2026");
+    expect(q?.endsWith("What stack did he use for that one?")).toBe(true);
+  });
+
+  it("caps the assistant reply at CONTEXT_ASSISTANT_CHARS and the total at MAX_QUERY_CHARS", () => {
+    const q = contextualQuery("hola", [
+      { role: "user", content: "u".repeat(400) },
+      { role: "assistant", content: "r".repeat(500) },
+    ]);
+    expect(CONTEXT_ASSISTANT_CHARS).toBe(160);
+    expect(q?.match(/r/g)).toHaveLength(CONTEXT_ASSISTANT_CHARS);
+    expect(q?.length).toBeLessThanOrEqual(MAX_QUERY_CHARS);
+    expect(q?.length).toBe(MAX_QUERY_CHARS);
+    expect(q?.endsWith(" hola")).toBe(true);
+  });
+
+  it("takes the first assistant reply after the last user turn only", () => {
+    const q = contextualQuery("¿y eso?", [
+      { role: "user", content: "pregunta vieja" },
+      { role: "assistant", content: "respuesta vieja" },
+      { role: "user", content: "pregunta nueva" },
+      { role: "assistant", content: "respuesta nueva" },
+    ]);
+    expect(q).toBe("pregunta nueva respuesta nueva ¿y eso?");
   });
 });
 
