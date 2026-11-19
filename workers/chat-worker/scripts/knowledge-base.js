@@ -9,11 +9,14 @@ export const KNOWLEDGE_BASE = `
 - **Especialidades**: Node.js, NestJS, Python, FastAPI, React (19), React Native, TypeScript, Arquitectura de software, performance, observabilidad, agentes de IA (Google ADK, LangGraph), inferencia en el edge y automatizaciones.
 - **Idiomas**: Español (Nativo), Inglés (B2: lectura y escritura técnica fluida, conversación profesional)
 - **Modalidad**: 100% remoto, huso horario de Argentina (GMT-3)
+- **Disponibilidad**: Ramiro está abierto a nuevas oportunidades: proyectos freelance y roles Full-Stack Engineer / Applied AI donde pueda hacerse cargo del producto de punta a punta.
+
+## Contacto
+Cómo contactar a Ramiro Cerdá para proyectos, roles o consultas:
 - **Email**: rami992009@gmail.com (canal preferido para charlar de roles Full-Stack Engineer / Applied AI)
 - **LinkedIn**: https://www.linkedin.com/in/cerdaramiro/
 - **GitHub**: https://github.com/ramiro-c
 - **Web personal**: https://ramirocerda.com.ar
-- **Disponibilidad**: Ramiro está abierto a nuevas oportunidades: proyectos freelance y roles Full-Stack Engineer / Applied AI donde pueda hacerse cargo del producto de punta a punta.
 - **Contacto profesional**: para oportunidades o proyectos, el canal es el email o el formulario de la web, que agenda una charla de 20 minutos sin costo ni compromiso.
 
 ## Kano Studio — detalle técnico de la landing
