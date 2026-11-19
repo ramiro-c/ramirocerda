@@ -61,7 +61,7 @@
     "DECISION_INTEGRATION_ID": "opencode",
     "DECISION_TIMEOUT_MS": "1000",
     "DECISION_MIN_CONFIDENCE": "0.5",
-    "JUDGE_SUFFICIENT_THRESHOLD": "0.4",
+    "JUDGE_SUFFICIENT_THRESHOLD": "0.75",
     "MAX_RETRIEVAL_ITERATIONS": "2",
     "LEAD_NOTIFY_TO": "rami992009@gmail.com",
     "LEAD_FROM": "Botardo <noreply@ramirocerda.com.ar>",
