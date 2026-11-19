@@ -72,7 +72,7 @@ Auditoría de performance con New Relic sobre 389 endpoints y unos 1,5 millones 
 #### Desarrollador Mobile / Front-end SSR (React Native y React) | Jun 2022 - Abr 2025
 (Etapas: React Native Developer de jun 2022 a dic 2023 y Full-Stack Developer de ene 2024 a mar 2025.)
 * **Primera migración a TypeScript:** pasó la app móvil legacy de JavaScript a TypeScript, la primera vez que se usó TS en el proyecto.
-* **Mentoría de 2 pasantes** (de 1 y 3 meses).
+* **Mentoría de 2 pasantes que venían de un bootcamp** (de 1 y 3 meses).
 * **Frontend a escala con mentalidad de producto/MVP:** entregué features transversales en web y mobile con foco en lanzamientos rápidos y adaptabilidad al negocio.
 * **Modularización del ecosistema:** lideré propuestas técnicas aprobadas para estandarizar el frontend (Zustand, React Query, ESLint, Prettier) y armé pipelines en Bitbucket (Vitest, SonarQube, Husky).
 * **Mobile engineering:** reestructuré el state management global con Zustand (corrigiendo fugas de rendimiento), migré componentes clave a TypeScript y coordiné el refactor del Design System mobile.

@@ -21,7 +21,7 @@ es:
     - "Liderazgo full stack: Node.js, React, GCP."
     - "Entré por la app móvil y hoy lidero el desarrollo full stack."
     - "Entrevistas técnicas y challenges para la empresa."
-    - "Mentor de dos integrantes de un bootcamp."
+    - "Mentor de dos pasantes que venían de un bootcamp."
   stack: ["Node.js", "React", "GCP", "TypeScript"]
 en:
   title: "Libro de Pases (LDP) — Football platform"
@@ -36,6 +36,6 @@ en:
     - "Full stack leadership: Node.js, React, GCP."
     - "Joined on the mobile app, now lead full stack development."
     - "Technical interviews and challenges for the company."
-    - "Mentored two bootcamp graduates."
+    - "Mentored two interns who came from a bootcamp."
   stack: ["Node.js", "React", "GCP", "TypeScript"]
 ---
