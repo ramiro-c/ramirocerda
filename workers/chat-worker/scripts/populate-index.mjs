@@ -20,10 +20,12 @@
  * tests). No shell-outs, no git.
  */
 
-import { createHash } from "node:crypto";
-import { readFile, writeFile, readdir } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
+
+import { chunkKB, globFiles, sha1Hex, slugify } from "./chunking.mjs";
+import { loadSiteChunks } from "./site-pages.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKER_DIR = path.join(SCRIPT_DIR, "..");
@@ -232,21 +234,6 @@ export function buildProjectChunks(md, opts = {}) {
   return chunks;
 }
 
-/** First 8 hex chars of the sha1 of a string. */
-export function sha1Hex(text) {
-  return createHash("sha1").update(text, "utf8").digest("hex");
-}
-
-function slugify(text) {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48); // keep full id within Vectorize's 64-byte id limit
-}
-
 /** Split markdown front matter (leading --- block) into a flat key/value map. */
 export function stripFrontmatter(md) {
   const m = md.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
@@ -275,93 +262,6 @@ export function isDraftNote(md) {
       .trim()
       .toLowerCase() === "true"
   );
-}
-
-/**
- * Split markdown KB text into heading-boundary chunks.
- *
- * - Boundaries at H2/H3/H4 headings (the KB nests roles and projects under
- *   H3/H4 headings); no overlap; whole sections.
- * - A heading whose section has no body of its own (a pure container, e.g.
- *   "## Experiencia Profesional" with only H3 children) is folded as a context
- *   prefix line into the first child chunk so company/group context is kept.
- * - The document H1 title and any text before the first H2 are not chunks
- *   (default). With `foldPreamble`, that preamble is folded as a context
- *   prefix into the first heading chunk instead of being dropped — used for
- *   note files so title + intro survive chunking.
- * - Content lines are preserved verbatim.
- * - Empty input (or no headings with foldPreamble=false) yields zero chunks.
- *
- * @param {string} kbText
- * @param {{ idPrefix?: string, foldPreamble?: boolean }} [opts]
- * @returns {Array<{ id: string, text: string, section: string, idx: number }>}
- */
-export function chunkKB(kbText, opts = {}) {
-  const idPrefix = opts.idPrefix ?? "kb";
-  const foldPreamble = opts.foldPreamble ?? false;
-  const headingRe = /^(#{2,4})\s+(.+?)\s*$/;
-  const raw = [];
-  const preambleLines = [];
-  let current = null;
-
-  for (const line of kbText.split("\n")) {
-    const m = line.match(headingRe);
-    if (m) {
-      if (current) raw.push(current);
-      current = { level: m[1].length, headingLine: line, heading: m[2].trim(), body: [] };
-    } else if (current) {
-      current.body.push(line);
-    } else if (foldPreamble || preambleLines.length > 0) {
-      preambleLines.push(line);
-    }
-    // With foldPreamble=false, lines before the first H2+ heading (H1 title,
-    // blanks) are dropped once the first heading is found.
-  }
-  if (current) raw.push(current);
-
-  const chunks = [];
-  let pendingParents = preambleLines.filter((l) => l.trim() !== "");
-  for (const c of raw) {
-    // A heading whose section has no body (pure container, e.g. "## Experiencia
-    // Profesional" holding only H3 children) becomes a context prefix line for
-    // the first child chunk instead of an empty chunk of its own.
-    const hasBody = c.body.some((line) => line.trim() !== "");
-    if (!hasBody) {
-      pendingParents.push(c.headingLine);
-      continue;
-    }
-    const ownText = [c.headingLine, ...c.body].join("\n").trimEnd();
-    const lines = [...pendingParents, ownText];
-    // Keep parent headings (higher level = fewer #) for sibling chunks at deeper levels
-    pendingParents = pendingParents.filter((p) => {
-      const pm = p.match(/^(#+)\s+/);
-      const cm = c.headingLine.match(/^(#+)\s+/);
-      if (!pm || !cm) return false;
-      return pm[1].length < cm[1].length;
-    });
-    const text = lines.join("\n").trimEnd();
-    chunks.push({ heading: c.heading, text });
-  }
-
-  // Prose-only input with no headings at all: one whole-document chunk so the
-  // content is never silently dropped.
-  if (chunks.length === 0 && pendingParents.length > 0) {
-    const text = pendingParents.join("\n").trimEnd();
-    chunks.push({
-      heading: text
-        .split("\n")[0]
-        .replace(/^#+\s*/, "")
-        .slice(0, 80),
-      text,
-    });
-  }
-
-  return chunks.map((c, idx) => ({
-    id: `${idPrefix}-${slugify(c.heading)}-${sha1Hex(c.text).slice(0, 8)}`,
-    text: c.text,
-    section: c.heading,
-    idx,
-  }));
 }
 
 /**
@@ -424,49 +324,6 @@ export function chunkNote(md, opts = {}) {
 }
 
 /**
- * Minimal glob over the local filesystem (no dependencies). Supports literal
- * path segments, a `*` wildcard segment, and `**` as zero-or-more directories.
- * Hidden directories (dotfiles, node_modules) are never traversed.
- *
- * @param {string} rootDir
- * @param {string} pattern
- * @returns {Promise<string[]>}
- */
-export async function globFiles(rootDir, pattern) {
-  const parts = pattern.split("/").filter((p) => p !== "" && p !== ".");
-  const results = [];
-  const walk = async (base, rest) => {
-    const [head, ...tail] = rest;
-    if (head === undefined) {
-      results.push(base);
-      return;
-    }
-    if (head === "**") {
-      await walk(base, tail);
-      const entries = await readdir(base, { withFileTypes: true }).catch(() => []);
-      for (const entry of entries) {
-        if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules") continue;
-        await walk(path.join(base, entry.name), rest);
-      }
-      return;
-    }
-    const entries = await readdir(base, { withFileTypes: true }).catch(() => []);
-    for (const entry of entries) {
-      if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
-      const isMatch = head.includes("*")
-        ? new RegExp(`^${head.replace(/\*/g, "[^.]*")}$`).test(entry.name)
-        : entry.name === head;
-      if (!isMatch) continue;
-      const child = path.join(base, entry.name);
-      if (tail.length === 0 && entry.isFile()) results.push(child);
-      else if (tail.length > 0 && entry.isDirectory()) await walk(child, tail);
-    }
-  };
-  await walk(rootDir, parts);
-  return results.toSorted();
-}
-
-/**
  * Load the chunk set for all sources declared in kb-sources.json, relative to
  * the repo root.
  *
@@ -509,9 +366,166 @@ export async function loadKBChunks(rootDir) {
       }
       continue;
     }
+    if (source.type === "site") {
+      // Index what the site actually publishes: every indexable HTML page Astro
+      // emitted to dist/. dist must exist (the CI/populate runbook builds it
+      // first); without it there is nothing honest to index.
+      const pages = await loadSiteChunks(path.resolve(rootDir, source.dir));
+      chunks.push(...pages.map((c) => ({ ...c, source: source.id })));
+      continue;
+    }
     throw new Error(`Unknown source type '${source.type}' for source '${source.id}'`);
   }
+  // The site source indexes every published page, including the note and
+  // project pages that the markdown/projects sources already claim. Drop those
+  // duplicates so each route is owned by exactly one source, then enforce that
+  // the curated KB never restates what those published chunks already say.
+  const result = excludeClaimedRoutes(chunks);
+  assertCuratedIsOffSite(result);
+  return result;
+}
+
+/**
+ * Drift-guard thresholds for assertCuratedIsOffSite: a curated line with fewer
+ * than CURATED_MIN_WORDS words is never checked, copied prose is detected with
+ * CURATED_SHINGLE-word shingles, and a line whose shingle overlap with the
+ * published set reaches CURATED_MAX_OVERLAP counts as copied.
+ */
+export const CURATED_MIN_WORDS = 8;
+export const CURATED_SHINGLE = 6;
+export const CURATED_MAX_OVERLAP = 0.6;
+
+/**
+ * Normalized words for the shingle check: lowercase, NFD with combining marks
+ * stripped (accents gone), and every non [a-z0-9] run collapsed to one space.
+ */
+function shingleWords(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean);
+}
+
+/** All CURATED_SHINGLE-word shingles (consecutive word runs) of a word list. */
+function shinglesOf(words) {
+  const out = [];
+  for (let i = 0; i + CURATED_SHINGLE <= words.length; i++) {
+    out.push(words.slice(i, i + CURATED_SHINGLE).join(" "));
+  }
+  return out;
+}
+
+/**
+ * Drift guard: the curated KB ("kb-*" chunks) must not restate what the other
+ * sources already publish. Runs only when the chunk list contains at least one
+ * site-source chunk (`site-` prefix) — with no site source there is no
+ * "published" baseline, so the check is a no-op (unit-test fixtures without a
+ * site source stay unaffected). Collects ALL violations and throws a single
+ * error listing them:
+ *
+ * - Rule 1 (heading collision): slugify(curated section) equals slugify of a
+ *   published chunk's leaf heading — for site chunks the section after the
+ *   last ` › `, for notes/projects the section as is.
+ * - Rule 2 (copied prose): every CURATED_SHINGLE-word shingle of every
+ *   published chunk's text goes into a set; a curated line with at least
+ *   CURATED_MIN_WORDS (normalized) words whose shingles overlap that set by
+ *   CURATED_MAX_OVERLAP or more is copied, not hand-written.
+ *
+ * @param {Array<{ id: string, text: string, section: string, source: string, url?: string }>} chunks
+ * @returns {Array<...>} the same list, unchanged, when nothing drifts
+ */
+export function assertCuratedIsOffSite(chunks) {
+  if (!chunks.some((c) => c.id.startsWith("site-"))) return chunks;
+
+  const curated = chunks.filter((c) => c.id.startsWith("kb-"));
+  const published = chunks.filter((c) => !c.id.startsWith("kb-"));
+  const violations = [];
+
+  // Rule 1 — heading collision.
+  const leafOwner = new Map();
+  for (const p of published) {
+    const leaf = p.id.startsWith("site-") ? p.section.split(" › ").pop() : p.section;
+    const slug = slugify(leaf ?? "");
+    if (slug && !leafOwner.has(slug)) leafOwner.set(slug, p);
+  }
+  for (const c of curated) {
+    const owner = leafOwner.get(slugify(c.section));
+    if (owner) {
+      violations.push(
+        `curated chunk ${c.id} repeats the heading "${c.section}" of published chunk ${owner.id}${owner.url ? ` (${owner.url})` : ""}. Delete it from knowledge-base.js: the site already publishes it.`,
+      );
+    }
+  }
+
+  // Rule 2 — copied prose.
+  const shingleOwner = new Map();
+  for (const p of published) {
+    for (const shingle of shinglesOf(shingleWords(p.text))) {
+      if (!shingleOwner.has(shingle)) shingleOwner.set(shingle, p);
+    }
+  }
+  for (const c of curated) {
+    for (const line of c.text.split("\n")) {
+      const words = shingleWords(line);
+      if (words.length < CURATED_MIN_WORDS) continue;
+      const shingles = shinglesOf(words);
+      if (shingles.length === 0) continue;
+      let hits = 0;
+      let owner = null;
+      for (const shingle of shingles) {
+        const found = shingleOwner.get(shingle);
+        if (found) {
+          hits += 1;
+          owner ??= found;
+        }
+      }
+      const overlap = hits / shingles.length;
+      if (overlap >= CURATED_MAX_OVERLAP) {
+        violations.push(
+          `curated chunk ${c.id} copies the line "${line.trim()}" (${Math.round(overlap * 100)}% of its ${CURATED_SHINGLE}-word shingles) from published chunk ${owner.id}${owner.url ? ` (${owner.url})` : ""}. Delete it from knowledge-base.js: the site already publishes it.`,
+        );
+      }
+    }
+  }
+
+  if (violations.length > 0) {
+    throw new Error(
+      `curated KB duplicates site-published content (${violations.length}):\n${violations.map((v) => `- ${v}`).join("\n")}`,
+    );
+  }
   return chunks;
+}
+
+/**
+ * Remove site-source chunks whose route is already claimed by another source,
+ * and fail loudly when a claimed route has no page in dist/ at all (that means
+ * the markdown/projects sources index something the site does not publish).
+ *
+ * A chunk belongs to the site source when its id carries the `site-` prefix —
+ * the only prefix loadSiteChunks ever generates (notes use `note-`, projects
+ * `project-<lang>-`, the curated KB `kb-`).
+ *
+ * @param {Array<{ id: string, source: string, url?: string, urlAlt?: string }>} chunks
+ * @returns {Array<{ id: string, source: string, url?: string, urlAlt?: string }>}
+ */
+export function excludeClaimedRoutes(chunks) {
+  const isSite = (c) => c.id.startsWith("site-");
+  const siteUrls = new Set(chunks.filter(isSite).map((c) => c.url));
+  const claimedBy = new Map();
+  for (const c of chunks) {
+    if (isSite(c)) continue;
+    if (c.url && !claimedBy.has(c.url)) claimedBy.set(c.url, c.source);
+    if (c.urlAlt && !claimedBy.has(c.urlAlt)) claimedBy.set(c.urlAlt, c.source);
+  }
+  if (siteUrls.size > 0) {
+    for (const [url, source] of claimedBy) {
+      if (!siteUrls.has(url)) throw new Error(`claimed route ${url} has no page in dist/ (source ${source})`);
+    }
+  }
+  return chunks.filter((c) => !isSite(c) || !claimedBy.has(c.url));
 }
 
 /** Manifest sync diff: ids the manifest is missing and ids it should prune. */

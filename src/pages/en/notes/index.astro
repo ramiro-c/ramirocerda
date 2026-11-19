@@ -33,7 +33,7 @@ const notes = (await getCollection("notes"))
     {notes.length === 0 ? (
       <p class="empty body-3">{t("notes.empty")}</p>
     ) : (
-      <ul class="list">
+      <ul class="list" data-kb="skip">
         {notes.map((note, i) => (
           <li>
             <a href={getLocalizedPath(lang, `/notes/${note.slug}/`)}>

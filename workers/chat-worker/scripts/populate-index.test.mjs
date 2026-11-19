@@ -1,18 +1,17 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  assertCuratedIsOffSite,
   buildProjectChunks,
-  chunkKB,
   chunkNote,
   diffIds,
-  globFiles,
   isDraftNote,
   loadKBChunks,
   noteRoute,
   projectRoute,
-  sha1Hex,
   stripFrontmatter,
 } from "./populate-index.mjs";
+import { chunkKB, globFiles, sha1Hex } from "./chunking.mjs";
 import { KNOWLEDGE_BASE } from "./knowledge-base.js";
 
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
@@ -34,26 +33,22 @@ describe("chunkKB", () => {
     }
   });
 
-  it("splits the real KB into heading-boundary chunks (22)", () => {
+  it("splits the real KB into heading-boundary chunks (12)", () => {
     const chunks = chunkKB(KNOWLEDGE_BASE);
-    expect(chunks.length).toBeGreaterThanOrEqual(20);
+    expect(chunks.length).toBe(12);
 
     const sections = chunks.map((c) => c.section);
     expect(sections).toContain("Overview");
+    expect(sections).toContain("Kano Studio — detalle técnico de la landing");
+    expect(sections).toContain("LactarIA — resultados del piloto");
+    expect(sections).toContain("Google Cloud — AI Agents Path (completo, jun–jul 2026)");
     expect(sections).toContain("Stack Técnico");
     expect(sections).toContain("Educación");
-    expect(sections).toContain("Soccer Analytics Agent");
-    expect(sections).toContain("Mundial 2026 — Soccer Analytics / World Cup Companion");
-    expect(sections).toContain("Sitio Web y Arquitectura del Bot");
-    expect(sections).toContain("Google Cloud — AI Agents Path (completo, jun–jul 2026)");
-    expect(sections).toContain("Workflow de trabajo con agentes (loop de cards)");
-    expect(sections).toContain("Triage");
-    expect(sections).toContain("card-start");
-    expect(sections).toContain("SDD auto");
-    expect(sections).toContain("card-review");
-    expect(sections).toContain("card-pr");
-    expect(sections).toContain("Judgment Day");
-    expect(sections).toContain("Partners / Slack");
+    // Everything the built site publishes is gone from the curated file.
+    expect(sections).not.toContain("Productos y clientes");
+    expect(sections).not.toContain("Soccer Analytics Agent");
+    expect(sections).not.toContain("Sitio Web y Arquitectura del Bot");
+    expect(sections).not.toContain("Workflow de trabajo con agentes (loop de cards)");
   });
 
   it("keeps every KB content line in exactly one chunk (R1 content unchanged)", () => {
@@ -326,6 +321,64 @@ describe("loadKBChunks", () => {
     } finally {
       await rm(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe("assertCuratedIsOffSite", () => {
+  it("is a no-op when the chunk set has no site chunk", () => {
+    const chunks = [
+      { id: "kb-skills-12345678", section: "Skills", text: "Skills y experiencia.\n", source: "kb" },
+      { id: "note-skills-87654321", section: "Skills", text: "Skills y experiencia.\n", source: "notes" },
+    ];
+    expect(() => assertCuratedIsOffSite(chunks)).not.toThrow();
+  });
+
+  it("throws when a curated section collides with a published site leaf heading", () => {
+    const chunks = [
+      { id: "kb-skills-12345678", section: "Skills", text: "React, Node, Python.", source: "kb" },
+      {
+        id: "site-about-skills-87654321",
+        section: "Sobre mí › Skills",
+        text: "# Sobre mí\n\n## Skills\n\nReact y Node.",
+        source: "site",
+        url: "/about",
+      },
+    ];
+    expect(() => assertCuratedIsOffSite(chunks)).toThrow(/kb-skills-12345678/);
+  });
+
+  it("throws when a curated line of 10+ words is copied verbatim from a published chunk", () => {
+    const line = "este equipo entrega productos digitales completos de punta a punta con calidad verificada";
+    const chunks = [
+      { id: "kb-copiado-12345678", section: "Copiado", text: line, source: "kb" },
+      {
+        id: "site-home-foo-87654321",
+        section: "Home › Foo",
+        text: `# Foo\n\n${line}`,
+        source: "site",
+        url: "/",
+      },
+    ];
+    expect(() => assertCuratedIsOffSite(chunks)).toThrow(/site-home-foo-87654321/);
+  });
+
+  it("does not throw when a curated line shares only a few words with published text", () => {
+    const chunks = [
+      {
+        id: "kb-stack-12345678",
+        section: "Toolbox",
+        text: "Trabajo con React y con Node en proyectos personales y profesionales",
+        source: "kb",
+      },
+      {
+        id: "site-home-stack-87654321",
+        section: "Home › Stack",
+        text: "React y Node son las tecnologías del día a día.",
+        source: "site",
+        url: "/",
+      },
+    ];
+    expect(() => assertCuratedIsOffSite(chunks)).not.toThrow();
   });
 });
 

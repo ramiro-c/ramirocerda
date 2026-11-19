@@ -1,5 +1,5 @@
 # Run the Botardo chat-worker test suite on PRs/pushes that touch the worker.
-# The site build itself is already gated by the Vercel preview check.
+# Builds the site first: the KB loader reads dist/ (site source).
 name: chat-worker tests
 
 on:
@@ -7,11 +7,13 @@ on:
     branches: [main]
     paths:
       - "workers/chat-worker/**"
+      - "src/**"
       - "bun.lock"
       - ".github/workflows/chat-worker-tests.yml"
   pull_request:
     paths:
       - "workers/chat-worker/**"
+      - "src/**"
       - "bun.lock"
       - ".github/workflows/chat-worker-tests.yml"
 
@@ -35,7 +37,10 @@ jobs:
       - name: Validate manifest JSON
         run: node -e "JSON.parse(require('node:fs').readFileSync('workers/chat-worker/vectorize-manifest.json','utf8'))"
 
-      - run: bun install --frozen-lockfile --filter ramirocerda-chat-worker
+      # Full install + site build: loadKBChunks reads the built dist/ (site source).
+      - run: bun install --frozen-lockfile
+
+      - run: bun run build
 
       - run: bun run --filter ramirocerda-chat-worker typecheck
 

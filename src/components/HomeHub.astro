@@ -47,7 +47,7 @@ const notes = (await getCollection("notes"))
   </span>
   <div class="hub-main">
     <p class="label caption-3">{t("home.workLabel")}</p>
-    <ul class="pj-rail">
+    <ul class="pj-rail" data-kb="skip">
       {projects.map((p) => (
         <li>
           <a href={getLocalizedPath(lang, `/work/${p.slug}/`)}>
@@ -78,7 +78,7 @@ const notes = (await getCollection("notes"))
     {notes.length === 0 ? (
       <p class="empty body-6">{t("home.notesEmpty")}</p>
     ) : (
-      <ul class="note-rail">
+      <ul class="note-rail" data-kb="skip">
         {notes.map((note) => (
           <li>
             <a href={getLocalizedPath(lang, `/notes/${note.slug}/`)}>

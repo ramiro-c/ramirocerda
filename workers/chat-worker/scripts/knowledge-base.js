@@ -16,40 +16,8 @@ export const KNOWLEDGE_BASE = `
 - **Disponibilidad**: Ramiro está abierto a nuevas oportunidades: proyectos freelance y roles Full-Stack Engineer / Applied AI donde pueda hacerse cargo del producto de punta a punta.
 - **Contacto profesional**: para oportunidades o proyectos, el canal es el email o el formulario de la web, que agenda una charla de 20 minutos sin costo ni compromiso.
 
-## Productos y clientes
-
-(In English: Products, projects and clients — who Ramiro has worked with and what products and projects he has built and shipped: Libro de Pases (LDP), Kano Studio, Avellana, LactarIA, Mundial 2026, LDP Copilot (AI product assistant), management software for businesses. Keywords: clients, customers, companies, products, apps, shipped, worked with, portfolio, case studies.)
-
-Ramiro trabajó con **LDP (Libro de Pases)**, **Kano Studio** y **Avellana** (un producto de Kano Studio). Productos que construyó o en los que trabajó, todos en producción o con usuarios reales:
-* **Libro de Pases (LDP)** — plataforma SaaS de fútbol para el mercado de pases. Es su trabajo full-time: entró por la app móvil y hoy lidera el desarrollo full stack. Ver: /work/ldp
-* **Kano Studio** — colaboración: landing y diagnóstico interactivo del estudio (sistema de diseño, versión en dos idiomas, SEO y accesibilidad). Sitio: https://kano.studio/
-* **Avellana** — colaboración con Kano Studio: app gratuita para Android e iOS para comprar ropa en Av. Avellaneda. Sitio: https://avellana.store/
-* **LactarIA** — freelance: app de apoyo en lactancia materna con un chatbot de IA sobre un banco de preguntas curado; piloto cerrado con 50 madres. Ver: /work/lactaria
-* **Mundial 2026** — producto propio: app para seguir el Mundial (grupos, fixture en tu huso horario, cuadro, sedes y guía de TV). Está online.
-* **LDP Copilot** — asistente de producto con IA para LDP: agente multi-agente con Google ADK que responde con los permisos de cada usuario (ver la sección del proyecto).
-* **Software de gestión para negocios** — freelance: sistemas de gestión multi rubro en DevGAM (PHP, JS, MySQL) y un sistema de trámites administrativos para la UTN FRLP (Laravel, Vue).
-
-### Kano Studio — landing y diagnóstico interactivo (colaboración)
-(In English: Kano Studio — collaboration on the studio's landing page and interactive diagnostic.)
-Con el equipo de Kano Studio, Ramiro hizo el sistema de diseño de la landing, la versión en dos idiomas (español e inglés) y el SEO. También corrigió los problemas de accesibilidad que marcó una auditoría. La landing incluye un diagnóstico interactivo. Detalle técnico: design system con paleta de cuatro colores y tokens CSS, i18n con swap estático, pipeline propio de imágenes OG con sharp, fuentes self-hosted y remediación de accesibilidad a WCAG 2.2 AA a partir de una auditoría con bloqueantes de contraste. Stack: Astro, TypeScript, sharp.
-* **Rol:** colaboración con el equipo de Kano Studio.
-* **Sitio:** https://kano.studio/
-
-### Avellana — app para comprar ropa en Av. Avellaneda (colaboración)
-(In English: Avellana — a Kano Studio product, a free Android and iOS app to shop for clothes on Av. Avellaneda in Buenos Aires.)
-Avellana es un producto de Kano Studio en el que Ramiro colaboró. Es una app gratuita para Android e iOS que compara precios de ropa de mujer entre los locales de Av. Avellaneda en Buenos Aires, guarda favoritos y arma el recorrido más corto entre los locales.
-* **Rol:** colaboración con el equipo de Kano Studio en un producto del estudio.
-* **Sitio:** https://avellana.store/
-
-## Servicios: qué tipo de proyectos hace
-
-(In English: Services — what kind of projects Ramiro takes on: web and mobile apps, platforms with their own backend, sites and landing pages, and AI agents. Pricing depends on scope: a free 20-minute call first, then a concrete proposal by email.)
-
-* **Qué hace:** apps web y móviles, plataformas con backend propio, sitios y landings, y agentes de IA. Diseña, desarrolla y mantiene el producto entero, de la primera pantalla al deploy, y se queda hasta que funciona con usuarios reales.
-* **Mejorar algo que ya existe:** sí. En Libro de Pases buena parte del trabajo fue mejorar lo que ya estaba: la búsqueda, el monitoreo de errores y performance, los tests y el CI.
-* **¿Hace falta IA?:** no siempre. Si una regla, un formulario o una buena búsqueda resuelven el problema, conviene eso. Cuando la IA sirve, la diseña para que cite la fuente y diga cuando no sabe.
-* **Después del lanzamiento:** el producto sale con monitoreo de errores y de performance, y con tests que corren en cada cambio.
-* **Precio:** depende del alcance. Primero una charla de 20 minutos sin costo para ver qué se necesita y después una propuesta concreta por mail. No hay una tarifa por hora publicada.
+## Kano Studio — detalle técnico de la landing
+Detalle técnico del trabajo con Kano Studio: design system con paleta de cuatro colores y tokens CSS, i18n con swap estático, pipeline propio de imágenes OG con sharp, fuentes self-hosted y remediación de accesibilidad a WCAG 2.2 AA a partir de una auditoría con bloqueantes de contraste. Stack: Astro, TypeScript, sharp.
 
 ## Experiencia Profesional
 
@@ -87,14 +55,13 @@ Auditoría de performance con New Relic sobre 389 endpoints y unos 1,5 millones 
 * **Historial de lesiones:** de 3,2 s a 0,8 s (−75%).
 
 #### Otras funcionalidades y logros en LDP
-(In English: other LDP work — squad planner module, transfer marketplace, technical debt audit, frontend security audit, QA automation, Spec Driven Development, AI chat frontend, admin panel migration to Vite.)
+(In English: other LDP work — squad planner module, transfer marketplace, technical debt audit, frontend security audit, QA automation, AI chat frontend, admin panel migration to Vite.)
 * **Planificador de plantillas (módulo nuevo end-to-end):** clubes y agentes arman alineaciones hipotéticas con jugadores del mercado. Diseñó el modelo de datos, la API (equipos, etiquetas, membresías, límites por plan) y la interfaz: cancha con formaciones, drag & drop, filtros y borradores, con tests E2E propios.
 * **Marketplace de transferencias:** ownership end-to-end del módulo donde clubes y agentes publican, ofertan y cierran operaciones por jugadores: compatibilidad por rol, flujo de ofertas, firma de contrato, notificaciones por email y seguimiento de la transferencia.
 * **Features core adicionales:** desarrollé junto al equipo otros módulos centrales de la plataforma: la Comparativa (panel multi-entidad para comparar jugadores, clubes y ligas) y el scouting propio (listas, shadow teams y dashboards).
 * **Auditoría de deuda técnica del backend (iniciativa propia):** análisis de ~400 endpoints con 14 hallazgos priorizados por impacto y esfuerzo y un roadmap por sprints. La arquitectura objetivo (Repository Pattern, inyección de dependencias y Zod) se validó con una prueba de concepto de 17 tests en 3 capas.
 * **Auditoría de seguridad del frontend:** 10 hallazgos verificados y corregidos en 4 módulos.
 * **QA Automation:** más de 60 casos de API en Bruno, E2E con Playwright sobre varios entornos y 3 roles de usuario, y pipelines con reporte a Slack.
-* **Spec Driven Development como proceso del equipo:** explorar, proponer, especificar, diseñar, dividir en tareas, implementar y verificar, con review adversarial antes del PR.
 * **Bots propios de monitoreo y seguimiento (grokbot, sep 2026):** creé bots que monitorean New Relic y Sentry, generan reportes automáticos y levantan issues, entre otras automatizaciones internas del equipo.
 * **Asistente conversacional con IA:** la capa frontend completa del chat embebido en el producto.
 * **Panel de administración interno:** migración de Create React App a Vite (React 19, deploys a S3 y CloudFront).
@@ -105,7 +72,7 @@ Auditoría de performance con New Relic sobre 389 endpoints y unos 1,5 millones 
 #### Desarrollador Mobile / Front-end SSR (React Native y React) | Jun 2022 - Abr 2025
 (Etapas: React Native Developer de jun 2022 a dic 2023 y Full-Stack Developer de ene 2024 a mar 2025.)
 * **Primera migración a TypeScript:** pasó la app móvil legacy de JavaScript a TypeScript, la primera vez que se usó TS en el proyecto.
-* **Mentoría de 2 pasantes** (de 1 y 3 meses).
+* **Mentoría de 2 pasantes que venían de un bootcamp** (de 1 y 3 meses).
 * **Frontend a escala con mentalidad de producto/MVP:** entregué features transversales en web y mobile con foco en lanzamientos rápidos y adaptabilidad al negocio.
 * **Modularización del ecosistema:** lideré propuestas técnicas aprobadas para estandarizar el frontend (Zustand, React Query, ESLint, Prettier) y armé pipelines en Bitbucket (Vitest, SonarQube, Husky).
 * **Mobile engineering:** reestructuré el state management global con Zustand (corrigiendo fugas de rendimiento), migré componentes clave a TypeScript y coordiné el refactor del Design System mobile.
@@ -116,95 +83,10 @@ Auditoría de performance con New Relic sobre 389 endpoints y unos 1,5 millones 
 En DevGAM (dic 2020 – dic 2021) hizo sistemas de gestión de stock, contables, de turnos y clientes para frigoríficos, gimnasios, fletes, restaurantes y supermercados. En la Secretaría de TIC de la UTN FRLP (ene 2020 – sep 2021) hizo el sistema de trámites universitarios con Laravel, Vue, React y Strapi. En New Logic (2020) hizo un blog con marketplace en React sobre Google Cloud Platform.
 En resumen: desarrollo full-stack para sistemas de administración comercial, gestión de stock, administración contable, gestión de turnos/clientes, trámites universitarios y plataformas web (marketplace y portal de noticias). Motor CMS propietario en PHP, optimización de bases de datos MySQL e implementación de frontends en React y Vue sobre Google Cloud Platform.
 
-## Proyectos Destacados
-
-### LDP Copilot — Asistente de producto multi-agente
-(In English: LDP Copilot — the AI product assistant Ramiro built for Libro de Pases. Formerly called Agent General; it also absorbed the earlier Agent Scout scouting assistant. Natural language filters: it parses free-text filters into the structured JSON of the advanced player search.)
-LDP Copilot es el asistente de producto con IA que Ramiro construyó para Libro de Pases, la plataforma de fútbol (clubes, agentes y jugadores): un agente raíz sin herramientas de datos clasifica cada turno y delega en 5 sub-agentes agrupados por tarea del usuario: jugadores (scouting, búsqueda en lenguaje natural con un parser NL→JSON que compila lo que pide el usuario en texto libre a los filtros estructurados de la búsqueda avanzada de jugadores, similares, perfil y comparaciones), clubes y agentes, plantilla propia y mercado, scouting propio (listas, shadow teams y dashboards) y cuenta y ayuda. Identidad por usuario: cada llamada a la API usa el JWT del usuario que conversa, verificado en cada turno, con sesiones aisladas. Escrituras reversibles con confirmación explícita (crear una lista o un shadow team, sumar o quitar jugadores, generar el PDF de un perfil). Muestra tarjetas de UI generativa (comparaciones, sugerencias, opciones). Responde en el idioma del usuario (español, inglés y portugués de primera clase). Evals determinísticos sin LLM juez: 49 casos contra el entorno real que verifican sub-agentes y tools esperados, idioma y grounding (cada número y nombre de la respuesta tiene que salir de las tools). Incluye un servidor MCP que expone el agente desplegado como una tool ask(message) para agentes de código. Construido con Google ADK y Gemini, desplegado en Vertex AI Agent Engine.
-* **Stack:** Python 3.13, Google ADK, Vertex AI Agent Engine, Gemini, uv, pytest.
-* **Link:** https://ramirocerda.com.ar/work/ldp-copilot
-
-### Soccer Analytics Agent
-Agente de chat de análisis y predicción de fútbol sobre ~49k partidos internacionales (1872–hoy, dataset Kaggle), con un loop de herramientas escrito a mano (sin framework de agentes): Gemini vía Vertex AI razona, decide y llama tools. Expone 9 herramientas, entre ellas SQL de solo lectura, búsqueda vectorial, retrieval híbrido con fusión RRF, Elo por equipo, forma y head-to-head, y un predictor de resultados con XGBoost multiclass (51 features, 336 equipos, fallback Elo). Memoria de 3 niveles (working/episodic/semántica) y Postgres 16 + pgvector como capa única de datos, vectores y memoria. Fases 0–7 completas (predictor incluido); fase 8 de deploy a GCP (Cloud Run + Cloud SQL) en curso.
-* **Stack:** Python 3.12, uv, Postgres 16 + pgvector, sentence-transformers (MiniLM all-MiniLM-L6-v2, 384 dims), XGBoost, FastAPI, React, Gemini vía Vertex AI, Ruff, pre-commit.
-* **Link:** https://github.com/ramiro-c/ai-agents-hub
-
-### Mundial 2026 — Soccer Analytics / World Cup Companion
-Aplicación full-stack de análisis de fútbol para el Mundial 2026 (México, USA, Canadá). Incluye tabla de grupos con lógica de mejores terceros, fixture completo con hora local, cuadro eliminatorio de 16avos hasta la Final, mapa interactivo de las 16 sedes, histórico de enfrentamientos en Mundiales desde 1930 con estadísticas por selección y guía de TV por país.
-* **Fuentes de datos:** wheniskickoff API (fixture, grupos, sedes, TV), OpenFootball (histórico CC0), StatsBomb (eventos históricos).
-* **Stack:** FastAPI, React 19, TypeScript, Vite, Tailwind CSS v4, Leaflet, Cloudflare Workers.
-* **Links:** Demo: https://worldcup-2026.rami992009.workers.dev | GitHub: https://github.com/ramiro-c/worldcup-2026
-
-### linkedin-markdownificator
-Herramienta para exportar perfiles de LinkedIn a Markdown, facilitando la sincronización con sitios web personales e interacción con agentes de IA. Para lograrlo, diseñé un extractor tolerante a cambios en el DOM adaptado al layout React post-2025, externalicé los selectores en JSON para evitar rupturas de scraping y aseguré la estabilidad con 26 pruebas de integración.
-* **Stack:** Python, Selenium, BeautifulSoup, Pytest, Ruff.
-* **Link:** https://github.com/ramiro-c/linkedin-markdownificator
-
-### Portafolio Personal y Asistente IA
-Diseñé y desarrollé mi sitio web personal integrando a Botardo, un agente conversacional con RAG (retrieval-augmented generation) que responde consultas interactivas sobre mi experiencia y stack. El bot corre en Cloudflare Workers con recuperación vectorial sobre Cloudflare Vectorize y generación con DeepSeek V4.1 Flash a través de OpenCode Go. La base de conocimiento la armé gracias al scraper linkedin-markdownificator.
-* **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4.1 Flash), Vercel.
-* **Link:** https://ramirocerda.com.ar
-
-### Spec Refinery
-Sistema multi-agente que convierte un ticket vago en una spec Gherkin con citas: interroga al PM ronda a ronda contra el corpus de la organización (ADRs, specs, catálogo) vía RAG, distingue un choque real de simple contexto y no deja pasar una respuesta vaga. Supervisor determinístico más especialistas y un writer, con checkpointing async y trazas en Arize Phoenix.
-* **Stack:** Python 3.12, LangGraph, FastAPI, Streamlit, Chroma, Vertex AI, Arize Phoenix, Docker.
-* **Link:** https://github.com/ramiro-c/spec-refinery
-
-## Sitio Web y Arquitectura del Bot
-
-* **Sitio:** https://ramirocerda.com.ar, desarrollado con Astro y TypeScript, desplegado en Vercel.
-* **Botardo:** agente conversacional serverless que vive en un Cloudflare Worker junto a la web personal.
-* **Pipeline RAG por pregunta:**
-  1. Se detecta el idioma del último mensaje del visitante (español o inglés) de forma determinística.
-  2. El mensaje se convierte en embedding con el modelo bge-m3 de Workers AI.
-  3. Se recuperan los chunks más relevantes de la base de conocimiento desde Cloudflare Vectorize (top-k con umbral de similitud).
-  4. Se genera la respuesta con DeepSeek V4.1 Flash vía la API de OpenCode Go, usando solo el contexto recuperado y el historial de los últimos 10 turnos.
-* **Idioma:** responde en el mismo idioma del visitante: español rioplatense (voseo) o inglés.
-* **Sin información:** si la pregunta no tiene contexto en la base, Botardo lo aclara con elegancia en el idioma del visitante, sin inventar contenido.
-* **Seguridad:** la API key de OpenCode Go vive como secret del Worker, nunca en el repositorio.
-
-### Botardo — Implementación
-Agente conversacional con RAG embebido en mi sitio web personal. Implementé el pipeline completo en Cloudflare Workers: el mensaje del visitante se embeddea con bge-m3 (Workers AI), se recuperan los chunks más similares desde Cloudflare Vectorize (umbral de similitud más tope de 4 chunks) y se genera la respuesta con DeepSeek V4.1 Flash a través de OpenCode Go. El idioma (es/en) se detecta de forma determinística y, si no hay contexto recuperado, igual se llama al modelo: el prompt marca el contexto como vacío e instruye a DeepSeek a responder solo con lo recuperado y a decir con naturalidad que no tiene esa información, sin inventar. Incluye retry con backoff, CORS acotado a los orígenes del sitio y 32 pruebas con Vitest. La base de conocimiento se alimenta desde mi exportador linkedin-markdownificator.
-* **Stack:** Astro, TypeScript, Cloudflare Workers, Cloudflare Vectorize, Workers AI (embeddings bge-m3), OpenCode Go (DeepSeek V4.1 Flash), Vitest.
-
-### LactarIA — resultados del piloto
+## LactarIA — resultados del piloto
 (In English: LactarIA pilot results — about 50 users, 22 answered the validation survey: 100% satisfaction, 77.3% reported less anxiety, 95.5% ease of use, 90% trusted the answers.)
 App móvil de lactancia y crianza (oct–nov 2024) hecha para la tesis de dos puericultoras: chatbot con Gemini, preguntas frecuentes y contacto, publicada en Play Store en prueba cerrada. En el piloto participaron unas 50 usuarias y 22 respondieron la validación: 100% de satisfacción (8 a 10 sobre 10), 77,3% reportó menos ansiedad, 95,5% destacó la facilidad de uso y 90% confió en las respuestas.
 * **Stack:** React Native, Expo, serverless, Gemini API, Vercel.
-
-### AI Agents Hub
-Monorepo de arquitecturas de agentes: planificación multi-paso (PlanReAct), extracción estructurada con Pydantic y ejecución nativa de código. Incluye dos apps full-stack (Career Coach y Customer Support) desplegadas en Cloud Run y Vertex AI Agent Engine.
-* **Stack:** Python 3.13, Google ADK, LangGraph, FastAPI, React 19, Vertex AI, Cloud Run.
-* **Repositorio (el mismo monorepo que el Soccer Analytics Agent):** https://github.com/ramiro-c/ai-agents-hub
-
-### Knowledge Vault
-Sistema personal de gestión de conocimiento sobre Obsidian, sincronizado con Git (GitHub + iCloud). Capturo fuentes en crudo (artículos, papers, videos, PDFs) y agentes de IA las procesan automáticamente vía skills propias: categorización, extracción de ideas clave, links semánticos entre notas y resúmenes con puntos de acción. El resultado es una base con la que puedo conversar desde cualquier agente, no solo buscar por keyword.
-* **Stack:** Obsidian, Git, agentes de IA (Claude, OpenCode, modelos locales/cloud).
-
-## Workflow de trabajo con agentes (loop de cards)
-
-Ramiro itera con agentes de IA en un loop de 7 etapas sobre cards de Jira, alternando fases autónomas con puntos de decisión humana (human-in-the-loop). Cada card del backlog en To Do con label "agent:loop" pasa por las etapas conectadas. No hay auto-merge: la decisión final siempre es humana.
-
-### Triage
-Se toma una card del backlog en To Do con label agent:loop. Todavía lo dispara Ramiro manualmente (no hay cron): cada tick agarra como máximo una card. Clasifica tipo de tarea y asigna prioridad.
-
-### card-start
-Crea un worktree aislado con su propia rama a partir de la card de Jira. Resuelve el repo y la rama base desde los labels de la card. Listo para trabajar sin tocar el checkout principal.
-
-### SDD auto
-Pipeline completo de 5 fases: Explore (contexto), Propose (intención), Spec (requisitos + escenarios), Design (arquitectura técnica), Tasks (desglose en tareas). Todo generado por agentes antes de tocar código. Punto human-in-the-loop: Ramiro revisa antes de continuar.
-
-### card-review
-Revisión pre-PR usando los cuatro lentes 4R (Requirements, Reliability, Readability, Risk). Report-only: encuentra issues antes de abrir el PR. Opcionalmente simplifica código si el usuario lo pide.
-
-### card-pr
-Push de la rama y apertura del PR en GitHub. No mergea: deja el diff listo para la revisión adversarial del paso siguiente.
-
-### Judgment Day
-Revisión adversarial ciega: dos agentes revisan el diff de forma independiente, comparan hallazgos y emiten un veredicto. Si encuentra issues, vuelve a SDD para fix + re-judgment (máximo 2 rondas). Punto human-in-the-loop.
-
-### Partners / Slack
-La card se mueve a Partners/Code Review en Jira y se manda una sola notificación al canal de Slack (backend o frontend). El merge es humano — el loop nunca auto-mergea.
 
 ## Certificaciones
 
@@ -217,14 +99,8 @@ Completé el recorrido completo de Google Cloud en AI Agents: 10 certificaciones
 
 ## Stack Técnico
 
-* **Frontend & Mobile:** React (19), React Native, TypeScript, JavaScript, Expo, Zustand, React Query, Vue.js, Tailwind CSS (v4), Shadcn/ui, Leaflet, amCharts.
 * **Datos:** PostgreSQL (tuning de planes con EXPLAIN ANALYZE, índices GIN y trigram, CLUSTER, pg_prewarm), MySQL, BigQuery, MongoDB, Redis, Drizzle ORM, Sequelize, vistas materializadas.
-* **Backend, Cloud & Data:** Node.js, Express, NestJS, Python, FastAPI, Zod, AWS (S3, Lambda), MySQL, PostgreSQL, Google Cloud Platform (Vertex AI, Cloud Run), Cloudflare Workers (Edge Computing), Serverless, APIs REST, Pino Logger.
-* **IA & Automatización:** Google ADK, LangGraph, Cloudflare Workers AI (embeddings bge-m3), Cloudflare Vectorize (RAG), OpenCode Go (DeepSeek V4.1 Flash), n8n, APIs de LLMs (Gemini, Anthropic), OpenRouter, Claude Code, Cursor (context management).
-* **DevOps, Calidad & Testing:** CI/CD (GitHub Actions, Bitbucket Pipelines), Docker, Git (worktrees), Bash, Sentry, New Relic, Pytest, Jest, Vitest, Playwright, Bruno, SonarQube, Biome, Husky.
 * **Arquitectura:** Repository Pattern, inyección de dependencias, DDD, arquitectura hexagonal, atomic design, container-presentational.
-* **Metodologías & Procesos:** SCRUM, GitFlow, Code Reviews, Jira, Confluence.
-* **Certificaciones:** Path completo de Google Cloud en AI Agents (10 certificaciones, jun–jul 2026) — ver sección Certificaciones.
 * **Idiomas:** Español (Nativo) | Inglés (B2).
 
 ## Educación

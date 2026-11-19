@@ -1,5 +1,5 @@
 {
-  "$comment": "Fixed eval set for Botardo (linear vs adaptive RAG with the Jev decision-model router). expectedChunks are chunk-id PREFIXES (the -<hash> suffix changes when the content changes). expectedFacts are case- and accent-insensitive substrings any of which a good answer contains. route: search | smalltalk | off_topic | null (either is fine). retrieve: true = must search the KB, false = must not, null = either is fine. answerable: true = KB has the answer, false = the right reply is a decline (no info / off-topic), null = not graded. offerContact: expected router hire_intent (AskResponse.offerContact), null = not graded. unanswerableKind (answerable=false only): near_miss = the KB has relevant docs on the topic (expectedChunks, which retrieval should still find) but NOT the fact asked; out_of_kb = nothing in the KB. Every near_miss label was checked against the indexed KB text (scripts/knowledge-base.js + notes via kb-sources.json): the relevant chunk exists and the asked fact does not appear in any chunk.",
+  "$comment": "Fixed eval set for Botardo (linear vs adaptive RAG with the Jev decision-model router). expectedChunks are chunk-id PREFIXES (the -<hash> suffix changes when the content changes). expectedFacts are case- and accent-insensitive substrings any of which a good answer contains. route: search | smalltalk | off_topic | null (either is fine). retrieve: true = must search the KB, false = must not, null = either is fine. answerable: true = KB has the answer, false = the right reply is a decline (no info / off-topic), null = not graded. offerContact: expected router hire_intent (AskResponse.offerContact), null = not graded. unanswerableKind (answerable=false only): near_miss = the KB has relevant docs on the topic (expectedChunks, which retrieval should still find) but NOT the fact asked; out_of_kb = nothing in the KB. Labels and expectedChunks are validated against loadKBChunks (curated KB + notes + projects + built site pages), enforced by a test.",
   "cases": [
     {
       "id": "st-es-hola",
@@ -108,7 +108,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-stack-tecnico"],
+        "expectedChunks": ["site-about-skills"],
         "expectedFacts": ["React", "Node", "Python", "TypeScript"],
         "offerContact": false
       }
@@ -150,7 +150,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-soccer-analytics-agent"],
+        "expectedChunks": ["project-es-soccer-analytics-agent"],
         "expectedFacts": ["XGBoost", "pgvector", "Gemini"],
         "offerContact": false
       }
@@ -164,22 +164,22 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-sitio-web-y-arquitectura-del-bot", "kb-botardo-implementacion"],
+        "expectedChunks": ["project-es-botardo"],
         "expectedFacts": ["Vectorize", "bge-m3", "Cloudflare Workers"],
         "offerContact": false
       }
     },
     {
-      "id": "kb-es-judgment-day",
+      "id": "kb-es-interrogate",
       "category": "kb",
       "lang": "es",
-      "message": "¿Qué es el Judgment Day en su workflow con agentes?",
+      "message": "¿Qué hace el paso de interrogate en su workflow con agentes?",
       "expected": {
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-judgment-day"],
-        "expectedFacts": ["adversarial", "dos agentes"],
+        "expectedChunks": ["site-workflow-card-pr-interrogate"],
+        "expectedFacts": ["adversarial", "modelos"],
         "offerContact": false
       }
     },
@@ -234,7 +234,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-soccer-analytics-agent", "kb-mundial-2026-soccer-analytics-world-cup-companio"],
+        "expectedChunks": ["project-en-soccer-analytics-agent", "project-en-mundial-2026"],
         "expectedFacts": ["Soccer Analytics", "World Cup", "Mundial", "markdownificator"],
         "offerContact": false
       }
@@ -262,7 +262,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-mundial-2026-soccer-analytics-world-cup-companio"],
+        "expectedChunks": ["project-en-mundial-2026"],
         "expectedFacts": ["FastAPI", "React", "Leaflet", "Cloudflare Workers"],
         "offerContact": false
       }
@@ -290,7 +290,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-linkedin-markdownificator"],
+        "expectedChunks": ["project-en-linkedin-markdownificator"],
         "expectedFacts": ["Markdown", "Selenium", "LinkedIn"],
         "offerContact": false
       }
@@ -352,7 +352,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-soccer-analytics-agent"],
+        "expectedChunks": ["project-es-soccer-analytics-agent"],
         "expectedFacts": ["XGBoost"],
         "offerContact": false
       }
@@ -393,14 +393,14 @@
         },
         {
           "role": "assistant",
-          "content": "Itera con agentes de IA en un loop de 7 etapas sobre cards de Jira, alternando fases autónomas con puntos de decisión humana."
+          "content": "Itera con agentes de IA en un loop de 9 etapas sobre cards de Jira, con pstack como base y puntos de decisión humana."
         }
       ],
       "expected": {
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-partners-slack", "kb-card-pr"],
+        "expectedChunks": ["site-workflow-partners-slack", "site-workflow-card-pr-interrogate"],
         "expectedFacts": ["human", "humano", "no auto", "nunca auto"],
         "offerContact": false
       }
@@ -424,7 +424,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-mundial-2026-soccer-analytics-world-cup-companio"],
+        "expectedChunks": ["project-en-mundial-2026"],
         "expectedFacts": ["FastAPI", "React", "Leaflet"],
         "offerContact": false
       }
@@ -472,7 +472,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-botardo-implementacion", "kb-sitio-web-y-arquitectura-del-bot"],
+        "expectedChunks": ["project-en-botardo"],
         "expectedFacts": ["bge-m3"],
         "offerContact": false
       }
@@ -636,7 +636,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": false,
-        "expectedChunks": ["kb-soccer-analytics-agent"],
+        "expectedChunks": ["project-en-soccer-analytics-agent"],
         "offerContact": false,
         "unanswerableKind": "near_miss"
       }
@@ -650,7 +650,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": false,
-        "expectedChunks": ["kb-mundial-2026-soccer-analytics-world-cup-companio"],
+        "expectedChunks": ["project-en-mundial-2026"],
         "offerContact": false,
         "unanswerableKind": "near_miss"
       }
@@ -855,7 +855,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedChunks": ["site-home-productos-en-produccion"],
         "expectedFacts": ["Avellana", "Kano", "LactarIA", "Libro de Pases"],
         "offerContact": null
       }
@@ -869,7 +869,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedChunks": ["site-home-productos-en-produccion"],
         "expectedFacts": ["Kano", "Avellana"],
         "offerContact": null
       }
@@ -883,7 +883,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedChunks": ["site-home-productos-en-produccion"],
         "expectedFacts": ["Kano", "Avellana"],
         "offerContact": null
       }
@@ -897,7 +897,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-kano-studio"],
+        "expectedChunks": ["site-home-kano-studio-landing-y-diagnostico-interacti"],
         "expectedFacts": ["sistema de diseño", "SEO", "accesibilidad"],
         "offerContact": null
       }
@@ -911,7 +911,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-avellana"],
+        "expectedChunks": ["site-home-avellana-app-para-comprar-ropa-en-av-avella"],
         "expectedFacts": ["Avellaneda"],
         "offerContact": null
       }
@@ -925,7 +925,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedChunks": ["site-home-products-in-production"],
         "expectedFacts": ["Kano", "Avellana"],
         "offerContact": null
       }
@@ -939,7 +939,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-productos-y-clientes"],
+        "expectedChunks": ["site-home-products-in-production"],
         "expectedFacts": ["Avellana", "LactarIA", "Libro de Pases"],
         "offerContact": null
       }
@@ -953,7 +953,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-servicios"],
+        "expectedChunks": ["site-home-antes-de-escribirme"],
         "expectedFacts": ["web", "móvil", "agentes"],
         "offerContact": null
       }
@@ -967,7 +967,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-ldp-copilot"],
+        "expectedChunks": ["project-es-ldp-copilot"],
         "expectedFacts": ["sub-agentes", "Google ADK"],
         "offerContact": null
       }
@@ -981,7 +981,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-ldp-copilot", "project-en-ldp-copilot"],
+        "expectedChunks": ["project-en-ldp-copilot"],
         "expectedFacts": ["49", "judge"],
         "offerContact": null
       }
