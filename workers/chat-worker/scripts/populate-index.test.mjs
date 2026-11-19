@@ -2,17 +2,15 @@ import { describe, it, expect } from "vitest";
 
 import {
   buildProjectChunks,
-  chunkKB,
   chunkNote,
   diffIds,
-  globFiles,
   isDraftNote,
   loadKBChunks,
   noteRoute,
   projectRoute,
-  sha1Hex,
   stripFrontmatter,
 } from "./populate-index.mjs";
+import { chunkKB, globFiles, sha1Hex } from "./chunking.mjs";
 import { KNOWLEDGE_BASE } from "./knowledge-base.js";
 
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";

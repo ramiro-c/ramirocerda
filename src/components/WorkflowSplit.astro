@@ -39,9 +39,13 @@ const returns: Record<number, string> = {
             {node.isHitl && <span class="pill caption-3">{hitlLabel}</span>}
             <span class="arrow">→</span>
           </button>
-          {returns[i] && <p class="c-return mono caption-5">{returns[i]}</p>}
+          {returns[i] && (
+            <p class="c-return mono caption-5" aria-hidden="true">
+              {returns[i]}
+            </p>
+          )}
           <div class="row-detail">
-            <p class="d-title title-1">{node.panelTitle}</p>
+            <h3 class="d-title title-1">{node.panelTitle}</h3>
             <p class="d-body body-6">{node.panelBody}</p>
             {node.isHitl && <span class="pill caption-3">{hitlLabel}</span>}
           </div>
@@ -50,7 +54,7 @@ const returns: Record<number, string> = {
     </ul>
   </div>
 
-  <aside class="s-panel" data-wf-panel>
+  <aside class="s-panel" data-wf-panel data-kb="skip">
     <p class="panel-placeholder body-6" data-wf-placeholder>
       <span aria-hidden="true">→</span>
       {panelHint}

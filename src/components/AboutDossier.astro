@@ -34,7 +34,7 @@ const labels = {
     <p class="bio body-3">{copy.bio}</p>
 
     <div class="personal">
-      <p class="section-label caption-3">{labels.personalLabel}</p>
+      <h2 class="section-label caption-3">{labels.personalLabel}</h2>
       {copy.personal.map((paragraph) => (
         <p class="personal-p body-3">{paragraph}</p>
       ))}
@@ -65,7 +65,7 @@ const labels = {
       <figcaption class="personal-photo-caption caption-5">{labels.photoCaption}</figcaption>
     </figure>
 
-    <p class="section-label roles-label caption-3">{labels.rolesLabel}</p>
+    <h2 class="section-label roles-label caption-3">{labels.rolesLabel}</h2>
     <ul class="d-rows">
       {copy.roles.map((role, i) => (
         <li>
@@ -79,7 +79,7 @@ const labels = {
   </div>
 
   <section class="d-skills">
-    <p class="section-label caption-3">{labels.skillsLabel}</p>
+    <h2 class="section-label caption-3">{labels.skillsLabel}</h2>
     <ul class="skill-idx">
       {copy.skills.map((group, i) => (
         <li>

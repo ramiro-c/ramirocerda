@@ -44,7 +44,7 @@ const groups = trackIds
           <h2 class="track-title caption-3">{group.title}</h2>
           <p class="track-note caption-5">{group.note}</p>
         </div>
-        <ul class="cat">
+        <ul class="cat" data-kb="skip">
           {group.items.map((item, i) => (
             <li>
               <a href={getLocalizedPath(lang, `/work/${item.slug}/`)}>

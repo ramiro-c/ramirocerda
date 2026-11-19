@@ -20,10 +20,12 @@
  * tests). No shell-outs, no git.
  */
 
-import { createHash } from "node:crypto";
-import { readFile, writeFile, readdir } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
+
+import { chunkKB, globFiles, sha1Hex, slugify } from "./chunking.mjs";
+import { loadSiteChunks } from "./site-pages.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKER_DIR = path.join(SCRIPT_DIR, "..");
@@ -232,21 +234,6 @@ export function buildProjectChunks(md, opts = {}) {
   return chunks;
 }
 
-/** First 8 hex chars of the sha1 of a string. */
-export function sha1Hex(text) {
-  return createHash("sha1").update(text, "utf8").digest("hex");
-}
-
-function slugify(text) {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48); // keep full id within Vectorize's 64-byte id limit
-}
-
 /** Split markdown front matter (leading --- block) into a flat key/value map. */
 export function stripFrontmatter(md) {
   const m = md.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
@@ -275,93 +262,6 @@ export function isDraftNote(md) {
       .trim()
       .toLowerCase() === "true"
   );
-}
-
-/**
- * Split markdown KB text into heading-boundary chunks.
- *
- * - Boundaries at H2/H3/H4 headings (the KB nests roles and projects under
- *   H3/H4 headings); no overlap; whole sections.
- * - A heading whose section has no body of its own (a pure container, e.g.
- *   "## Experiencia Profesional" with only H3 children) is folded as a context
- *   prefix line into the first child chunk so company/group context is kept.
- * - The document H1 title and any text before the first H2 are not chunks
- *   (default). With `foldPreamble`, that preamble is folded as a context
- *   prefix into the first heading chunk instead of being dropped — used for
- *   note files so title + intro survive chunking.
- * - Content lines are preserved verbatim.
- * - Empty input (or no headings with foldPreamble=false) yields zero chunks.
- *
- * @param {string} kbText
- * @param {{ idPrefix?: string, foldPreamble?: boolean }} [opts]
- * @returns {Array<{ id: string, text: string, section: string, idx: number }>}
- */
-export function chunkKB(kbText, opts = {}) {
-  const idPrefix = opts.idPrefix ?? "kb";
-  const foldPreamble = opts.foldPreamble ?? false;
-  const headingRe = /^(#{2,4})\s+(.+?)\s*$/;
-  const raw = [];
-  const preambleLines = [];
-  let current = null;
-
-  for (const line of kbText.split("\n")) {
-    const m = line.match(headingRe);
-    if (m) {
-      if (current) raw.push(current);
-      current = { level: m[1].length, headingLine: line, heading: m[2].trim(), body: [] };
-    } else if (current) {
-      current.body.push(line);
-    } else if (foldPreamble || preambleLines.length > 0) {
-      preambleLines.push(line);
-    }
-    // With foldPreamble=false, lines before the first H2+ heading (H1 title,
-    // blanks) are dropped once the first heading is found.
-  }
-  if (current) raw.push(current);
-
-  const chunks = [];
-  let pendingParents = preambleLines.filter((l) => l.trim() !== "");
-  for (const c of raw) {
-    // A heading whose section has no body (pure container, e.g. "## Experiencia
-    // Profesional" holding only H3 children) becomes a context prefix line for
-    // the first child chunk instead of an empty chunk of its own.
-    const hasBody = c.body.some((line) => line.trim() !== "");
-    if (!hasBody) {
-      pendingParents.push(c.headingLine);
-      continue;
-    }
-    const ownText = [c.headingLine, ...c.body].join("\n").trimEnd();
-    const lines = [...pendingParents, ownText];
-    // Keep parent headings (higher level = fewer #) for sibling chunks at deeper levels
-    pendingParents = pendingParents.filter((p) => {
-      const pm = p.match(/^(#+)\s+/);
-      const cm = c.headingLine.match(/^(#+)\s+/);
-      if (!pm || !cm) return false;
-      return pm[1].length < cm[1].length;
-    });
-    const text = lines.join("\n").trimEnd();
-    chunks.push({ heading: c.heading, text });
-  }
-
-  // Prose-only input with no headings at all: one whole-document chunk so the
-  // content is never silently dropped.
-  if (chunks.length === 0 && pendingParents.length > 0) {
-    const text = pendingParents.join("\n").trimEnd();
-    chunks.push({
-      heading: text
-        .split("\n")[0]
-        .replace(/^#+\s*/, "")
-        .slice(0, 80),
-      text,
-    });
-  }
-
-  return chunks.map((c, idx) => ({
-    id: `${idPrefix}-${slugify(c.heading)}-${sha1Hex(c.text).slice(0, 8)}`,
-    text: c.text,
-    section: c.heading,
-    idx,
-  }));
 }
 
 /**
@@ -424,49 +324,6 @@ export function chunkNote(md, opts = {}) {
 }
 
 /**
- * Minimal glob over the local filesystem (no dependencies). Supports literal
- * path segments, a `*` wildcard segment, and `**` as zero-or-more directories.
- * Hidden directories (dotfiles, node_modules) are never traversed.
- *
- * @param {string} rootDir
- * @param {string} pattern
- * @returns {Promise<string[]>}
- */
-export async function globFiles(rootDir, pattern) {
-  const parts = pattern.split("/").filter((p) => p !== "" && p !== ".");
-  const results = [];
-  const walk = async (base, rest) => {
-    const [head, ...tail] = rest;
-    if (head === undefined) {
-      results.push(base);
-      return;
-    }
-    if (head === "**") {
-      await walk(base, tail);
-      const entries = await readdir(base, { withFileTypes: true }).catch(() => []);
-      for (const entry of entries) {
-        if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules") continue;
-        await walk(path.join(base, entry.name), rest);
-      }
-      return;
-    }
-    const entries = await readdir(base, { withFileTypes: true }).catch(() => []);
-    for (const entry of entries) {
-      if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
-      const isMatch = head.includes("*")
-        ? new RegExp(`^${head.replace(/\*/g, "[^.]*")}$`).test(entry.name)
-        : entry.name === head;
-      if (!isMatch) continue;
-      const child = path.join(base, entry.name);
-      if (tail.length === 0 && entry.isFile()) results.push(child);
-      else if (tail.length > 0 && entry.isDirectory()) await walk(child, tail);
-    }
-  };
-  await walk(rootDir, parts);
-  return results.toSorted();
-}
-
-/**
  * Load the chunk set for all sources declared in kb-sources.json, relative to
  * the repo root.
  *
@@ -509,9 +366,49 @@ export async function loadKBChunks(rootDir) {
       }
       continue;
     }
+    if (source.type === "site") {
+      // Index what the site actually publishes: every indexable HTML page Astro
+      // emitted to dist/. dist must exist (the CI/populate runbook builds it
+      // first); without it there is nothing honest to index.
+      const pages = await loadSiteChunks(path.resolve(rootDir, source.dir));
+      chunks.push(...pages.map((c) => ({ ...c, source: source.id })));
+      continue;
+    }
     throw new Error(`Unknown source type '${source.type}' for source '${source.id}'`);
   }
-  return chunks;
+  // The site source indexes every published page, including the note and
+  // project pages that the markdown/projects sources already claim. Drop those
+  // duplicates so each route is owned by exactly one source.
+  return excludeClaimedRoutes(chunks);
+}
+
+/**
+ * Remove site-source chunks whose route is already claimed by another source,
+ * and fail loudly when a claimed route has no page in dist/ at all (that means
+ * the markdown/projects sources index something the site does not publish).
+ *
+ * A chunk belongs to the site source when its id carries the `site-` prefix —
+ * the only prefix loadSiteChunks ever generates (notes use `note-`, projects
+ * `project-<lang>-`, the curated KB `kb-`).
+ *
+ * @param {Array<{ id: string, source: string, url?: string, urlAlt?: string }>} chunks
+ * @returns {Array<{ id: string, source: string, url?: string, urlAlt?: string }>}
+ */
+export function excludeClaimedRoutes(chunks) {
+  const isSite = (c) => c.id.startsWith("site-");
+  const siteUrls = new Set(chunks.filter(isSite).map((c) => c.url));
+  const claimedBy = new Map();
+  for (const c of chunks) {
+    if (isSite(c)) continue;
+    if (c.url && !claimedBy.has(c.url)) claimedBy.set(c.url, c.source);
+    if (c.urlAlt && !claimedBy.has(c.urlAlt)) claimedBy.set(c.urlAlt, c.source);
+  }
+  if (siteUrls.size > 0) {
+    for (const [url, source] of claimedBy) {
+      if (!siteUrls.has(url)) throw new Error(`claimed route ${url} has no page in dist/ (source ${source})`);
+    }
+  }
+  return chunks.filter((c) => !isSite(c) || !claimedBy.has(c.url));
 }
 
 /** Manifest sync diff: ids the manifest is missing and ids it should prune. */
