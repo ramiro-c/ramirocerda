@@ -4,16 +4,32 @@ import { PROMPT } from "./prompts";
 
 import {
   buildRagPrompt,
+  chunkLanguage,
   DEFAULT_RAG_RERANK_MODEL,
   extractEmbedding,
   filterChunks,
   MAX_CHUNKS,
+  preferLanguage,
   retrieveChunks,
+  type RetrievalDiagnostics,
   type VectorizeMatch,
 } from "./rag";
 
 function match(score: number, id = `kb-${score}`): VectorizeMatch {
   return { id, score, metadata: { section: "Overview", source: "knowledge-base", idx: 0, text: `texto de ${id}` } };
+}
+
+function withUrl(score: number, id: string, url?: string, urlAlt?: string): VectorizeMatch {
+  return {
+    id,
+    score,
+    metadata: {
+      section: "Notas",
+      text: `texto de ${id}`,
+      ...(url ? { url } : {}),
+      ...(urlAlt ? { urlAlt } : {}),
+    },
+  };
 }
 
 function withText(score: number, id: string, text: string): VectorizeMatch {
@@ -167,6 +183,84 @@ describe("retrieveChunks with the reranker", () => {
     });
     await retrieveChunks("q", env);
     expect(query.mock.calls[0][1].topK).toBe(50);
+  });
+});
+
+describe("chunkLanguage", () => {
+  it("reads the language off the published route", () => {
+    expect(chunkLanguage({ url: "/en/work/x" })).toBe("en");
+    expect(chunkLanguage({ url: "/en" })).toBe("en");
+    expect(chunkLanguage({ url: "/work/x" })).toBe("es");
+    expect(chunkLanguage({ url: "/enfoque" })).toBe("es"); // boundary: /en must not match /enfoque
+  });
+
+  it("returns null for a missing or empty url", () => {
+    expect(chunkLanguage({})).toBeNull();
+    expect(chunkLanguage({ url: "" })).toBeNull();
+    expect(chunkLanguage({ url: 42 })).toBeNull();
+    expect(chunkLanguage(undefined)).toBeNull();
+  });
+});
+
+describe("preferLanguage", () => {
+  it("drops the en twin when lang=es and the es twin is among the candidates", () => {
+    const es = withUrl(0.5, "kb-es-x", "/work/x", "/en/work/x");
+    const en = withUrl(0.45, "kb-en-x", "/en/work/x", "/work/x");
+    expect(preferLanguage([es, en], "es").map((m) => m.id)).toEqual(["kb-es-x"]);
+  });
+
+  it("keeps a wrong-language chunk whose twin is absent (cross-language content is never lost)", () => {
+    const en = withUrl(0.45, "kb-en-y", "/en/notes/y", "/notes/y");
+    expect(preferLanguage([en], "es").map((m) => m.id)).toEqual(["kb-en-y"]);
+  });
+
+  it("keeps url-less curated chunks whatever the language", () => {
+    const curated = { id: "kb-cur", score: 0.4, metadata: { section: "KB", text: "cuerpo" } };
+    expect(preferLanguage([curated], "es")).toEqual([curated]);
+    expect(preferLanguage([curated], "en")).toEqual([curated]);
+  });
+
+  it("does not mutate its input", () => {
+    const es = withUrl(0.5, "kb-es-x", "/work/x", "/en/work/x");
+    const en = withUrl(0.45, "kb-en-x", "/en/work/x", "/work/x");
+    const input = [es, en];
+    preferLanguage(input, "es");
+    expect(input).toEqual([es, en]);
+  });
+
+  it("preserves the candidate order", () => {
+    const es = withUrl(0.5, "kb-es-x", "/work/x", "/en/work/x");
+    const en = withUrl(0.45, "kb-en-x", "/en/work/x", "/work/x");
+    expect(preferLanguage([en, es], "es").map((m) => m.id)).toEqual(["kb-es-x"]);
+    const other = match(0.6);
+    expect(preferLanguage([other, en, es], "es").map((m) => m.id)).toEqual(["kb-0.6", "kb-es-x"]);
+  });
+});
+
+describe("retrieveChunks language preference", () => {
+  const twinMatches = (): VectorizeMatch[] => [
+    withUrl(0.5, "kb-es-x", "/work/x", "/en/work/x"),
+    withUrl(0.45, "kb-en-x", "/en/work/x", "/work/x"),
+  ];
+
+  it("with lang the en twin gives its context slot to the es twin", async () => {
+    const { env } = ragEnv({ matches: twinMatches() });
+    const result = await retrieveChunks("q", env, { lang: "es" });
+    expect(result.map((c) => c.id)).toEqual(["kb-es-x"]);
+    expect(result[0]?.metadata?.url).toBe("/work/x");
+  });
+
+  it("without lang the behaviour is unchanged: both twins come back in dense order", async () => {
+    const { env } = ragEnv({ matches: twinMatches() });
+    expect((await retrieveChunks("q", env)).map((c) => c.id)).toEqual(["kb-es-x", "kb-en-x"]);
+  });
+
+  it("keeps denseIdsOrdered raw in the diagnostics, before the language filter", async () => {
+    const diagnostics: RetrievalDiagnostics[] = [];
+    const { env } = ragEnv({ matches: twinMatches() });
+    await retrieveChunks("q", env, { lang: "es", accumulate: diagnostics });
+    expect(diagnostics[0]?.denseIdsOrdered).toEqual(["kb-es-x", "kb-en-x"]);
+    expect(diagnostics[0]?.finalChunkIds).toEqual(["kb-es-x"]);
   });
 });
 

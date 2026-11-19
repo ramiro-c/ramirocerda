@@ -12,8 +12,9 @@ interface Props {
   }[];
   hitlLabel: string;
   panelHint: string;
+  stagesLabel: string;
 }
-const { nodes, hitlLabel, panelHint } = Astro.props;
+const { nodes, hitlLabel, panelHint, stagesLabel } = Astro.props;
 const returns: Record<number, string> = {
   5: "↩ fix → verify → 04",
   6: "↩ fix → verify → 04",
@@ -22,6 +23,7 @@ const returns: Record<number, string> = {
 ---
 
 <div class="split" data-wf-c>
+  <h2 class="sr-only">{stagesLabel}</h2>
   <div class="s-rows">
     <ul class="c-rows">
       {nodes.map((node, i) => (
@@ -106,6 +108,20 @@ const returns: Record<number, string> = {
     gap: var(--space-300);
     margin: var(--space-200) 0 0;
     align-items: start;
+  }
+  /* Visually hidden but in the accessibility tree and the KB markdown: the h2
+     labels the stage list so every stage chunk carries workflow context.
+     position:absolute also takes it out of the .split grid flow. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   .s-rows {
     min-width: 0;

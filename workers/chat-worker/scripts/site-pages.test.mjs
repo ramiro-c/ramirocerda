@@ -134,7 +134,7 @@ describe("chunkSitePage", () => {
   it("makes one chunk per h2 section with title prefix and › section chain", () => {
     const page = parse("<h1>Flujo</h1><p>Intro.</p><h2>Uno</h2><p>cuerpo uno</p><h2>Dos</h2><p>cuerpo dos</p>");
     const chunks = chunkSitePage(page);
-    expect(chunks).toHaveLength(2);
+    expect(chunks).toHaveLength(3);
     for (const c of chunks) {
       expect(c.text.startsWith("# Flujo\n\n")).toBe(true);
       expect(c.id).toMatch(/^site-[a-z0-9-]+-[0-9a-f]{8}$/);
@@ -142,10 +142,27 @@ describe("chunkSitePage", () => {
       expect(c.url).toBe("/workflow");
       expect(c.urlAlt).toBe("/en/workflow");
     }
+    expect(chunks[0].section).toBe("Flujo");
     expect(chunks[0].text).toContain("Intro.");
-    expect(chunks[0].section).toBe("Flujo › Uno");
-    expect(chunks[1].text).toContain("cuerpo dos");
-    expect(chunks[1].section).toBe("Flujo › Dos");
+    expect(chunks[1].text).not.toContain("Intro.");
+    expect(chunks[1].text).toContain("cuerpo uno");
+    expect(chunks[1].section).toBe("Flujo › Uno");
+    expect(chunks[2].text).toContain("cuerpo dos");
+    expect(chunks[2].section).toBe("Flujo › Dos");
+  });
+
+  it("emits the page intro as its own first chunk with an intro id leaf", () => {
+    const page = parse(
+      "<h1>Flujo</h1><p>Hero de portada.</p><h2>Uno</h2><p>cuerpo uno</p><h2>Dos</h2><p>cuerpo dos</p>",
+    );
+    const chunks = chunkSitePage(page);
+    expect(chunks).toHaveLength(3);
+    expect(chunks[0].section).toBe("Flujo");
+    expect(chunks[0].id).toMatch(/^site-workflow-intro-[0-9a-f]{8}$/);
+    expect(chunks[0].text).toBe("# Flujo\n\nHero de portada.");
+    for (const sectionChunk of chunks.slice(1)) {
+      expect(sectionChunk.text).not.toContain("Hero de portada.");
+    }
   });
 
   it("splits long chunks at blank-line boundaries, repeating headings and suffixing the section", () => {
@@ -231,10 +248,82 @@ describe("loadSiteChunks", () => {
       await rm(dist, { recursive: true, force: true });
     }
   });
+
+  it("skips excluded pages after the noindex check, leaving the rest untouched", async () => {
+    const dist = await mkdtemp(path.join(tmpdir(), "botardo-dist-"));
+    try {
+      await mkdir(path.join(dist, "a"), { recursive: true });
+      await mkdir(path.join(dist, "b"), { recursive: true });
+      await mkdir(path.join(dist, "privacy"), { recursive: true });
+      await writeFile(
+        path.join(dist, "a", "index.html"),
+        pageHtml({ url: "/a/", body: "<h1>A</h1><p>contenido a</p>" }),
+      );
+      await writeFile(
+        path.join(dist, "b", "index.html"),
+        pageHtml({ url: "/b/", body: "<h1>B</h1><p>contenido b</p>" }),
+      );
+      await writeFile(
+        path.join(dist, "privacy", "index.html"),
+        pageHtml({ url: "/privacy/", body: "<h1>Privacidad</h1><p>contenido privado</p>" }),
+      );
+      const chunks = await loadSiteChunks(dist, { exclude: ["/privacy"] });
+      expect(chunks.map((c) => c.url)).toEqual(["/a", "/b"]);
+      expect(chunks.some((c) => c.text.includes("contenido privado"))).toBe(false);
+
+      // No exclude list: the same dist indexes the privacy page.
+      expect((await loadSiteChunks(dist)).map((c) => c.url)).toEqual(["/a", "/b", "/privacy"]);
+    } finally {
+      await rm(dist, { recursive: true, force: true });
+    }
+  });
+
+  it("throws when an exclude entry matches no indexable page, naming every unmatched route", async () => {
+    const dist = await mkdtemp(path.join(tmpdir(), "botardo-dist-"));
+    try {
+      await mkdir(path.join(dist, "a"), { recursive: true });
+      await mkdir(path.join(dist, "gone"), { recursive: true });
+      await writeFile(
+        path.join(dist, "a", "index.html"),
+        pageHtml({ url: "/a/", body: "<h1>A</h1><p>contenido a</p>" }),
+      );
+      // A noindex page is not a published page: excluding it is stale config.
+      await writeFile(path.join(dist, "gone", "index.html"), pageHtml({ url: "/gone/", robots: "noindex" }));
+      await expect(loadSiteChunks(dist, { exclude: ["/gone", "/missing"] })).rejects.toThrow(
+        "site exclude: no published page at /gone, /missing",
+      );
+      // Every entry matched: no throw, and the excluded page yields nothing.
+      expect(await loadSiteChunks(dist, { exclude: ["/a"] })).toEqual([]);
+    } finally {
+      await rm(dist, { recursive: true, force: true });
+    }
+  });
+
+  it("throws when exclude is not an array of route paths starting with /", async () => {
+    const dist = await mkdtemp(path.join(tmpdir(), "botardo-dist-"));
+    try {
+      await mkdir(path.join(dist, "a"), { recursive: true });
+      await writeFile(
+        path.join(dist, "a", "index.html"),
+        pageHtml({ url: "/a/", body: "<h1>A</h1><p>contenido a</p>" }),
+      );
+      await expect(loadSiteChunks(dist, { exclude: "/privacy" })).rejects.toThrow(
+        'site exclude: must be an array of route paths starting with "/"',
+      );
+      await expect(loadSiteChunks(dist, { exclude: ["privacy"] })).rejects.toThrow(
+        'site exclude: must be an array of route paths starting with "/"',
+      );
+      await expect(loadSiteChunks(dist, { exclude: ["/ok", 42] })).rejects.toThrow(
+        'site exclude: must be an array of route paths starting with "/"',
+      );
+    } finally {
+      await rm(dist, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("loadKBChunks with a site source", () => {
-  async function makeRoot({ withNoteDistPage = true } = {}) {
+  async function makeRoot({ withNoteDistPage = true, exclude = null } = {}) {
     const root = await mkdtemp(path.join(tmpdir(), "botardo-kb-site-"));
     await mkdir(path.join(root, "src", "content", "notes", "es"), { recursive: true });
     await writeFile(
@@ -247,7 +336,7 @@ describe("loadKBChunks with a site source", () => {
       JSON.stringify({
         sources: [
           { id: "notes", type: "markdown", glob: "src/content/notes/**/*.md" },
-          { id: "site", type: "site", dir: "dist" },
+          { id: "site", type: "site", dir: "dist", ...(exclude ? { exclude } : {}) },
         ],
       }),
     );
@@ -255,6 +344,18 @@ describe("loadKBChunks with a site source", () => {
     await mkdir(path.join(dist, "notes", "n1"), { recursive: true });
     await mkdir(path.join(dist, "en", "notes", "n1"), { recursive: true });
     await mkdir(path.join(dist, "workflow"), { recursive: true });
+    if (exclude) {
+      await mkdir(path.join(dist, "privacy"), { recursive: true });
+      await mkdir(path.join(dist, "en", "privacy"), { recursive: true });
+      await writeFile(
+        path.join(dist, "privacy", "index.html"),
+        pageHtml({ url: "/privacy/", alt: "/en/privacy/", body: "<h1>Privacidad</h1><p>contenido privado</p>" }),
+      );
+      await writeFile(
+        path.join(dist, "en", "privacy", "index.html"),
+        pageHtml({ lang: "en", url: "/en/privacy/", alt: "/privacy/", body: "<h1>Privacy</h1><p>private content</p>" }),
+      );
+    }
     if (withNoteDistPage) {
       await writeFile(
         path.join(dist, "notes", "n1", "index.html"),
@@ -294,6 +395,20 @@ describe("loadKBChunks with a site source", () => {
     }
   });
 
+  it("honors the site source exclude list end to end", async () => {
+    const root = await makeRoot({ exclude: ["/privacy", "/en/privacy"] });
+    try {
+      const chunks = await loadKBChunks(root);
+      const siteChunks = chunks.filter((c) => c.id.startsWith("site-"));
+      // /privacy and /en/privacy excluded; /workflow still indexed.
+      expect(siteChunks.map((c) => c.url)).toEqual(["/workflow"]);
+      expect(chunks.some((c) => c.text.includes("contenido privado"))).toBe(false);
+      expect(chunks.some((c) => c.text.includes("private content"))).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("throws when a claimed route has no page in dist/", async () => {
     const root = await makeRoot({ withNoteDistPage: false });
     try {
@@ -320,7 +435,7 @@ describe("loadKBChunks with a site source", () => {
 });
 
 describe("site source against the real dist/", () => {
-  it.skipIf(!existsSync(repoDistDir))("chunks /workflow and /en/workflow one chunk per stage", async () => {
+  it.skipIf(!existsSync(repoDistDir))("chunks /workflow: one chunk per stage carrying the stages label", async () => {
     const chunks = await loadSiteChunks(repoDistDir);
     const shared = [
       "card-start",
@@ -332,17 +447,24 @@ describe("site source against the real dist/", () => {
       "card-pr + interrogate",
       "Partners / Slack",
     ];
-    const pages = {
-      "/workflow": ["Triage y framing gate", ...shared],
-      "/en/workflow": ["Triage and framing gate", ...shared],
-    };
-    for (const [url, stages] of Object.entries(pages)) {
-      const sections = chunks.filter((c) => c.url === url).map((c) => c.section);
+    const pages = [
+      {
+        url: "/workflow",
+        label: "Las nueve etapas de mi workflow con agentes de IA",
+        stages: ["Triage y framing gate", ...shared],
+      },
+      {
+        url: "/en/workflow",
+        label: "The nine stages of my AI agent workflow",
+        stages: ["Triage and framing gate", ...shared],
+      },
+    ];
+    for (const { url, label, stages } of pages) {
+      const pageChunks = chunks.filter((c) => c.url === url);
       for (const stage of stages) {
-        expect(
-          sections.filter((s) => s.endsWith(` › ${stage}`)),
-          `${url}: ${stage}`,
-        ).toHaveLength(1);
+        const stageChunks = pageChunks.filter((c) => c.section.endsWith(` › ${stage}`));
+        expect(stageChunks, `${url}: ${stage}`).toHaveLength(1);
+        expect(stageChunks[0].text.includes(label), `${url}: ${stage}`).toBe(true);
       }
     }
   });
@@ -363,5 +485,10 @@ describe("site source against the real dist/", () => {
     const chunks = await loadKBChunks(path.dirname(repoDistDir));
     expect(chunks.some((c) => c.id.startsWith("kb-"))).toBe(true);
     expect(chunks.some((c) => c.id.startsWith("site-"))).toBe(true);
+  });
+
+  it.skipIf(!existsSync(repoDistDir))("never indexes the privacy page through loadKBChunks", async () => {
+    const chunks = await loadKBChunks(path.dirname(repoDistDir));
+    expect(chunks.some((c) => c.url === "/privacy" || c.url === "/en/privacy")).toBe(false);
   });
 });

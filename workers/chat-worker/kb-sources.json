@@ -18,7 +18,8 @@
     {
       "id": "site",
       "type": "site",
-      "dir": "dist"
+      "dir": "dist",
+      "exclude": ["/privacy", "/en/privacy"]
     }
   ]
 }

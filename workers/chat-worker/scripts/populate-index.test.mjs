@@ -33,9 +33,9 @@ describe("chunkKB", () => {
     }
   });
 
-  it("splits the real KB into heading-boundary chunks (12)", () => {
+  it("splits the real KB into heading-boundary chunks (13)", () => {
     const chunks = chunkKB(KNOWLEDGE_BASE);
-    expect(chunks.length).toBe(12);
+    expect(chunks.length).toBe(13);
 
     const sections = chunks.map((c) => c.section);
     expect(sections).toContain("Overview");

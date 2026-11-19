@@ -134,9 +134,40 @@ function pushDiagnostics(
   });
 }
 
+/**
+ * Language of an indexed chunk, read from its published route: the index holds
+ * most pages twice (es + en twins with mirrored url/urlAlt), an /en/... url is
+ * the English copy, any other non-empty url is the Spanish one, and curated
+ * chunks without a url have no language at all. Pure metadata reading.
+ */
+export function chunkLanguage(metadata?: Record<string, unknown>): Language | null {
+  const url = typeof metadata?.url === "string" ? metadata.url : "";
+  if (!url) return null;
+  return /^\/en(\/|$)/.test(url) ? "en" : "es";
+}
+
+/**
+ * Keep cross-language content while preferring the visitor's language: drop a
+ * wrong-language match only when the right-language twin of the same page is
+ * also among the candidates (same urlAlt), so the pair stops taking two
+ * context slots. A wrong-language chunk without its twin stays, and url-less
+ * curated chunks always stay. Pure: order preserved, input not mutated.
+ */
+export function preferLanguage(matches: VectorizeMatch[], lang: Language): VectorizeMatch[] {
+  return matches.filter((m) => {
+    const matchLang = chunkLanguage(m.metadata);
+    if (matchLang === null || matchLang === lang) return true;
+    const twin = typeof m.metadata?.urlAlt === "string" ? m.metadata.urlAlt : undefined;
+    if (!twin) return true;
+    return !matches.some((n) => chunkLanguage(n.metadata) === lang && n.metadata?.url === twin);
+  });
+}
+
 export interface RetrieveChunksOptions {
   /** When set, append one diagnostic row per retrieveChunks invocation (eval / telemetry hook). */
   accumulate?: RetrievalDiagnostics[];
+  /** Visitor language: drop a page's wrong-language twin when the right one is among the candidates. */
+  lang?: Language;
 }
 
 export async function retrieveChunks(
@@ -145,12 +176,16 @@ export async function retrieveChunks(
   opts?: RetrieveChunksOptions,
 ): Promise<RetrievedChunk[]> {
   const accumulate = opts?.accumulate;
+  const lang = opts?.lang;
   const threshold = defaultThreshold(env.SIMILARITY_THRESHOLD);
   const vector = await embedQuestion(question, env);
   const rerankModel = (env.RAG_RERANK_MODEL ?? "").trim() || null;
   if (!rerankModel) {
-    const matches = await queryIndex(vector, env);
-    const denseIdsOrdered = matches.map((m) => m.id);
+    const denseMatches = await queryIndex(vector, env);
+    // denseIdsOrdered stays the RAW dense order (before the language filter) so
+    // eval dense metrics remain comparable across runs with and without lang.
+    const denseIdsOrdered = denseMatches.map((m) => m.id);
+    const matches = lang ? preferLanguage(denseMatches, lang) : denseMatches;
     const filtered = filterChunks(matches, threshold, MAX_CHUNKS);
     const finalChunkIds = filtered.map((c) => c.id);
     pushDiagnostics(accumulate, {
@@ -170,8 +205,11 @@ export async function retrieveChunks(
   // the knowledge base and the bot still owes the visitor a "no-info" reply.
   const parsedCandidates = Number.parseInt(env.RAG_RERANK_CANDIDATES ?? "20", 10);
   const candidates = Number.isFinite(parsedCandidates) && parsedCandidates > 0 ? parsedCandidates : 20;
-  const matches = await queryIndex(vector, env, candidates);
-  const denseIdsOrdered = matches.map((m) => m.id);
+  const denseMatches = await queryIndex(vector, env, candidates);
+  // denseIdsOrdered stays the RAW dense order (before the language filter) so
+  // eval dense metrics remain comparable across runs with and without lang.
+  const denseIdsOrdered = denseMatches.map((m) => m.id);
+  const matches = lang ? preferLanguage(denseMatches, lang) : denseMatches;
   if (Math.max(...matches.map((m) => m.score), 0) < threshold) {
     pushDiagnostics(accumulate, {
       denseIdsOrdered,

@@ -192,7 +192,7 @@
         "route": "search",
         "retrieve": true,
         "answerable": true,
-        "expectedChunks": ["kb-overview"],
+        "expectedChunks": ["kb-contacto"],
         "expectedFacts": ["rami992009@gmail.com"],
         "offerContact": null
       }
@@ -729,7 +729,7 @@
         "retrieve": true,
         "answerable": true,
         "offerContact": true,
-        "expectedChunks": ["kb-overview"],
+        "expectedChunks": ["kb-contacto"],
         "expectedFacts": ["rami992009@gmail.com"]
       }
     },

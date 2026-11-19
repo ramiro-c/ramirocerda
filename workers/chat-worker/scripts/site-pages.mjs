@@ -9,8 +9,9 @@
  * source of truth.
  *
  * Pages opt out with <meta name="robots" content="noindex"> (the 404 page and
- * Astro redirect stubs), and page fragments that are UI — not content — opt
- * out with data-kb="skip", hidden, or aria-hidden="true" wrappers.
+ * Astro redirect stubs), page fragments that are UI — not content — opt
+ * out with data-kb="skip", hidden, or aria-hidden="true" wrappers, and whole
+ * routes opt out via the site source's exclude list in kb-sources.json.
  *
  * Everything is deterministic: same dist/ in, same chunk ids out.
  */
@@ -273,24 +274,47 @@ export function readSitePage(html, file) {
 
 /**
  * Chunk one parsed page the same way chunkNote chunks a note: chunkKB on
- * heading boundaries with the preamble (h1 + intro before the first h2) folded
- * into the first chunk, every chunk prefixed with the page title, and chunks
+ * heading boundaries, every chunk prefixed with the page title, and chunks
  * over MAX_CHUNK_CHARS split further at blank-line block boundaries — each
  * continuation repeats the chunk's heading lines and gets ` (2)`, ` (3)`... in
  * its section.
+ *
+ * The page intro (everything before the first h2/h3/h4, `# <title>` removed)
+ * is NOT folded into the first section chunk: on the home page it is the hero
+ * (role, clients, availability) and gluing it to the first section made that
+ * chunk match every generic question. It becomes its own `<pageKey>-intro`
+ * chunk instead.
  *
  * @param {{ url: string, urlAlt: string | null, pageKey: string, title: string, markdown: string }} page
  * @returns {Array<{ id: string, text: string, section: string, idx: number, url: string, urlAlt?: string }>}
  */
 export function chunkSitePage(page) {
   const titleLine = `# ${page.title}`;
-  const raw = chunkKB(page.markdown, { idPrefix: "site", foldPreamble: true });
+
+  // Split the rendered markdown into the preamble (lines before the first
+  // h2/h3/h4, `# <title>` line removed) and the rest, which chunkKB chunks on
+  // its heading boundaries.
+  const markdownLines = page.markdown.split("\n");
+  const firstHeadingIdx = markdownLines.findIndex((line) => /^#{2,4}\s/.test(line));
+  const preambleBody = (firstHeadingIdx === -1 ? markdownLines : markdownLines.slice(0, firstHeadingIdx))
+    .filter((line) => line !== titleLine)
+    .join("\n")
+    .trim();
+  const rest = firstHeadingIdx === -1 ? "" : markdownLines.slice(firstHeadingIdx).join("\n");
+
+  const raw = chunkKB(rest, { idPrefix: "site" });
+  const entries = raw.map((c) => ({ text: c.text, leaf: null }));
+  // A page with intro content gets it as a standalone chunk, placed first,
+  // with the fixed "intro" id leaf. It flows through the same rebuild below.
+  if (preambleBody !== "") {
+    entries.unshift({ text: `${titleLine}\n\n${preambleBody}`, leaf: "intro" });
+  }
 
   const chunks = [];
-  raw.forEach((c) => {
+  entries.forEach((entry) => {
     // chunkKB carries the h1 as a parent line into every chunk; drop it so each
     // chunk is rebuilt with exactly one `# <title>` prefix.
-    const lines = c.text.split("\n").filter((line) => line !== titleLine);
+    const lines = entry.text.split("\n").filter((line) => line !== titleLine);
     // Heading lines lift to the front of the rebuilt chunk: chunkKB joins the
     // folded preamble to the first heading with a bare newline, and the split
     // continuations need the headings as one repeatable prefix.
@@ -322,7 +346,7 @@ export function chunkSitePage(page) {
     // dropped as well.
     let chain = headingLines.filter((l) => !l.startsWith("# ")).map((l) => l.replace(/^#+\s+/, ""));
     if (chain[0] === page.title) chain = chain.slice(1);
-    const leafHeading = chain.length ? chain[chain.length - 1] : page.title;
+    const leafHeading = entry.leaf ?? (chain.length ? chain[chain.length - 1] : page.title);
     const baseSection = chain.length ? `${page.title} › ${chain.join(" › ")}` : page.title;
 
     // Greedy packing of body blocks: once a part would exceed
@@ -371,10 +395,17 @@ export function chunkSitePage(page) {
  * Load all site chunks from a built dist directory: every indexable HTML page,
  * in sorted file order, chunked deterministically.
  *
+ * opts.exclude lists route paths (same normalized form as page.url: no
+ * trailing slash, "/" for the root) that must not be indexed. Excluded pages
+ * are skipped after readSitePage, so noindex pages are still dropped first,
+ * and every exclude entry must match an indexable page — a stale entry fails
+ * loudly instead of silently doing nothing.
+ *
  * @param {string} distDir absolute path to the Astro build output
+ * @param {{ exclude?: string[] }} [opts]
  * @returns {Promise<Array<{ id: string, text: string, section: string, idx: number, url: string, urlAlt?: string }>>}
  */
-export async function loadSiteChunks(distDir) {
+export async function loadSiteChunks(distDir, opts = {}) {
   const DIST_MISSING = "dist/ missing: run `bun run build` before populate";
   let st;
   try {
@@ -384,6 +415,13 @@ export async function loadSiteChunks(distDir) {
   }
   if (!st.isDirectory()) throw new Error(DIST_MISSING);
 
+  const exclude = opts.exclude ?? [];
+  if (!Array.isArray(exclude) || exclude.some((route) => typeof route !== "string" || !route.startsWith("/"))) {
+    throw new Error('site exclude: must be an array of route paths starting with "/"');
+  }
+  const excludeSet = new Set(exclude);
+  const unmatched = new Set(excludeSet);
+
   const pages = [];
   const seen = new Map();
   for (const file of await globFiles(distDir, "**/*.html")) {
@@ -391,10 +429,17 @@ export async function loadSiteChunks(distDir) {
     const html = await readFile(file, "utf8");
     const page = readSitePage(html, rel);
     if (!page) continue;
+    if (excludeSet.has(page.url)) {
+      unmatched.delete(page.url);
+      continue;
+    }
     const first = seen.get(page.url);
     if (first) throw new Error(`duplicate site page url ${page.url} (${first} and ${rel})`);
     seen.set(page.url, rel);
     pages.push(page);
+  }
+  if (unmatched.size > 0) {
+    throw new Error(`site exclude: no published page at ${[...unmatched].join(", ")}`);
   }
   return pages.flatMap(chunkSitePage);
 }
