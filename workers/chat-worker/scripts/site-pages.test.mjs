@@ -358,4 +358,10 @@ describe("site source against the real dist/", () => {
     const oversized = chunks.filter((c) => c.source === "site" && c.text.length > MAX_CHUNK_CHARS);
     expect(oversized.map((c) => c.id)).toEqual([]);
   });
+
+  it.skipIf(!existsSync(repoDistDir))("the real curated file passes the off-site guard", async () => {
+    const chunks = await loadKBChunks(path.dirname(repoDistDir));
+    expect(chunks.some((c) => c.id.startsWith("kb-"))).toBe(true);
+    expect(chunks.some((c) => c.id.startsWith("site-"))).toBe(true);
+  });
 });

@@ -5,9 +5,14 @@
       "id": "soccer-predictor",
       "snippets": [
         {
-          "chunk": "kb-soccer-analytics-agent",
-          "section": "Proyectos Destacados",
-          "text": "un predictor de resultados con XGBoost multiclass (51 features, 336 equipos, fallback Elo). Memoria de 3 niveles (working/episodic/semántica) y Postgres 16 + pgvector como capa única de datos, vectores y memoria."
+          "chunk": "project-es-soccer-analytics-agent",
+          "section": "Soccer Analytics Agent",
+          "text": "XGBoost multiclase para predecir resultados (51 features, con fallback a Elo). Retrieval híbrido sobre 49k documentos (pgvector + full-text de Postgres, fusionado con RRF), memoria de tres capas (working, episódica, semántica), tracker de Elo de 336 selecciones"
+        },
+        {
+          "chunk": "project-es-soccer-analytics-agent",
+          "section": "Soccer Analytics Agent",
+          "text": "**Stack:** Python 3.12, Gemini, Vertex AI, Postgres 16, pgvector, MiniLM, XGBoost, FastAPI, React"
         }
       ],
       "claims": [

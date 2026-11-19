@@ -378,8 +378,125 @@ export async function loadKBChunks(rootDir) {
   }
   // The site source indexes every published page, including the note and
   // project pages that the markdown/projects sources already claim. Drop those
-  // duplicates so each route is owned by exactly one source.
-  return excludeClaimedRoutes(chunks);
+  // duplicates so each route is owned by exactly one source, then enforce that
+  // the curated KB never restates what those published chunks already say.
+  const result = excludeClaimedRoutes(chunks);
+  assertCuratedIsOffSite(result);
+  return result;
+}
+
+/**
+ * Drift-guard thresholds for assertCuratedIsOffSite: a curated line with fewer
+ * than CURATED_MIN_WORDS words is never checked, copied prose is detected with
+ * CURATED_SHINGLE-word shingles, and a line whose shingle overlap with the
+ * published set reaches CURATED_MAX_OVERLAP counts as copied.
+ */
+export const CURATED_MIN_WORDS = 8;
+export const CURATED_SHINGLE = 6;
+export const CURATED_MAX_OVERLAP = 0.6;
+
+/**
+ * Normalized words for the shingle check: lowercase, NFD with combining marks
+ * stripped (accents gone), and every non [a-z0-9] run collapsed to one space.
+ */
+function shingleWords(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean);
+}
+
+/** All CURATED_SHINGLE-word shingles (consecutive word runs) of a word list. */
+function shinglesOf(words) {
+  const out = [];
+  for (let i = 0; i + CURATED_SHINGLE <= words.length; i++) {
+    out.push(words.slice(i, i + CURATED_SHINGLE).join(" "));
+  }
+  return out;
+}
+
+/**
+ * Drift guard: the curated KB ("kb-*" chunks) must not restate what the other
+ * sources already publish. Runs only when the chunk list contains at least one
+ * site-source chunk (`site-` prefix) — with no site source there is no
+ * "published" baseline, so the check is a no-op (unit-test fixtures without a
+ * site source stay unaffected). Collects ALL violations and throws a single
+ * error listing them:
+ *
+ * - Rule 1 (heading collision): slugify(curated section) equals slugify of a
+ *   published chunk's leaf heading — for site chunks the section after the
+ *   last ` › `, for notes/projects the section as is.
+ * - Rule 2 (copied prose): every CURATED_SHINGLE-word shingle of every
+ *   published chunk's text goes into a set; a curated line with at least
+ *   CURATED_MIN_WORDS (normalized) words whose shingles overlap that set by
+ *   CURATED_MAX_OVERLAP or more is copied, not hand-written.
+ *
+ * @param {Array<{ id: string, text: string, section: string, source: string, url?: string }>} chunks
+ * @returns {Array<...>} the same list, unchanged, when nothing drifts
+ */
+export function assertCuratedIsOffSite(chunks) {
+  if (!chunks.some((c) => c.id.startsWith("site-"))) return chunks;
+
+  const curated = chunks.filter((c) => c.id.startsWith("kb-"));
+  const published = chunks.filter((c) => !c.id.startsWith("kb-"));
+  const violations = [];
+
+  // Rule 1 — heading collision.
+  const leafOwner = new Map();
+  for (const p of published) {
+    const leaf = p.id.startsWith("site-") ? p.section.split(" › ").pop() : p.section;
+    const slug = slugify(leaf ?? "");
+    if (slug && !leafOwner.has(slug)) leafOwner.set(slug, p);
+  }
+  for (const c of curated) {
+    const owner = leafOwner.get(slugify(c.section));
+    if (owner) {
+      violations.push(
+        `curated chunk ${c.id} repeats the heading "${c.section}" of published chunk ${owner.id}${owner.url ? ` (${owner.url})` : ""}. Delete it from knowledge-base.js: the site already publishes it.`,
+      );
+    }
+  }
+
+  // Rule 2 — copied prose.
+  const shingleOwner = new Map();
+  for (const p of published) {
+    for (const shingle of shinglesOf(shingleWords(p.text))) {
+      if (!shingleOwner.has(shingle)) shingleOwner.set(shingle, p);
+    }
+  }
+  for (const c of curated) {
+    for (const line of c.text.split("\n")) {
+      const words = shingleWords(line);
+      if (words.length < CURATED_MIN_WORDS) continue;
+      const shingles = shinglesOf(words);
+      if (shingles.length === 0) continue;
+      let hits = 0;
+      let owner = null;
+      for (const shingle of shingles) {
+        const found = shingleOwner.get(shingle);
+        if (found) {
+          hits += 1;
+          owner ??= found;
+        }
+      }
+      const overlap = hits / shingles.length;
+      if (overlap >= CURATED_MAX_OVERLAP) {
+        violations.push(
+          `curated chunk ${c.id} copies the line "${line.trim()}" (${Math.round(overlap * 100)}% of its ${CURATED_SHINGLE}-word shingles) from published chunk ${owner.id}${owner.url ? ` (${owner.url})` : ""}. Delete it from knowledge-base.js: the site already publishes it.`,
+        );
+      }
+    }
+  }
+
+  if (violations.length > 0) {
+    throw new Error(
+      `curated KB duplicates site-published content (${violations.length}):\n${violations.map((v) => `- ${v}`).join("\n")}`,
+    );
+  }
+  return chunks;
 }
 
 /**
