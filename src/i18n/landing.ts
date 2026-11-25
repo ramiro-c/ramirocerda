@@ -29,6 +29,20 @@ export interface CaseStudy {
   result: string;
 }
 
+/**
+ * One line of the "En qué ando" strip under the hero. Everything listed is in
+ * production; the tag says how often Ramiro works on it. Items and cadence
+ * are confirmed by Ramiro.
+ */
+export interface NowItem {
+  id: string;
+  name: string;
+  note: string;
+  cadence: "daily" | "sometimes";
+  /** A path, an absolute URL, or "botardo" to open the chat. */
+  href: string;
+}
+
 export interface Testimonial {
   quote: string;
   name: string;
@@ -54,6 +68,7 @@ export interface LandingCopy {
     whatsapp: string;
   };
   proof: { workedWith: string; logos: Array<{ name: string; confirmed: boolean }> };
+  now: { label: string; cadence: Record<NowItem["cadence"], string>; items: NowItem[] };
   demo: { label: string; title: string; body: string; prompts: string[] };
   cases: { label: string; title: string; items: CaseStudy[]; more: string; visit: string };
   testimonials: { label: string; items: Testimonial[] };
@@ -121,6 +136,33 @@ export const landing: Record<Lang, LandingCopy> = {
       whatsapp: "WhatsApp",
     },
     proof: { workedWith: "Trabajé con", logos: LOGOS },
+    now: {
+      label: "En qué ando",
+      cadence: { daily: "Todos los días", sometimes: "De vez en cuando" },
+      items: [
+        {
+          id: "ldp",
+          name: "Libro de Pases",
+          note: "Lidero el desarrollo full stack de la plataforma.",
+          cadence: "daily",
+          href: "/work/ldp/",
+        },
+        {
+          id: "avellana",
+          name: "Avellana",
+          note: "App para comprar ropa en Av. Avellaneda. Con Kano Studio seguimos sumando cosas.",
+          cadence: "daily",
+          href: "https://avellana.store/",
+        },
+        {
+          id: "botardo",
+          name: "Botardo",
+          note: "El agente de esta web. Lo itero cuando encuentro algo para mejorar.",
+          cadence: "sometimes",
+          href: "botardo",
+        },
+      ],
+    },
     demo: {
       label: "Demo en vivo",
       title: "Probá un agente que construí",
@@ -280,6 +322,33 @@ export const landing: Record<Lang, LandingCopy> = {
       whatsapp: "WhatsApp",
     },
     proof: { workedWith: "Worked with", logos: LOGOS },
+    now: {
+      label: "What I'm working on",
+      cadence: { daily: "Every day", sometimes: "Now and then" },
+      items: [
+        {
+          id: "ldp",
+          name: "Libro de Pases",
+          note: "I lead full stack development of the platform.",
+          cadence: "daily",
+          href: "/work/ldp/",
+        },
+        {
+          id: "avellana",
+          name: "Avellana",
+          note: "An app for shopping clothes on Av. Avellaneda. We keep shipping with Kano Studio.",
+          cadence: "daily",
+          href: "https://avellana.store/",
+        },
+        {
+          id: "botardo",
+          name: "Botardo",
+          note: "The agent on this site. I iterate on it when I find something to improve.",
+          cadence: "sometimes",
+          href: "botardo",
+        },
+      ],
+    },
     demo: {
       label: "Live demo",
       title: "Try an agent I built",

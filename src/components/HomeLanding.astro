@@ -131,6 +131,53 @@ const faqSchema = {
   </figure>
 </section>
 
+<section class="now" aria-labelledby="nowTitle">
+  <h2 class="label caption-3 now-title" id="nowTitle">
+    {c.now.label}
+  </h2>
+  <ul class="now-list">
+    {c.now.items.map((item) => (
+      <li class="now-item">
+        <p class="now-head">
+          {item.href === "botardo" ? (
+            <button
+              class="now-name body-1"
+              type="button"
+              data-open-botardo
+              data-cta-id="now"
+              data-cta-position={item.id}
+            >
+              {item.name}
+            </button>
+          ) : /^https?:\/\//.test(item.href) ? (
+            <a
+              class="now-name body-1"
+              href={item.href}
+              target="_blank"
+              rel="noreferrer"
+              data-cta-id="now"
+              data-cta-position={item.id}
+            >
+              {item.name}
+            </a>
+          ) : (
+            <a
+              class="now-name body-1"
+              href={getLocalizedPath(lang, item.href)}
+              data-cta-id="now"
+              data-cta-position={item.id}
+            >
+              {item.name}
+            </a>
+          )}
+          <span class:list={["now-status caption-4", `is-${item.cadence}`]}>{c.now.cadence[item.cadence]}</span>
+        </p>
+        <p class="now-note body-5">{item.note}</p>
+      </li>
+    ))}
+  </ul>
+</section>
+
 <section class="band demo reveal" aria-labelledby="demoTitle">
   <span class="band-num mono caption-4" aria-hidden="true">
     01
@@ -517,6 +564,74 @@ const faqSchema = {
     .chip-sep {
       display: none;
     }
+  }
+
+  /* "En qué ando": what is moving right now, between the hero and the demo.
+     Lighter than a numbered band: it is context, not a section to read. */
+  .now {
+    padding: var(--space-400) 0;
+    border-top: 1px solid var(--border);
+  }
+  .now-title {
+    margin: 0 0 var(--space-200);
+  }
+  .now-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-300) var(--space-500);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .now-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-75) var(--space-100);
+    margin: 0 0 var(--space-50);
+  }
+  .now-name {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+    transition: text-decoration-color var(--dur-color) var(--ease-out);
+  }
+  .now-name:hover {
+    text-decoration-color: currentColor;
+  }
+  .now-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-50);
+    color: var(--muted-2);
+    white-space: nowrap;
+  }
+  .now-status::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    border: 1px solid currentColor;
+  }
+  .now-status.is-daily::before {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  .now-status.is-sometimes::before {
+    border-color: var(--muted);
+    background: var(--muted);
+  }
+  .now-note {
+    margin: 0;
+    max-width: 34ch;
+    color: var(--muted);
   }
 
   /* Every band shares one editorial frame: a numbered rail on the left and the
