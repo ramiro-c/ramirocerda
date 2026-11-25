@@ -1,7 +1,7 @@
 {
   "index": "botardo-kb",
   "embeddingModel": "@cf/baai/bge-m3",
-  "generatedAt": "2026-11-19T14:50:44.769Z",
+  "generatedAt": "2026-11-25T17:13:13.573Z",
   "sources": {
     "kb": 13,
     "notes": 42,
@@ -111,8 +111,8 @@
     "site-home-before-you-write-1a1738d3",
     "site-home-before-you-write-2409ff2c",
     "site-home-got-something-to-build-or-something-to-fix-fdc9baa0",
-    "site-home-intro-39f804c2",
-    "site-home-intro-de5cabcb",
+    "site-home-intro-0993f9ea",
+    "site-home-intro-ca3fb511",
     "site-home-kano-studio-landing-and-interactive-diagnos-bc560b89",
     "site-home-kano-studio-landing-y-diagnostico-interacti-4fcc8e83",
     "site-home-lactaria-apoyo-en-lactancia-materna-60a82a57",
