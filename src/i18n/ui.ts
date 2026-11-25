@@ -32,7 +32,7 @@ export const ui = {
       "Tech lead y desarrollador full stack en Buenos Aires. Entro a un producto, entiendo cómo se usa y me hago cargo de lo que falta: la búsqueda, el monitoreo, los tests, el deploy. También llevo agentes de IA a producción.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Abierto a nuevos proyectos y roles full-time",
-    "home.location": "Buenos Aires · UTC-3",
+    "home.city": "Buenos Aires",
     "botardo.welcome":
       "¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su experiencia, proyectos, habilidades o cualquier tema profesional.",
     "botardo.welcomeReturning":
@@ -86,6 +86,8 @@ export const ui = {
     "work.back": "← Todos los proyectos",
     "footer.line": "Diseñado y construido por Ramiro Cerdá · Buenos Aires",
     "footer.email": "Correo",
+    "footer.copyEmail": "Copiar mail",
+    "footer.copied": "Copiado",
     "project.problem": "Problema",
     "project.what": "Qué hice",
     "project.highlights": "Destacados",
@@ -124,7 +126,7 @@ export const ui = {
       "Tech lead and full stack developer based in Buenos Aires. I join a product, learn how it is used, and take ownership of what is missing: search, monitoring, tests, deploy. I also take AI agents to production.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Open to new projects and full-time roles",
-    "home.location": "Buenos Aires · UTC-3",
+    "home.city": "Buenos Aires",
     "botardo.welcome":
       "Hi! I’m Botardo, an AI assistant with info about Ramiro. Ask me about his experience, projects, skills, or anything professional.",
     "botardo.welcomeReturning":
@@ -178,6 +180,8 @@ export const ui = {
     "work.back": "← All projects",
     "footer.line": "Designed and built by Ramiro Cerdá · Buenos Aires",
     "footer.email": "Email",
+    "footer.copyEmail": "Copy email",
+    "footer.copied": "Copied",
     "project.problem": "Problem",
     "project.what": "What I did",
     "project.highlights": "Highlights",

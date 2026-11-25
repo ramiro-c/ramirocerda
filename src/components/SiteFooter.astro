@@ -2,6 +2,7 @@
 import type { Lang } from "../i18n/ui";
 import { getLocalizedPath, useTranslations } from "../i18n/utils";
 import { landing } from "../i18n/landing";
+import { CONTACT_EMAIL } from "../config/site";
 
 interface Props {
   lang: Lang;
@@ -24,11 +25,47 @@ const year = new Date().getFullYear();
       LinkedIn
     </a>
     <span aria-hidden="true">·</span>
-    <a href="mailto:rami992009@gmail.com">{t("footer.email")}</a>
+    <a href={`mailto:${CONTACT_EMAIL}`}>{t("footer.email")}</a>
+    <button
+      class="copy-email"
+      type="button"
+      data-copy-email={CONTACT_EMAIL}
+      data-label={t("footer.copyEmail")}
+      data-done={t("footer.copied")}
+    >
+      {t("footer.copyEmail")}
+    </button>
+    <span class="sr-only" aria-live="polite" data-copy-status></span>
     <span aria-hidden="true">·</span>
     <a href={getLocalizedPath(lang, "/privacy/")}>{landing[lang].notice.link}</a>
   </p>
 </footer>
+
+<script>
+  // Copy the address instead of opening a mail client: many visitors use webmail
+  // and a mailto link does nothing for them.
+  const button = document.querySelector<HTMLButtonElement>("[data-copy-email]");
+  const status = document.querySelector<HTMLElement>("[data-copy-status]");
+  if (button && navigator.clipboard) {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copyEmail ?? "");
+      } catch {
+        return;
+      }
+      button.textContent = button.dataset.done ?? "";
+      if (status) status.textContent = button.dataset.done ?? "";
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        button.textContent = button.dataset.label ?? "";
+        if (status) status.textContent = "";
+      }, 2000);
+    });
+  } else if (button) {
+    button.hidden = true;
+  }
+</script>
 
 <style>
   .footer {
@@ -51,6 +88,30 @@ const year = new Date().getFullYear();
     transition:
       color var(--dur-color) var(--ease-out),
       transform var(--dur-color) var(--ease-out);
+  }
+
+  .copy-email {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline dotted;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+    transition: color var(--dur-color) var(--ease-out);
+  }
+  .copy-email:hover {
+    color: var(--text);
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .footer-links a:hover {

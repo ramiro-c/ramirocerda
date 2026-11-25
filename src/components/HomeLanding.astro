@@ -82,7 +82,12 @@ const faqSchema = {
         <span class="chip-sep" aria-hidden="true">
           ·
         </span>
-        <span class="chip-loc">{t("home.location")}</span>
+        <span class="chip-loc">
+          {t("home.city")} ·{" "}
+          <span data-ba-clock title="UTC-3">
+            UTC-3
+          </span>
+        </span>
       </p>
     </div>
   </div>
@@ -267,6 +272,26 @@ const faqSchema = {
     </a>
   </p>
 </section>
+
+<script>
+  // Live Buenos Aires time in the status chip. The server renders "UTC-3" so the
+  // chip reads correctly without JS; the script swaps in the local hour.
+  const clocks = document.querySelectorAll<HTMLElement>("[data-ba-clock]");
+  if (clocks.length > 0) {
+    const fmt = new Intl.DateTimeFormat("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const tick = () => {
+      const now = fmt.format(new Date());
+      clocks.forEach((el) => (el.textContent = now));
+    };
+    tick();
+    setInterval(tick, 15_000);
+  }
+</script>
 
 <style>
   /* Hero: the photo bleeds off the right and bottom edges while the copy sits on
@@ -470,6 +495,9 @@ const faqSchema = {
   /* The city and the timezone are one fact, so they never split across lines. */
   .chip-loc {
     white-space: nowrap;
+  }
+  [data-ba-clock] {
+    font-variant-numeric: tabular-nums;
   }
   /* Below this width the chip's copy no longer fits on one line and the flex
      row wraps. The separator is its own flex item, so left in place it would
