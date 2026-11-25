@@ -30,15 +30,15 @@ export interface CaseStudy {
 }
 
 /**
- * One line of the "En qué ando" strip under the hero. Unlike the project
- * schema (which only marks `live`), this strip says what is moving right now,
- * so it carries its own status. Items are confirmed by Ramiro.
+ * One line of the "En qué ando" strip under the hero. Everything listed is in
+ * production; the tag says how often Ramiro works on it. Items and cadence
+ * are confirmed by Ramiro.
  */
 export interface NowItem {
   id: string;
   name: string;
   note: string;
-  status: "building" | "live";
+  cadence: "daily" | "sometimes";
   /** A path, an absolute URL, or "botardo" to open the chat. */
   href: string;
 }
@@ -68,7 +68,7 @@ export interface LandingCopy {
     whatsapp: string;
   };
   proof: { workedWith: string; logos: Array<{ name: string; confirmed: boolean }> };
-  now: { label: string; status: Record<NowItem["status"], string>; items: NowItem[] };
+  now: { label: string; cadence: Record<NowItem["cadence"], string>; items: NowItem[] };
   demo: { label: string; title: string; body: string; prompts: string[] };
   cases: { label: string; title: string; items: CaseStudy[]; more: string; visit: string };
   testimonials: { label: string; items: Testimonial[] };
@@ -138,28 +138,28 @@ export const landing: Record<Lang, LandingCopy> = {
     proof: { workedWith: "Trabajé con", logos: LOGOS },
     now: {
       label: "En qué ando",
-      status: { building: "En desarrollo", live: "En producción" },
+      cadence: { daily: "Todos los días", sometimes: "De vez en cuando" },
       items: [
         {
-          id: "botardo",
-          name: "Botardo",
-          note: "El agente de esta web. Estoy mejorando cómo busca y cómo responde.",
-          status: "building",
-          href: "botardo",
-        },
-        {
-          id: "ldp-copilot",
-          name: "LDP Copilot",
-          note: "Asistente de producto en Libro de Pases, con subagentes por dominio.",
-          status: "live",
-          href: "/work/ldp-copilot/",
+          id: "ldp",
+          name: "Libro de Pases",
+          note: "Lidero el desarrollo full stack de la plataforma.",
+          cadence: "daily",
+          href: "/work/ldp/",
         },
         {
           id: "avellana",
           name: "Avellana",
           note: "App para comprar ropa en Av. Avellaneda. Con Kano Studio seguimos sumando cosas.",
-          status: "building",
+          cadence: "daily",
           href: "https://avellana.store/",
+        },
+        {
+          id: "botardo",
+          name: "Botardo",
+          note: "El agente de esta web. Lo itero cuando encuentro algo para mejorar.",
+          cadence: "sometimes",
+          href: "botardo",
         },
       ],
     },
@@ -324,28 +324,28 @@ export const landing: Record<Lang, LandingCopy> = {
     proof: { workedWith: "Worked with", logos: LOGOS },
     now: {
       label: "What I'm working on",
-      status: { building: "In progress", live: "In production" },
+      cadence: { daily: "Every day", sometimes: "Now and then" },
       items: [
         {
-          id: "botardo",
-          name: "Botardo",
-          note: "The agent on this site. I'm improving how it searches and answers.",
-          status: "building",
-          href: "botardo",
-        },
-        {
-          id: "ldp-copilot",
-          name: "LDP Copilot",
-          note: "Product assistant at Libro de Pases, with domain subagents.",
-          status: "live",
-          href: "/work/ldp-copilot/",
+          id: "ldp",
+          name: "Libro de Pases",
+          note: "I lead full stack development of the platform.",
+          cadence: "daily",
+          href: "/work/ldp/",
         },
         {
           id: "avellana",
           name: "Avellana",
           note: "An app for shopping clothes on Av. Avellaneda. We keep shipping with Kano Studio.",
-          status: "building",
+          cadence: "daily",
           href: "https://avellana.store/",
+        },
+        {
+          id: "botardo",
+          name: "Botardo",
+          note: "The agent on this site. I iterate on it when I find something to improve.",
+          cadence: "sometimes",
+          href: "botardo",
         },
       ],
     },

@@ -170,7 +170,7 @@ const faqSchema = {
               {item.name}
             </a>
           )}
-          <span class:list={["now-status caption-4", `is-${item.status}`]}>{c.now.status[item.status]}</span>
+          <span class:list={["now-status caption-4", `is-${item.cadence}`]}>{c.now.cadence[item.cadence]}</span>
         </p>
         <p class="now-note body-5">{item.note}</p>
       </li>
@@ -620,11 +620,11 @@ const faqSchema = {
     border-radius: var(--radius-full);
     border: 1px solid currentColor;
   }
-  .now-status.is-building::before {
+  .now-status.is-daily::before {
     border-color: var(--accent);
     background: var(--accent);
   }
-  .now-status.is-live::before {
+  .now-status.is-sometimes::before {
     border-color: var(--muted);
     background: var(--muted);
   }
