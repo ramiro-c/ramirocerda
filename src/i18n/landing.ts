@@ -29,6 +29,20 @@ export interface CaseStudy {
   result: string;
 }
 
+/**
+ * One line of the "En qué ando" strip under the hero. Unlike the project
+ * schema (which only marks `live`), this strip says what is moving right now,
+ * so it carries its own status. Items are confirmed by Ramiro.
+ */
+export interface NowItem {
+  id: string;
+  name: string;
+  note: string;
+  status: "building" | "live";
+  /** A path, an absolute URL, or "botardo" to open the chat. */
+  href: string;
+}
+
 export interface Testimonial {
   quote: string;
   name: string;
@@ -54,6 +68,7 @@ export interface LandingCopy {
     whatsapp: string;
   };
   proof: { workedWith: string; logos: Array<{ name: string; confirmed: boolean }> };
+  now: { label: string; status: Record<NowItem["status"], string>; items: NowItem[] };
   demo: { label: string; title: string; body: string; prompts: string[] };
   cases: { label: string; title: string; items: CaseStudy[]; more: string; visit: string };
   testimonials: { label: string; items: Testimonial[] };
@@ -121,6 +136,33 @@ export const landing: Record<Lang, LandingCopy> = {
       whatsapp: "WhatsApp",
     },
     proof: { workedWith: "Trabajé con", logos: LOGOS },
+    now: {
+      label: "En qué ando",
+      status: { building: "En desarrollo", live: "En producción" },
+      items: [
+        {
+          id: "botardo",
+          name: "Botardo",
+          note: "El agente de esta web. Estoy mejorando cómo busca y cómo responde.",
+          status: "building",
+          href: "botardo",
+        },
+        {
+          id: "ldp-copilot",
+          name: "LDP Copilot",
+          note: "Asistente de producto en Libro de Pases, con subagentes por dominio.",
+          status: "live",
+          href: "/work/ldp-copilot/",
+        },
+        {
+          id: "avellana",
+          name: "Avellana",
+          note: "App para comprar ropa en Av. Avellaneda. Con Kano Studio seguimos sumando cosas.",
+          status: "building",
+          href: "https://avellana.store/",
+        },
+      ],
+    },
     demo: {
       label: "Demo en vivo",
       title: "Probá un agente que construí",
@@ -280,6 +322,33 @@ export const landing: Record<Lang, LandingCopy> = {
       whatsapp: "WhatsApp",
     },
     proof: { workedWith: "Worked with", logos: LOGOS },
+    now: {
+      label: "What I'm working on",
+      status: { building: "In progress", live: "In production" },
+      items: [
+        {
+          id: "botardo",
+          name: "Botardo",
+          note: "The agent on this site. I'm improving how it searches and answers.",
+          status: "building",
+          href: "botardo",
+        },
+        {
+          id: "ldp-copilot",
+          name: "LDP Copilot",
+          note: "Product assistant at Libro de Pases, with domain subagents.",
+          status: "live",
+          href: "/work/ldp-copilot/",
+        },
+        {
+          id: "avellana",
+          name: "Avellana",
+          note: "An app for shopping clothes on Av. Avellaneda. We keep shipping with Kano Studio.",
+          status: "building",
+          href: "https://avellana.store/",
+        },
+      ],
+    },
     demo: {
       label: "Live demo",
       title: "Try an agent I built",
