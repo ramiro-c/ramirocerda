@@ -33,6 +33,7 @@ export const ui = {
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Abierto a nuevos proyectos y roles full-time",
     "home.city": "Buenos Aires",
+    "home.casesAll": "Ver todos los proyectos",
     "botardo.welcome":
       "¡Hola! Soy Botardo, un asistente de IA con información sobre Ramiro. Preguntame sobre su experiencia, proyectos, habilidades o cualquier tema profesional.",
     "botardo.welcomeReturning":
@@ -126,6 +127,7 @@ export const ui = {
       "Tech lead and full stack developer based in Buenos Aires. I join a product, learn how it is used, and take ownership of what is missing: search, monitoring, tests, deploy. I also take AI agents to production.",
     "home.stackLabel": "Stack",
     "home.statusAvailable": "Open to new projects and full-time roles",
+    "home.casesAll": "See all projects",
     "home.city": "Buenos Aires",
     "botardo.welcome":
       "Hi! I’m Botardo, an AI assistant with info about Ramiro. Ask me about his experience, projects, skills, or anything professional.",

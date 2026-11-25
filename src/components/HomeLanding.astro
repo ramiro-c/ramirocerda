@@ -24,6 +24,10 @@ const c = landing[lang];
 const isDev = import.meta.env.DEV;
 const logos = c.proof.logos.filter((logo) => logo.confirmed || isDev);
 const testimonials = c.testimonials.items;
+// The home shows the strongest cases only; the rest live on /work. The order
+// in i18n/landing.ts decides which ones make the cut.
+const HOME_CASES = 4;
+const cases = c.cases.items.slice(0, HOME_CASES);
 const taglineWords = c.tagline.split(" ");
 const faqSchema = {
   "@context": "https://schema.org",
@@ -164,7 +168,7 @@ const faqSchema = {
     {c.cases.title}
   </h2>
   <ol class="case-list">
-    {c.cases.items.map((item, i) => (
+    {cases.map((item, i) => (
       <li class="case">
         <span class="case-num mono caption-4" aria-hidden="true">
           {String(i + 1).padStart(2, "0")}
@@ -194,6 +198,11 @@ const faqSchema = {
       </li>
     ))}
   </ol>
+  <p class="secondary-actions">
+    <a class="cta-link" href={getLocalizedPath(lang, "/work/")} data-cta-id="work" data-cta-position="cases">
+      {t("home.casesAll")}
+    </a>
+  </p>
   <div class="cta-row">
     <PrimaryCta lang={lang} position="cases" />
   </div>
